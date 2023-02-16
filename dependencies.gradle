@@ -1,0 +1,94 @@
+ext {
+    appDependencies = [
+            coreKt            : 'androidx.core:core-ktx:1.7.0',
+            appCompat         : 'androidx.appcompat:appcompat:1.5.0',
+            material          : 'com.google.android.material:material:1.6.1',
+            constrainlayout   : 'androidx.constraintlayout:constraintlayout:2.1.4',
+            dynamicAnimation  : 'androidx.dynamicanimation:dynamicanimation:1.0.0',
+            swipeRefreshLayout: "androidx.swiperefreshlayout:swiperefreshlayout:+"
+    ]
+
+    rxJavaDependencies = [
+            rxjava   : 'io.reactivex.rxjava3:rxjava:3.0.13',
+            rxandroid: 'io.reactivex.rxjava3:rxandroid:3.0.0',
+    ]
+
+    daggerDependencies = [
+            daggerAndroid       : "com.google.dagger:dagger-android:2.44",
+            daggerAndroidSupport: "com.google.dagger:dagger-android-support:2.44",
+    ]
+
+    complier = [
+            kapDaggerCompiler        : "com.google.dagger:dagger-compiler:2.44",
+            kapDaggerAndroidProcessor: "com.google.dagger:dagger-android-processor:2.44",
+            glide                    : "com.github.bumptech.glide:compiler:4.14.2",
+            roomCompiler             : "androidx.room:room-compiler:2.4.3",
+            roomArch                 : "android.arch.persistence.room:compiler:1.1.1"
+    ]
+
+    roomDatabase = [
+            runtime   : "androidx.room:room-runtime:2.4.3",
+            roomRxJava: "androidx.room:room-rxjava3:2.4.3"
+    ]
+
+    retrofitDependencies = [
+            retrofit             : "com.squareup.retrofit2:retrofit:2.9.0",
+            retrofitRxJavaAdapter: "com.squareup.retrofit2:adapter-rxjava3:2.9.0",
+            retrofitGsonConverter: "com.squareup.retrofit2:converter-gson:2.9.0",
+    ]
+
+    okhttpDependencies = [
+            logging: "com.squareup.okhttp3:logging-interceptor:+",
+            client : "com.squareup.okhttp3:okhttp:+"
+    ]
+
+    firebaseDependencies = [
+            firebaseAuth: "com.google.firebase:firebase-auth-ktx",
+            analytics   : 'com.google.firebase:firebase-analytics-ktx',
+            firestore   : 'com.google.firebase:firebase-firestore-ktx',
+            database    : 'com.google.firebase:firebase-database-ktx',
+            dynamicLinks: 'com.google.firebase:firebase-dynamic-links-ktx',
+            crashlytics : 'com.google.firebase:firebase-crashlytics-ktx',
+            remoteConfig: 'com.google.firebase:firebase-config-ktx:21.0.2',
+            messaging   : 'com.google.firebase:firebase-messaging-ktx:23.1.0'
+    ]
+
+    externalDependencies = [
+            lotieAnimation: "com.airbnb.android:lottie:5.2.0",
+            jsoup         : "org.jsoup:jsoup:1.15.3",
+            gson          : "com.google.code.gson:gson:2.9.1",
+            glide         : "com.github.bumptech.glide:glide:4.14.2",
+    ]
+
+    googlePlayServices = [
+            auth           : 'com.google.android.play:core-ktx:1.8.1',
+            playServiceAuth: 'com.google.android.gms:play-services-auth:20.3.0'
+
+
+    ]
+
+    exoPlayerDependencies = [
+            player  : 'com.google.android.exoplayer:exoplayer:2.18.1',
+            core    : 'com.google.android.exoplayer:exoplayer-core:2.18.1',
+            leanback: 'com.google.android.exoplayer:extension-leanback:2.18.1',
+            ui      : 'com.google.android.exoplayer:exoplayer-ui:2.18.1',
+            hls     : 'com.google.android.exoplayer:exoplayer-hls:2.18.1',
+            ima     : 'com.google.android.exoplayer:extension-ima:2.18.1',
+    ]
+
+    authen = [
+            googleAuthen: "com.google.android.gms:play-services-auth:20.3.0",
+    ]
+
+    ads = [
+            applovin       : 'com.applovin:applovin-sdk:+',
+            appColony      : "com.adcolony:sdk:4.8.0",
+            applovinAdapter: "com.google.ads.mediation:applovin:11.5.5.0",
+            meta           : "com.google.ads.mediation:facebook:6.12.0.0", //facebook
+            adcolony       : "com.google.ads.mediation:adcolony:4.8.0.0",
+    ]
+
+    otherLibs = [
+//            checkApi: "com.kt:api:1.1.15"
+    ]
+}

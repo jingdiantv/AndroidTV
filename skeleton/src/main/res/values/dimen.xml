@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="text_size_medium">15sp</dimen>
+    <dimen name="text_size_medium_15sp">15sp</dimen>
+    <dimen name="text_size_details_medium_13sp">13sp</dimen>
+
+    <dimen name="text_size_large">17sp</dimen>
+
+    <dimen name="padding_0dp">0dp</dimen>
+    <dimen name="common_padding">16dp</dimen>
+    <dimen name="large_padding">24dp</dimen>
+    <dimen name="very_large_padding">32dp</dimen>
+    <dimen name="small_padding">8dp</dimen>
+    <dimen name="tiny_padding">4dp</dimen>
+    <dimen name="common_padding_32dp">32dp</dimen>
+
+</resources>

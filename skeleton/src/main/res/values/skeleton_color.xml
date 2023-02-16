@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="splash_background_color">#FFF2F2F2</color>
+
+    <color name="primary_black_gray">#212121</color>
+    <color name="item_gray_light">#707070</color>
+    <color name="item_gray_selected">#4A4949</color>
+    <color name="transparent">#00212121</color>
+    <color name="black_gray_dark">#141414</color>
+
+    <color name="primaryBackgroundColor">#0B1358</color>
+    <color name="backgroundColor">@color/white</color>
+    <!--    <color name="backgroundColor">#0B1358</color>-->
+    <color name="textColorWhiteDim">#90FFFFFF</color>
+    <color name="statusBarColor">@color/backgroundColor</color>
+    <color name="itemBackgroundColor">@color/item_gray_selected</color>
+    <color name="tab_selected">#4A4949</color>
+
+    <color name="colorHighlight">#32D5FF</color>
+    <color name="startGradientIconColorHighlight">#2BE4FF</color>
+    <color name="textColorDim">#5C6DB1</color>
+    <color name="textColorDimLight">#AAAFDC</color>
+    <color name="tabBarIconColor">#405189</color>
+
+    <color name="skeleton_elements">@color/item_gray_selected</color> <!--    middle skeleton-->
+    <color name="skeleton_elements_transparent">#00ECECEC</color>
+    <color name="skeleton_elements_100">@color/backgroundColor</color>  <!--    light skeleton-->
+
+    <color name="white_transparent">#00FFFFFF</color>
+    <color name="icon_color_grey">#838287</color>
+    <color name="search_layout">#EEEEF0</color>
+    <color name="parentBackground">@color/itemBackgroundColor</color>
+
+    <color name="skeleton_elements_light">@color/itemBackgroundColor</color>
+    <color name="skeleton_elements_light_50">#90212121</color>
+    <color name="skeleton_elements_dark">@color/primary_black_gray</color>
+    <color name="skeleton_elements_dark_90">#90212121</color>
+
+
+    <color name="skeleton_elements_inside">#90DADCDB</color> <!--    dark skeleton-->
+    <color name="skeleton_elements_small_background">#EBEDEC</color>
+
+    <color name="skeleton_elements_big_background">#DADCDB</color>
+    <color name="skeleton_elements_list_dark">#EBEDEC</color>
+
+    <color name="skeleton_elements_base">#90ECECEC</color>
+    <color name="skeleton_elements_transparent_base">#00ECECEC</color>
+    <color name="skeleton_elements_100_base">#ECECEC</color>
+
+
+    <color name="skeleton_elements_light_base">#F3F3F3</color>
+    <color name="skeleton_elements_light_50_base">#90F3F3F3</color>
+    <color name="skeleton_elements_dark_base">#C9CCD1</color>
+    <color name="skeleton_elements_dark_90_base">#90C9CCD1</color>
+
+    <color name="cell_background_color">#4A4949</color>
+    <color name="header_line_color">#F44336</color>
+    <color name="table_view_default_text_color">@color/white</color>
+    <color name="lines_colors">#4A4949</color>
+    <color name="text_colors">#4A4949</color>
+    <color name="tab_text_color">#7E7E7E</color>
+    <color name="text_colors_selected">#000000</color>
+
+    <color name="background_player_colors">#212121</color>
+</resources>

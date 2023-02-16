@@ -1,0 +1,52 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'kotlin-parcelize'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+}
+
+android {
+    namespace 'com.kt.apps.media.xemtv'
+    compileSdk 32
+
+    defaultConfig {
+        applicationId "com.kt.apps.media.xemtv"
+        minSdk 21
+        targetSdk 32
+        versionCode 1
+        versionName "1.0"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation 'androidx.leanback:leanback:1.0.0'
+    implementation appDependencies.values()
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation daggerDependencies.values()
+    implementation retrofitDependencies.values()
+    implementation okhttpDependencies.values()
+    kapt complier.values()
+    implementation platform('com.google.firebase:firebase-bom:30.2.0')
+    implementation firebaseDependencies.values()
+    implementation externalDependencies.values()
+    implementation authen.values()
+    implementation roomDatabase.values()
+    implementation exoPlayerDependencies.values()
+    implementation project(":skeleton")
+    implementation project(":dialoglib")
+    implementation project(":core")
+    implementation project(":tv")
+}

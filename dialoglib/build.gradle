@@ -1,0 +1,22 @@
+apply plugin:'com.android.library'
+version = 1.3
+group ='cn.pedant.sweetalert'
+
+android {
+    compileSdkVersion 32
+    defaultConfig {
+        minSdk 21
+        targetSdk 32
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'com.pnikosis:materialish-progress:1.7'
+    implementation appDependencies.values()
+}
+
+//apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
