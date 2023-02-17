@@ -22,9 +22,11 @@ class GetListTVChannel @Inject constructor(
                     .onErrorResumeNext {
                         Observable.concat(
                             tvDataSources[TVDataSourceFrom.VTV_BACKUP]?.getTvList()
-                                ?: error("Null data sources VTV_BACKUP provider"),
-                            tvDataSources[TVDataSourceFrom.VTC_BACKUP]?.getTvList() ?: error(""),
-                            tvDataSources[TVDataSourceFrom.HTV_BACKUP]?.getTvList() ?: error(""),
+                                ?: error("Null data sources ${source.name} provider"),
+                            tvDataSources[TVDataSourceFrom.VTC_BACKUP]?.getTvList()
+                                ?: error("Null data sources ${source.name} provider"),
+                            tvDataSources[TVDataSourceFrom.HTV_BACKUP]?.getTvList()
+                                ?: error("Null data sources ${source.name} provider"),
                         )
                     }
                 else -> {
@@ -32,9 +34,12 @@ class GetListTVChannel @Inject constructor(
                 }
             }
         } ?: Observable.concat(
-            tvDataSources[TVDataSourceFrom.VTV_BACKUP]?.getTvList() ?: error("Null data sources VTV_BACKUP provider"),
-            tvDataSources[TVDataSourceFrom.VTC_BACKUP]?.getTvList() ?: error(""),
-            tvDataSources[TVDataSourceFrom.HTV_BACKUP]?.getTvList() ?: error(""),
+            tvDataSources[TVDataSourceFrom.VTV_BACKUP]?.getTvList()
+                ?: error("Null data sources TVDataSourceFrom.VTV_BACKUP provider"),
+            tvDataSources[TVDataSourceFrom.VTC_BACKUP]?.getTvList()
+                ?: error("Null data sources TVDataSourceFrom.VTC_BACKUP provider"),
+            tvDataSources[TVDataSourceFrom.HTV_BACKUP]?.getTvList()
+                ?: error("Null data sources TVDataSourceFrom.HTV_BACKUP provider"),
         ))
     }
 

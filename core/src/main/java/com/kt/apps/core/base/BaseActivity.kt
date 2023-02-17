@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
+import androidx.fragment.app.FragmentActivity
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.InstallStateUpdatedListener
@@ -29,7 +30,7 @@ import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import javax.inject.Inject
 
-abstract class BaseActivity<T : ViewDataBinding> : AppCompatActivity(), HasAndroidInjector {
+abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroidInjector {
     abstract val layoutRes: Int
     abstract fun initView(savedInstanceState: Bundle?)
     abstract fun initAction(savedInstanceState: Bundle?)

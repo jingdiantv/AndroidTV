@@ -1,20 +1,19 @@
 package com.kt.apps.core.tv.di
 
 import com.kt.apps.core.tv.datasource.ITVDataSource
-import com.kt.apps.core.tv.datasource.impl.HTVBackUpDataSourceImpl
-import com.kt.apps.core.tv.datasource.impl.VDataSourceImpl
-import com.kt.apps.core.tv.datasource.impl.VTVBackupDataSourceImpl
-import com.kt.apps.core.tv.datasource.impl.VtcBackupDataSourceImpl
+import com.kt.apps.core.tv.datasource.impl.*
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoMap
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
 class TVChannelModule {
+
+
+
     @Provides
     @IntoMap
     @TVDataSourceMapKey(TVDataSourceFrom.V)
@@ -32,6 +31,13 @@ class TVChannelModule {
     @TVDataSourceMapKey(TVDataSourceFrom.VTC_BACKUP)
     @TVScope
     fun providesVTCBackupDataSource(vDataSourceImpl: VtcBackupDataSourceImpl): ITVDataSource = vDataSourceImpl
+
+
+    @Provides
+    @IntoMap
+    @TVDataSourceMapKey(TVDataSourceFrom.VOV_BACKUP)
+    @TVScope
+    fun providesVOVBackupDataSource(vDataSourceImpl: VOVDataSourceImpl): ITVDataSource = vDataSourceImpl
 
     @Provides
     @IntoMap

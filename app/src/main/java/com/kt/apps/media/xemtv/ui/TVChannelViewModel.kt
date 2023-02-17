@@ -1,20 +1,25 @@
 package com.kt.apps.media.xemtv.ui
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
+import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.tv.usecase.GetChannelLinkStreamById
 import com.kt.apps.core.tv.usecase.GetListTVChannel
 import com.kt.apps.core.tv.usecase.GetTVChannelLinkStreamFrom
+import io.reactivex.rxjava3.disposables.Disposable
 import javax.inject.Inject
 
 data class TVChannelInteractors @Inject constructor(
     val getListChannel: GetListTVChannel,
-    val getChannelLinkStream: GetTVChannelLinkStreamFrom
+    val getChannelLinkStream: GetTVChannelLinkStreamFrom,
+    val getChannelLinkStreamById: GetChannelLinkStreamById
 )
 
 class TVChannelViewModel @Inject constructor(
@@ -50,25 +55,59 @@ class TVChannelViewModel @Inject constructor(
         )
     }
 
-
+    private var lastTVStreamLinkTask: Disposable? = null
     private val _tvWithLinkStreamLiveData by lazy { MutableLiveData<DataState<TVChannelLinkStream>>() }
     val tvWithLinkStreamLiveData: LiveData<DataState<TVChannelLinkStream>>
         get() = _tvWithLinkStreamLiveData
 
     fun getLinkStreamForChannel(tvDetail: TVChannel, isBackup: Boolean = false) {
         _tvWithLinkStreamLiveData.postValue(DataState.Loading())
-        add(
-            interactors.getChannelLinkStream(tvDetail, isBackup)
-                .subscribe({
-                    Logger.d(this, message = Gson().toJson(it))
-                    _tvWithLinkStreamLiveData.postValue(DataState.Success(it))
-                }, {
-                    Logger.e(this, exception = it)
-                    _tvWithLinkStreamLiveData.postValue(DataState.Error(it))
-                })
+        if (lastTVStreamLinkTask?.isDisposed != true) {
+            lastTVStreamLinkTask?.dispose()
+        }
+
+        lastTVStreamLinkTask = interactors.getChannelLinkStream(tvDetail, isBackup)
+            .subscribe({
+                Logger.d(this, message = Gson().toJson(it))
+                _tvWithLinkStreamLiveData.postValue(DataState.Success(it))
+            }, {
+                Logger.e(this, exception = it)
+                _tvWithLinkStreamLiveData.postValue(DataState.Error(it))
+            })
+
+        add(lastTVStreamLinkTask!!)
+    }
+
+    fun playTvByDeepLinks(uri: Uri) {
+        !(uri.host?.contentEquals(Constants.DEEPLINK_HOST) ?: return)
+        val lastPath = uri.pathSegments.last() ?: return
+        if (lastPath.contentEquals("xemtv")) return
+        Logger.d(
+            this, message = "play by deeplink: {" +
+                    "uri: $uri" +
+                    "}"
         )
 
+        if (lastTVStreamLinkTask?.isDisposed != true) {
+            lastTVStreamLinkTask?.dispose()
+        }
+
+        lastTVStreamLinkTask = interactors.getChannelLinkStreamById(lastPath)
+            .subscribe({
+                _tvWithLinkStreamLiveData.postValue(DataState.Success(it))
+                Logger.d(
+                    this, message = "play by deeplink result: {" +
+                            "uri: $uri, " +
+                            "channel: $it" +
+                            "}"
+                )
+            }, {
+                _tvWithLinkStreamLiveData.postValue(DataState.Error(it))
+                Logger.e(this, exception = it)
+            })
+        add(lastTVStreamLinkTask!!)
     }
+
 
     init {
         instance++

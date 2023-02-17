@@ -27,6 +27,7 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.BrowseErrorActivity
 import com.kt.apps.media.xemtv.CardPresenter
@@ -84,34 +85,38 @@ class MainFragment : BrowseSupportFragment(), HasAndroidInjector {
         }
         tvChannelViewModel.tvWithLinkStreamLiveData
             .observe(viewLifecycleOwner) {
-                when (it) {
-                    is DataState.Loading -> {
-                        progressBarManager.show()
-                    }
-                    is DataState.Success -> {
-                        progressBarManager.hide()
-                        val intent = Intent(requireActivity(), PlaybackActivity::class.java)
-                        intent.putExtra(DetailsActivity.TV_CHANNEL, it.data)
-                        val bundle = try {
-                            ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                requireActivity(),
-                                selectedView!!.mainImageView,
-                                DetailsActivity.SHARED_ELEMENT_NAME
-                            ).toBundle()
-                        } catch (e: Exception) {
-                            bundleOf()
-                        }
-
-                        startActivity(intent, bundle)
-                    }
-                    is DataState.Error -> {
-                        progressBarManager.hide()
-                        showErrorDialog(content = it.throwable.message)
-                    }
-                    else -> {
-                    }
-                }
+                handleGetTVChannelLinkStream(it)
             }
+    }
+
+    private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {
+        when (it) {
+            is DataState.Loading -> {
+                progressBarManager.show()
+            }
+            is DataState.Success -> {
+                progressBarManager.hide()
+                val intent = Intent(requireActivity(), PlaybackActivity::class.java)
+                intent.putExtra(DetailsActivity.TV_CHANNEL, it.data)
+                val bundle = try {
+                    ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        requireActivity(),
+                        selectedView!!.mainImageView,
+                        DetailsActivity.SHARED_ELEMENT_NAME
+                    ).toBundle()
+                } catch (e: Exception) {
+                    bundleOf()
+                }
+
+                startActivity(intent, bundle)
+            }
+            is DataState.Error -> {
+                progressBarManager.hide()
+                showErrorDialog(content = it.throwable.message)
+            }
+            else -> {
+            }
+        }
     }
 
     private fun handleListTVChannel(dataState: DataState<List<TVChannel>>) {
@@ -126,7 +131,7 @@ class MainFragment : BrowseSupportFragment(), HasAndroidInjector {
             }
 
             else -> {
-
+                progressBarManager.hide()
             }
         }
     }

@@ -3,6 +3,7 @@ package com.kt.apps.core.tv.di
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.tv.datasource.ITVDataSource
 import com.kt.apps.core.tv.model.TVDataSourceFrom
+import com.kt.apps.core.tv.usecase.GetChannelLinkStreamById
 import com.kt.apps.core.tv.usecase.GetListTVChannel
 import com.kt.apps.core.tv.usecase.GetTVChannelLinkStreamFrom
 import dagger.Component
@@ -17,4 +18,5 @@ interface TVComponents {
     fun providesTVDataSourceMap(): Map<TVDataSourceFrom, @JvmSuppressWildcards ITVDataSource>
     fun getChannelLinkStreamFrom(): GetTVChannelLinkStreamFrom
     fun getListTVChannel(): GetListTVChannel
+    fun providesGetChannelLinkStreamById(): GetChannelLinkStreamById
 }

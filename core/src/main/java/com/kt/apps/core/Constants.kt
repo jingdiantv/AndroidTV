@@ -10,4 +10,6 @@ object Constants {
     const val KEY_ACCESS_TOKEN = "key:access_token"
 
     const val URL = "https://binhluan.90phut6.live/"
+
+    const val DEEPLINK_HOST = "xemtivihd.net"
 }

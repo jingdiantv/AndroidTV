@@ -34,6 +34,11 @@ class GetTVChannelLinkStreamFrom @Inject constructor(
         val tvDetail = params[EXTRA_TV_CHANNEL] as TVChannel
         val sourceFrom = params[EXTRA_SOURCE_FROM] as TVDataSourceFrom
 
+
+        if (sourceFrom == TVDataSourceFrom.V && tvDetail.tvGroup == TVChannelGroup.VOV.name) {
+            return Observable.just(TVChannelLinkStream(tvDetail, listOf(tvDetail.tvChannelWebDetailPage)))
+        }
+
         if (sourceFrom == TVDataSourceFrom.V && tvDetail.tvGroup == TVChannelGroup.VOH.name) {
             return Observable.just(TVChannelLinkStream(tvDetail, listOf(tvDetail.tvChannelWebDetailPage)))
         }

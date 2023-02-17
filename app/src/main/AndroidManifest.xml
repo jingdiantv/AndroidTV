@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -31,13 +34,71 @@
 
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="xemtvonline.org"
+                    android:scheme="https" />
+                <data
+                    android:host="xemtvonline.org/xemtv"
+                    android:scheme="https" />
+                <data
+                    android:host="xemtvonline.org"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="xemtvonline.org/xemtv/"
+                    android:scheme="xemtv" />
+
+
+
+            </intent-filter>
+
+
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+            </intent-filter>
+
         </activity>
         <activity
             android:name=".ui.details.DetailsActivity"
-            android:exported="false" />
+            android:exported="true" />
+
         <activity
             android:name=".ui.playback.PlaybackActivity"
-            android:exported="false" />
+            android:launchMode="singleInstance"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="xemtivihd.net"
+                    android:scheme="https" />
+                <data
+                    android:host="xemtivihd.net/xemtv"
+                    android:scheme="https" />
+                <data
+                    android:host="xemtivihd.net"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="xemtivihd.net/xemtv/"
+                    android:scheme="xemtv" />
+
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".BrowseErrorActivity"
             android:exported="false" />
