@@ -2,6 +2,7 @@ package com.kt.apps.media.xemtv.ui.playback
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.logging.Logger
@@ -30,7 +31,7 @@ class PlaybackActivity : FragmentActivity(), HasAndroidInjector {
         intent?.data?.let {
             tvChannelViewModel.playTvByDeepLinks(it)
         }
-
+        tvChannelViewModel.getListTVChannel(true)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(android.R.id.content, PlaybackVideoFragment())
@@ -46,5 +47,10 @@ class PlaybackActivity : FragmentActivity(), HasAndroidInjector {
     }
     override fun androidInjector(): AndroidInjector<Any> {
         return androidInjector
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        Logger.d(this, message = "onKeyDown: $keyCode")
+        return super.onKeyDown(keyCode, event)
     }
 }
