@@ -2,6 +2,7 @@ package com.kt.apps.core.storage
 
 import android.content.SharedPreferences
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import javax.inject.Inject
 
 open class KeyValueStorageImpl @Inject constructor(
@@ -47,5 +48,30 @@ open class KeyValueStorageImpl @Inject constructor(
                 sharedPreferences.edit().putString(key, strValue).apply()
             }
         }
+    }
+
+    override fun <T, U> save(key: String, value: Map<T, U>) {
+        sharedPreferences.edit().putString(key, Gson().toJson(value)).apply()
+    }
+
+    override fun <T, U> get(key: String, clazz: Class<T>, clazz2: Class<U>): Map<T, U> {
+        return try {
+            val type = TypeToken.getParameterized(Map::class.java, clazz, clazz2).type
+            Gson().fromJson(sharedPreferences.getString(key, ""), type) as Map<T, U>
+        } catch (_: Exception) {
+            mapOf()
+        }
+
+    }
+
+    override fun <T> save(key: String, value: List<T>) {
+        sharedPreferences.edit().putString(key, Gson().toJson(value)).apply()
+    }
+
+    override fun <T> getList(key: String, clazz: Class<T>): List<T> {
+        val type = TypeToken.getParameterized(List::class.java, clazz).type
+        val gsonValue = sharedPreferences.getString(key, "")
+        if (gsonValue?.isEmpty() != false) return listOf()
+        return Gson().fromJson(gsonValue, type)
     }
 }

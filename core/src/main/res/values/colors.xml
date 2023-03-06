@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="white_transparent">#00FFFFFF</color>
+    <color name="icon_color_grey">#838287</color>
+    <color name="search_layout">#EEEEF0</color>
+    <color name="parentBackground">@color/itemBackgroundColor</color>
+    <color name="primary_black_gray">#212121</color>
+    <color name="item_gray_light">#707070</color>
+    <color name="item_gray_selected">#4A4949</color>
+    <color name="transparent">#00212121</color>
+    <color name="black_gray_dark">#141414</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="primaryBackgroundColor">#0B1358</color>
+    <color name="backgroundColor">@color/primary_black_gray</color>
+    <color name="textColorWhiteDim">#90FFFFFF</color>
+    <color name="statusBarColor">@color/backgroundColor</color>
+    <color name="itemBackgroundColor">@color/item_gray_selected</color>
+    <color name="startGradientIconColorHighlight">#2BE4FF</color>
+    <color name="cell_background_color">#4A4949</color>
+    <color name="header_line_color">#F44336</color>
+    <color name="table_view_default_text_color">@color/white</color>
+</resources>

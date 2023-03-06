@@ -29,9 +29,13 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    dataBinding {
+        enabled = true
+    }
 }
 
 dependencies {
+    implementation 'androidx.leanback:leanback:1.0.0'
     implementation appDependencies.values()
     implementation 'com.google.android.play:app-update-ktx:2.0.1'
     testImplementation 'junit:junit:4.13.2'
@@ -40,6 +44,7 @@ dependencies {
     implementation daggerDependencies.values()
     implementation retrofitDependencies.values()
     implementation okhttpDependencies.values()
+    implementation exoPlayerDependencies.values()
     kapt complier.values()
     implementation platform('com.google.firebase:firebase-bom:30.2.0')
     implementation firebaseDependencies.values()

@@ -1,0 +1,7 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="test">Test</string>
+    <string name="viewer_count_def">1</string>
+    <string name="firebase_notification_channel_id_default">12345</string>
+    <string name="user_agent">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36</string>
+    <string name="double_back_to_finish_title">Nhấn back lần nữa để thoát</string>
+</resources>

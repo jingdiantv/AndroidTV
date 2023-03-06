@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.kt.apps.core.base.CoreApp
+import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
 import dagger.BindsInstance
 import dagger.Component
@@ -26,11 +28,17 @@ interface CoreComponents {
     fun firebaseDatabase(): FirebaseDatabase
     fun sharedPreferences(): SharedPreferences
     fun okHttpClient(): OkHttpClient
+    fun coreApp(): CoreApp
+    fun context(): Context
+
+    fun keyValueStorage(): IKeyValueStorage
 
     @Component.Builder
     interface Builder {
         @BindsInstance
-        fun application(context: Context): Builder
+        fun application(context: CoreApp): Builder
+        @BindsInstance
+        fun context(context: Context): Builder
         fun storageModule(storageModule: StorageModule): Builder
         fun build(): CoreComponents
     }
