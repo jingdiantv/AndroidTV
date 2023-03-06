@@ -2,19 +2,23 @@ package com.kt.apps.media.xemtv
 
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.DaggerCoreComponents
 import com.kt.apps.core.tv.di.DaggerTVComponents
 import com.kt.apps.core.tv.di.TVComponents
+import com.kt.apps.football.di.DaggerFootballComponents
+import com.kt.apps.football.di.FootballComponents
 import com.kt.apps.media.xemtv.di.DaggerAppComponents
 import dagger.android.AndroidInjector
 import dagger.android.DaggerApplication
 
-class App : DaggerApplication() {
+class App : CoreApp() {
 
     private val _coreComponents by lazy {
         DaggerCoreComponents.builder()
             .application(this)
+            .context(this)
             .build()
     }
 
@@ -24,11 +28,20 @@ class App : DaggerApplication() {
             .build()
     }
 
+    private val _footballComponent by lazy {
+        DaggerFootballComponents.builder()
+            .coreComponents(_coreComponents)
+            .build()
+    }
+
     val coreComponents: CoreComponents
         get() = _coreComponents
 
     val tvComponents: TVComponents
         get() = _tvComponents
+
+    val footballComponents: FootballComponents
+        get() = _footballComponent
 
     override fun onCreate() {
         super.onCreate()

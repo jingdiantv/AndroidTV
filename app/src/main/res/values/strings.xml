@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">XemTv</string>
+    <string name="app_name">iMedia</string>
     <string name="browse_title">Danh sách kênh TV</string>
     <string name="related_movies">Related Videos</string>
     <string name="grid_view">Grid View</string>

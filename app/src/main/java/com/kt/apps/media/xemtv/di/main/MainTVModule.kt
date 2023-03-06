@@ -8,8 +8,10 @@ import com.kt.apps.media.xemtv.ui.details.VideoDetailsFragment
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelKey
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.main.DashboardFragment
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackVideoFragment
+import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 import dagger.Binds
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
@@ -41,6 +43,11 @@ abstract class MainTVModule {
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun playbackFragment(): PlaybackVideoFragment
 
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun dashboardFragment(): DashboardFragment
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun tvDashboardFragment(): FragmentTVDashboard
 
 
 }

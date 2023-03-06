@@ -30,8 +30,27 @@ object Logger {
             if (!tag?.trim().isNullOrEmpty()) {
                 logTag += "_$tag"
             }
+            val minMsgLength = MIN_MESSAGE_LENGTH
+            if (message.length < minMsgLength) {
+                Log.d(logTag, message)
+            } else {
+                var index = 0
+                var subStr : String
+                var range = 0
+
+                while (message.length >= index + range) {
+                    range = if (message.length - index > minMsgLength) minMsgLength else {
+                        message.length - index
+                    }
+                    subStr = message.substring(index, index + range)
+                    index+=range
+                    Log.d(logTag, subStr)
+                }
+            }
             Log.d(logTag, message)
         }
     }
+
+    private const val MIN_MESSAGE_LENGTH = 4000
 
 }

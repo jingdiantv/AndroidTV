@@ -3,9 +3,13 @@ package com.kt.apps.media.xemtv.ui.playback
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.View
 import androidx.fragment.app.FragmentActivity
+import androidx.leanback.widget.Action
+import androidx.leanback.widget.ObjectAdapter
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.utils.KeyCodeTranslator
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
@@ -51,6 +55,76 @@ class PlaybackActivity : FragmentActivity(), HasAndroidInjector {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         Logger.d(this, message = "onKeyDown: $keyCode")
+        val fragment: PlaybackVideoFragment = supportFragmentManager.findFragmentById(android.R.id.content)
+            ?.takeIf {
+                it is PlaybackVideoFragment
+            }?.let {
+                it as PlaybackVideoFragment
+            } ?: return super.onKeyDown(keyCode, event)
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_CENTER -> {
+                fragment.onDpadCenter()
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                fragment.onDpadDown()
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                fragment.onDpadUp()
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> {
+                fragment.onDpadLeft()
+            }
+
+            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                fragment.onDpadRight()
+            }
+
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+
+            }
+
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+
+            }
+
+            KeyEvent.KEYCODE_BACK -> {
+            }
+
+            KeyEvent.KEYCODE_CHANNEL_UP -> {
+                fragment.onKeyCodeChannelUp()
+            }
+
+            KeyEvent.KEYCODE_CHANNEL_DOWN -> {
+                fragment.onKeyCodeChannelDown()
+            }
+
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                fragment.onKeyCodeChannelUp()
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                fragment.onKeyCodeChannelDown()
+            }
+
+        }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onBackPressed() {
+        val fragment: PlaybackVideoFragment = supportFragmentManager.findFragmentById(android.R.id.content)
+            ?.takeIf {
+                it is PlaybackVideoFragment
+            }?.let {
+                it as PlaybackVideoFragment
+            } ?: return super.onBackPressed()
+        if (fragment.canBackToMain()) {
+            super.onBackPressed()
+        } else {
+            fragment.hideChannelMenu()
+        }
     }
 }

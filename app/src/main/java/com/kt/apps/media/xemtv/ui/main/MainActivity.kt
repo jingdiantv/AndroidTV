@@ -31,9 +31,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         intent?.data?.let {
             tvChannelViewModel.playTvByDeepLinks(it)
         }
+        tvChannelViewModel.getListTVChannel(true)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.main_browse_fragment, MainFragment())
+                .replace(R.id.main_browse_fragment, DashboardFragment())
                 .commitNow()
         }
     }

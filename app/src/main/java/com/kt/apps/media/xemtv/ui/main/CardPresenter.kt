@@ -1,4 +1,4 @@
-package com.kt.apps.media.xemtv
+package com.kt.apps.media.xemtv.ui.main
 
 import android.graphics.drawable.Drawable
 import androidx.leanback.widget.ImageCardView
@@ -9,6 +9,7 @@ import android.view.ViewGroup
 
 import com.bumptech.glide.Glide
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.media.xemtv.R
 import kotlin.properties.Delegates
 
 /**
@@ -46,7 +47,7 @@ class CardPresenter : Presenter() {
 
         Log.d(TAG, "onBindViewHolder")
         cardView.titleText = movie.tvChannelName
-        cardView.contentText = movie.tvChannelName
+        cardView.contentText = null
         cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
         Glide.with(viewHolder.view.context)
             .load(movie.logoChannel)

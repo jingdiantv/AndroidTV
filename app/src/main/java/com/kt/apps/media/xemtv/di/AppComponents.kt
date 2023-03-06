@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv.di
 
+import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
 import com.kt.apps.core.tv.di.TVComponents
@@ -20,6 +21,8 @@ import dagger.android.support.AndroidSupportInjectionModule
 )
 @AppScope
 interface AppComponents : AndroidInjector<App> {
+
+    fun exoPlayerManager(): ExoPlayerManager
 
     @Component.Builder
     interface Builder {

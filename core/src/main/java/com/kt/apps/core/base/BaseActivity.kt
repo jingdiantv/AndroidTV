@@ -11,7 +11,6 @@ import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.FragmentActivity
@@ -21,7 +20,6 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.kt.apps.core.R
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.core.utils.updateLocale
 import dagger.android.AndroidInjection
@@ -35,7 +33,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
     abstract fun initView(savedInstanceState: Bundle?)
     abstract fun initAction(savedInstanceState: Bundle?)
     lateinit var binding: T
-    var doubleBackToFinish = false
+    private var doubleBackToFinish = false
     private val updateManager by lazy { AppUpdateManagerFactory.create(this) }
     private val appUpdateInfoTask by lazy { updateManager.appUpdateInfo }
     private val appUpdateListener by lazy {
@@ -126,6 +124,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
         return super.dispatchTouchEvent(ev)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == UPDATE_REQUEST_CODE) {
