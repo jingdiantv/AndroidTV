@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
+import android.os.Parcelable
 import android.view.View
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
@@ -36,7 +37,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
     private val tvChannelViewModel by lazy {
-        ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
+        ViewModelProvider(this, viewModelFactory)[TVChannelViewModel::class.java]
     }
     private val mRowsAdapter: ArrayObjectAdapter by lazy {
         ArrayObjectAdapter(ListRowPresenter())
@@ -51,6 +52,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
 
     override fun initAction(rootView: View) {
         adapter = mRowsAdapter
+        tvChannelViewModel.getListTVChannel(true)
         onItemViewSelectedListener = OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
             if (item is TVChannel) {
                 mBackgroundUri = item.logoChannel
@@ -108,6 +110,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 progressBarManager.hide()
                 val intent = Intent(requireActivity(), PlaybackActivity::class.java)
                 intent.putExtra(DetailsActivity.TV_CHANNEL, it.data)
+                intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.TV as Parcelable)
                 val bundle = try {
                     ActivityOptionsCompat.makeSceneTransitionAnimation(
                         requireActivity(),

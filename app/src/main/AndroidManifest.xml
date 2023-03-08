@@ -118,6 +118,11 @@
                     android:host="xemtivihd.net/xemtv/"
                     android:scheme="xemtv" />
 
+                <data
+                    android:host="xemtivihd.net/"
+                    android:scheme="xembongda"
+                    />
+
             </intent-filter>
 
             <intent-filter>

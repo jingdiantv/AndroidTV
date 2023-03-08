@@ -1,11 +1,29 @@
 ext {
     appDependencies = [
-            coreKt            : 'androidx.core:core-ktx:1.7.0',
+            coreKt            : 'androidx.core:core-ktx:1.8.0',
             appCompat         : 'androidx.appcompat:appcompat:1.5.0',
             material          : 'com.google.android.material:material:1.6.1',
             constrainlayout   : 'androidx.constraintlayout:constraintlayout:2.1.4',
             dynamicAnimation  : 'androidx.dynamicanimation:dynamicanimation:1.0.0',
             swipeRefreshLayout: "androidx.swiperefreshlayout:swiperefreshlayout:+"
+    ]
+
+    testDependencies = [
+            jUnit  : 'junit:junit:4.13.2',
+            jupiter: 'org.junit.jupiter:junit-jupiter:5.9.1',
+    ]
+
+    androidTest = [
+            jUnit   : 'androidx.test.ext:junit:1.1.5',
+            espresso: 'androidx.test.espresso:espresso-core:3.5.1'
+    ]
+
+    kotlinTestDependencies = [
+            dagger: 'com.google.dagger:dagger-compiler:2.44'
+    ]
+
+    kotlinAndroidTestDependencies = [
+            dagger: 'com.google.dagger:dagger-compiler:2.44'
     ]
 
     rxJavaDependencies = [

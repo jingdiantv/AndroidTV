@@ -58,7 +58,7 @@ class TVChannelModule {
         TVChannelGroup.DiaPhuong.name to TVDataSourceFrom.HTV_BACKUP,
         TVChannelGroup.VOV.name to TVDataSourceFrom.VOV_BACKUP,
         TVChannelGroup.VOH.name to TVDataSourceFrom.VOH_BACKUP,
-        TVChannelGroup.Others.name to TVDataSourceFrom.HTV_BACKUP
+//        TVChannelGroup.Others.name to TVDataSourceFrom.HTV_BACKUP
     )
 
 }

@@ -15,8 +15,9 @@ android {
         applicationId "com.kt.apps.media.xemtv"
         minSdk 21
         targetSdk 32
-        versionCode 1
-        versionName "1.0"
+        versionCode 23030201
+        versionName "$versionCode"
+        setProperty("archivesBaseName", "XemTV.$versionName")
 
     }
 
@@ -35,7 +36,9 @@ android {
 dependencies {
     implementation 'androidx.leanback:leanback:1.0.0'
     implementation appDependencies.values()
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation testDependencies.values()
+    kaptTest kotlinTestDependencies.values()
+    kaptAndroidTest kotlinAndroidTestDependencies.values()
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation daggerDependencies.values()
@@ -52,4 +55,5 @@ dependencies {
     implementation project(":dialoglib")
     implementation project(":core")
     implementation project(":tv")
+    implementation project(":football")
 }

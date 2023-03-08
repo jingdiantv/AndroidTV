@@ -11,21 +11,22 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
+import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.utils.trustEveryone
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import javax.inject.Inject
 
 
 class ExoPlayerManager @Inject constructor(
-    private val application: CoreApp,
-    private val audioFocusManager: AudioFocusManager
+    private val _application: CoreApp,
+    private val _audioFocusManager: AudioFocusManager
 ) : Application.ActivityLifecycleCallbacks, AudioFocusManager.OnFocusChange {
-    private var exoPlayer: ExoPlayer? = null
-    private var playerAdapter: LeanbackPlayerAdapter? = null
+    private var _exoPlayer: ExoPlayer? = null
+    private var _playerAdapter: LeanbackPlayerAdapter? = null
     private var isFullScreen: Boolean = false
 
     init {
-        application.registerActivityLifecycleCallbacks(this)
+        _application.registerActivityLifecycleCallbacks(this)
     }
 
     private val audioAttr by lazy {
@@ -50,12 +51,16 @@ class ExoPlayerManager @Inject constructor(
                 super.onPlaybackStateChanged(state)
                 when (state) {
                     ExoPlayer.STATE_IDLE -> {
+                        Logger.d(this, message = "state: STATE_IDLE")
                     }
                     ExoPlayer.STATE_BUFFERING -> {
+                        Logger.d(this, message = "state: STATE_BUFFERING")
                     }
                     ExoPlayer.STATE_READY -> {
+                        Logger.d(this, message = "state: STATE_READY")
                     }
                     ExoPlayer.STATE_ENDED -> {
+                        Logger.d(this, message = "state: STATE_ENDED")
                     }
                     else -> {
                     }
@@ -69,15 +74,27 @@ class ExoPlayerManager @Inject constructor(
         }
     }
 
+    val playerAdapter: LeanbackPlayerAdapter?
+        get() = _playerAdapter
+
+    val exoPlayer: ExoPlayer?
+        get() = _exoPlayer
+
     private fun updateFullScreenState(isFullScreen: Boolean) {
         this.isFullScreen = isFullScreen
     }
 
+    fun prepare() {
+        _exoPlayer?.stop()
+        _exoPlayer?.release()
+        _exoPlayer = buildExoPlayer()
+        _playerAdapter = LeanbackPlayerAdapter(_application, _exoPlayer!!, 5)
+    }
+
     fun playVideo(data: List<LinkStream>) {
-        audioFocusManager.requestFocus(this)
-        if (exoPlayer == null) {
-            exoPlayer = buildExoPlayer()
-            playerAdapter = LeanbackPlayerAdapter(application, exoPlayer!!, 5)
+        if (_exoPlayer == null) {
+            _exoPlayer = buildExoPlayer()
+            _playerAdapter = LeanbackPlayerAdapter(_application, exoPlayer!!, 5)
         }
         val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
         dfSource.setDefaultRequestProperties(
@@ -85,7 +102,7 @@ class ExoPlayerManager @Inject constructor(
         )
         dfSource.setKeepPostFor302Redirects(true)
         dfSource.setAllowCrossProtocolRedirects(true)
-        dfSource.setUserAgent(application.getString(R.string.user_agent))
+        dfSource.setUserAgent(_application.getString(R.string.user_agent))
         trustEveryone()
 
         val mediaSources = data.map { it.m3u8Link }.map {
@@ -94,21 +111,23 @@ class ExoPlayerManager @Inject constructor(
                 .createMediaSource(MediaItem.fromUri(it.trim()))
         }
 
-        exoPlayer?.setMediaSources(mediaSources)
-        exoPlayer?.addListener(playerListener)
-        exoPlayer?.playWhenReady = true
-        exoPlayer?.prepare()
-        playerAdapter?.play()
+        _exoPlayer?.setMediaSources(mediaSources)
+        _exoPlayer?.addListener(playerListener)
+        _exoPlayer?.playWhenReady = true
+        _exoPlayer?.prepare()
+
     }
 
-    private fun buildExoPlayer() = ExoPlayer.Builder(application)
-        .setWakeMode(C.WAKE_MODE_LOCAL)
+    private fun buildExoPlayer() = ExoPlayer.Builder(_application)
+        .setWakeMode(C.WAKE_MODE_NETWORK)
         .setAudioAttributes(audioAttr, true)
         .setHandleAudioBecomingNoisy(true)
         .build()
 
     fun pause() {
-        playerAdapter?.pause()
+        Logger.d(this, message = "Pause")
+        _exoPlayer?.pause()
+        _playerAdapter?.pause()
     }
 
     private fun getHeader90pLink(referer: String, currentLinkStream: LinkStream): Map<String, String> {
@@ -125,7 +144,7 @@ class ExoPlayerManager @Inject constructor(
             "referer" to referer.trim(),
             "sec-fetch-dest" to "empty",
             "sec-fetch-site" to "cross-site",
-            "user-agent" to application.getString(R.string.user_agent),
+            "user-agent" to _application.getString(R.string.user_agent),
         ).apply {
             if (needHost) {
                 this["Host"] = host
@@ -157,15 +176,13 @@ class ExoPlayerManager @Inject constructor(
     }
 
     override fun onActivityResumed(activity: Activity) {
-        exoPlayer?.play()
+        _playerAdapter?.play()
     }
 
     override fun onActivityPaused(activity: Activity) {
-        exoPlayer?.pause()
     }
 
     override fun onActivityStopped(activity: Activity) {
-
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
@@ -178,7 +195,18 @@ class ExoPlayerManager @Inject constructor(
     }
 
     override fun onAudioLossFocus() {
-        playerAdapter?.pause()
+        _exoPlayer?.pause()
+        _playerAdapter?.pause()
+        Logger.d(this@ExoPlayerManager, message = "onAudioLossFocus")
+    }
+
+    fun detach() {
+        _exoPlayer?.removeListener(playerListener)
+        _audioFocusManager.releaseFocus()
+        _playerAdapter?.onDetachedFromHost()
+        _exoPlayer?.release()
+        _exoPlayer = null
+        _playerAdapter = null
     }
 
 }

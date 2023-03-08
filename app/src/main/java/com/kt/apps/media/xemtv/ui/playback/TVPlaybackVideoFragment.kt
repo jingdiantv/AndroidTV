@@ -3,27 +3,29 @@ package com.kt.apps.media.xemtv.ui.playback
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.widget.FrameLayout
-import android.widget.TextView
 import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.*
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy
-import com.kt.apps.core.GlideApp
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.tv.model.TVDataSourceFrom
@@ -32,6 +34,7 @@ import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.main.MainActivity
+import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
 import com.kt.skeleton.makeGone
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
@@ -41,10 +44,13 @@ import javax.inject.Inject
 import kotlin.math.max
 
 /** Handles video playback with media controls. */
-class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
+class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
 
     @Inject
     lateinit var injector: DispatchingAndroidInjector<Any>
+
+    @Inject
+    lateinit var exoPlayerManager: ExoPlayerManager
 
     @Inject
     lateinit var factory: ViewModelProvider.Factory
@@ -53,6 +59,16 @@ class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
     }
     private val player by lazy {
         ExoPlayer.Builder(requireContext())
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .setUsage(C.USAGE_MEDIA)
+                    .apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            setAllowedCapturePolicy(C.ALLOW_CAPTURE_BY_NONE)
+                        }
+                    }
+                    .build(), true)
             .build()
     }
     private val playerAdapter by lazy {
@@ -61,7 +77,7 @@ class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
     private lateinit var mTransportControlGlue: PlaybackTransportControlGlue<LeanbackPlayerAdapter>
 
     private val glueHost by lazy {
-        VideoSupportFragmentGlueHost(this@PlaybackVideoFragment)
+        VideoSupportFragmentGlueHost(this@TVPlaybackVideoFragment)
     }
 
     private var channelAdapter: ObjectAdapter? = null
@@ -75,7 +91,7 @@ class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
         }
 
     override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this@PlaybackVideoFragment)
+        AndroidSupportInjection.inject(this@TVPlaybackVideoFragment)
         super.onAttach(context)
     }
 
@@ -192,30 +208,6 @@ class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
     }
 
 
-    class TVChannelPresenter() : Presenter() {
-        override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
-            val view = LayoutInflater.from(parent!!.context)
-                .inflate(R.layout.item_channel_overlay, parent, false)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(viewHolder: ViewHolder?, item: Any?) {
-            viewHolder?.view?.findViewById<ImageCardView>(R.id.logoChannel)
-                ?.let {
-                    GlideApp.with(it)
-                        .load((item as TVChannel).logoChannel)
-                        .optionalCenterInside()
-                        .into(it.mainImageView)
-                }
-            viewHolder?.view?.findViewById<TextView>(R.id.channel_name)
-                ?.text = (item as TVChannel).tvChannelName
-        }
-
-        override fun onUnbindViewHolder(viewHolder: ViewHolder?) {
-        }
-
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         tvChannelViewModel.tvWithLinkStreamLiveData.observe(viewLifecycleOwner) {
@@ -292,6 +284,12 @@ class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
                 progressBarManager.hide()
             }
         }
+    }
+
+    override fun onDetach() {
+        exoPlayerManager.pause()
+        Logger.d(this, message = "onDetach")
+        super.onDetach()
     }
 
     override fun onStop() {
@@ -379,5 +377,11 @@ class PlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
 
     override fun androidInjector(): AndroidInjector<Any> {
         return injector
+    }
+
+    companion object {
+        fun newInstance(type: PlaybackActivity.Type): TVPlaybackVideoFragment {
+            return TVPlaybackVideoFragment()
+        }
     }
 }

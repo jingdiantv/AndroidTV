@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -20,6 +21,7 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.core.utils.updateLocale
 import dagger.android.AndroidInjection
@@ -146,6 +148,80 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
             setAction("RESTART") { updateManager.completeUpdate() }
             setActionTextColor(resources.getColor(com.kt.skeleton.R.color.white))
             show()
+        }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        Logger.d(this, message = "onKeyDown: $keyCode")
+        val iKeyCodeHandler: IKeyCodeHandler = supportFragmentManager.findFragmentById(android.R.id.content)
+            ?.takeIf {
+                it is IKeyCodeHandler
+            }?.let {
+                it as IKeyCodeHandler
+            } ?: return super.onKeyDown(keyCode, event)
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_CENTER -> {
+                iKeyCodeHandler.onDpadCenter()
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                iKeyCodeHandler.onDpadDown()
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                iKeyCodeHandler.onDpadUp()
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> {
+                iKeyCodeHandler.onDpadLeft()
+            }
+
+            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                iKeyCodeHandler.onDpadRight()
+            }
+
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                iKeyCodeHandler.onKeyCodeVolumeDown()
+            }
+
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                iKeyCodeHandler.onKeyCodeVolumeUp()
+            }
+
+            KeyEvent.KEYCODE_BACK -> {
+            }
+
+            KeyEvent.KEYCODE_CHANNEL_UP -> {
+                iKeyCodeHandler.onKeyCodeChannelUp()
+            }
+
+            KeyEvent.KEYCODE_CHANNEL_DOWN -> {
+                iKeyCodeHandler.onKeyCodeChannelDown()
+            }
+
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                iKeyCodeHandler.onKeyCodeMediaNext()
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                iKeyCodeHandler.onKeyCodeMediaPrevious()
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onBackPressed() {
+        val fragment: BasePlaybackFragment = supportFragmentManager.findFragmentById(android.R.id.content)
+            ?.takeIf {
+                it is BasePlaybackFragment
+            }?.let {
+                it as BasePlaybackFragment
+            } ?: return super.onBackPressed()
+        if (fragment.canBackToMain()) {
+            super.onBackPressed()
+        } else {
+            fragment.hideOverlay()
         }
     }
 

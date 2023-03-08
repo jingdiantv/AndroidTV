@@ -26,7 +26,7 @@ class GetTVChannelLinkStreamFrom @Inject constructor(
             TVChannelGroup.DiaPhuong.name to TVDataSourceFrom.HTV_BACKUP,
             TVChannelGroup.VOV.name to TVDataSourceFrom.VOV_BACKUP,
             TVChannelGroup.VOH.name to TVDataSourceFrom.VOH_BACKUP,
-            TVChannelGroup.Others.name to TVDataSourceFrom.HTV_BACKUP
+//            TVChannelGroup.Others.name to TVDataSourceFrom.HTV_BACKUP
         )
     }
 
@@ -42,9 +42,9 @@ class GetTVChannelLinkStreamFrom @Inject constructor(
         if (sourceFrom == TVDataSourceFrom.V && tvDetail.tvGroup == TVChannelGroup.VOH.name) {
             return Observable.just(TVChannelLinkStream(tvDetail, listOf(tvDetail.tvChannelWebDetailPage)))
         }
-        if (sourceFrom == TVDataSourceFrom.V && tvDetail.tvGroup == TVChannelGroup.Others.name) {
-            return Observable.just(TVChannelLinkStream(tvDetail, listOf(tvDetail.tvChannelWebDetailPage)))
-        }
+//        if (sourceFrom == TVDataSourceFrom.V && tvDetail.tvGroup == TVChannelGroup.Others.name) {
+//            return Observable.just(TVChannelLinkStream(tvDetail, listOf(tvDetail.tvChannelWebDetailPage)))
+//        }
         if (sourceFrom == TVDataSourceFrom.V && tvDetail.tvChannelWebDetailPage.contains(";stream")) {
             return Observable.just(TVChannelLinkStream(tvDetail, listOf(tvDetail.tvChannelWebDetailPage)))
         }

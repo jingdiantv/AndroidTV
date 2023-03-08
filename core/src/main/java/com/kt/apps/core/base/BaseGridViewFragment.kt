@@ -1,6 +1,7 @@
 package com.kt.apps.core.base
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,23 +10,47 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.leanback.app.BrowseSupportFragment
+import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.transition.TransitionHelper
 import androidx.leanback.widget.*
 import com.kt.apps.core.R
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.databinding.DefaultGridFragmentBinding
+import dagger.android.AndroidInjection
+import dagger.android.AndroidInjector
+import dagger.android.DispatchingAndroidInjector
+import dagger.android.HasAndroidInjector
+import dagger.android.support.AndroidSupportInjection
+import javax.inject.Inject
 
 abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
-    BrowseSupportFragment.MainFragmentAdapterProvider {
+    BrowseSupportFragment.MainFragmentAdapterProvider, HasAndroidInjector {
+    @Inject
+    lateinit var injector: DispatchingAndroidInjector<Any>
+
     abstract val layoutRes: Int
     protected var mAdapter: ObjectAdapter? = null
-    abstract val mGridPresenter: VerticalGridPresenter
-    abstract val mOnItemViewSelectedListener: OnItemViewSelectedListener
-    abstract val mOnItemViewClickedListener: OnItemViewClickedListener
+    abstract fun onCreatePresenter(): VerticalGridPresenter
+    abstract fun onItemViewSelectedListener(): OnItemViewSelectedListener
+    abstract fun onItemViewClickedListener(): OnItemViewClickedListener
     protected lateinit var binding: T
     protected var mGridViewHolder: VerticalGridPresenter.ViewHolder? = null
+    protected var mPresenter: VerticalGridPresenter? = null
+    protected var mOnItemViewSelectedListener: OnItemViewSelectedListener? = null
+    protected var mOnItemViewClickedListener: OnItemViewClickedListener? = null
     protected var mSceneAfterEntranceTransition: Any? = null
     protected var mSelectedPosition = -1
+    protected val progressManager by lazy {
+        ProgressBarManager()
+    }
+    override fun androidInjector(): AndroidInjector<Any> {
+        return injector
+    }
+
+    override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
+        super.onAttach(context)
+    }
 
     private val mMainFragmentAdapter by lazy {
         object : BrowseSupportFragment.MainFragmentAdapter<Fragment>(this@BaseGridViewFragment) {
@@ -40,7 +65,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
             val position: Int = mGridViewHolder?.gridView?.selectedPosition ?: -1
             Logger.d(this, message = "Selected position: $position")
             gridOnItemSelected(position)
-            mOnItemViewSelectedListener.onItemSelected(
+            mOnItemViewSelectedListener?.onItemSelected(
                 itemViewHolder, item,
                 rowViewHolder, row
             )
@@ -80,6 +105,13 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mPresenter = onCreatePresenter()
+        mOnItemViewSelectedListener = onItemViewSelectedListener()
+        mOnItemViewClickedListener = onItemViewClickedListener()
+        mPresenter?.onItemViewClickedListener = mOnItemViewClickedListener
+        mPresenter?.onItemViewSelectedListener = mViewSelectedListener
+        mAdapter = ArrayObjectAdapter(mPresenter)
+        updateAdapter()
         onCreateAdapter()
         mainFragmentAdapter.fragmentHost.notifyDataReady(mMainFragmentAdapter)
     }
@@ -92,6 +124,8 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
             false
         )
         initView(binding.root)
+        progressManager.initialDelay = 500
+        progressManager.setRootView(binding.root as ViewGroup?)
         return binding.root
     }
 
@@ -99,7 +133,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val gridDock: ViewGroup = view.findViewById(R.id.browse_grid_dock)
-        mGridViewHolder = mGridPresenter.onCreateViewHolder(gridDock)
+        mGridViewHolder = mPresenter!!.onCreateViewHolder(gridDock)
         gridDock.addView(mGridViewHolder!!.view)
         mGridViewHolder!!.gridView.setOnChildLaidOutListener(mChildLaidOutListener)
         mSceneAfterEntranceTransition = TransitionHelper.createScene(
@@ -112,7 +146,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
 
     protected fun updateAdapter() {
         if (mGridViewHolder != null) {
-            mGridPresenter.onBindViewHolder(mGridViewHolder, mAdapter)
+            mPresenter!!.onBindViewHolder(mGridViewHolder, mAdapter)
             if (mSelectedPosition != -1) {
                 mGridViewHolder!!.gridView.selectedPosition = mSelectedPosition
             }
@@ -120,7 +154,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
     }
 
     open fun setEntranceTransitionState(afterTransition: Boolean) {
-        mGridPresenter.setEntranceTransitionState(mGridViewHolder, afterTransition)
+        mPresenter!!.setEntranceTransitionState(mGridViewHolder, afterTransition)
     }
 
 
@@ -132,20 +166,23 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
         override val layoutRes: Int
             get() = R.layout.default_grid_fragment
 
-
-        override val mGridPresenter: VerticalGridPresenter
-            get() = VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM).apply {
+        override fun onCreatePresenter(): VerticalGridPresenter {
+            return VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM).apply {
                 this.numberOfColumns = 5
             }
-        override val mOnItemViewSelectedListener: OnItemViewSelectedListener
-            get() = OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
+        }
 
+        override fun onItemViewSelectedListener(): OnItemViewSelectedListener {
+            return OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
+                mSelectedPosition = mGridViewHolder!!.gridView.selectedPosition
             }
-        override val mOnItemViewClickedListener: OnItemViewClickedListener
-            get() = OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
+        }
 
+        override fun onItemViewClickedListener(): OnItemViewClickedListener {
+            return OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
+                mSelectedPosition = mGridViewHolder!!.gridView.selectedPosition
             }
-
+        }
 
         override fun onCreateAdapter() {
             val cardPresenter = ClassPresenterSelector()

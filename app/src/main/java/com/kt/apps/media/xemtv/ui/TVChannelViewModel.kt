@@ -81,7 +81,6 @@ class TVChannelViewModel @Inject constructor(
     fun playTvByDeepLinks(uri: Uri) {
         !(uri.host?.contentEquals(Constants.DEEPLINK_HOST) ?: return)
         val lastPath = uri.pathSegments.last() ?: return
-        if (lastPath.contentEquals("xemtv")) return
         Logger.d(
             this, message = "play by deeplink: {" +
                     "uri: $uri" +

@@ -52,6 +52,7 @@ class App : CoreApp() {
         return DaggerAppComponents.builder()
             .tvComponents(_tvComponents)
             .coreComponents(_coreComponents)
+            .footballComponent(_footballComponent)
             .app(this)
             .build()
     }

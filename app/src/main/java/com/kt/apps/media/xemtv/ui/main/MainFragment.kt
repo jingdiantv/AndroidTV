@@ -77,7 +77,6 @@ class MainFragment : BrowseSupportFragment(), HasAndroidInjector {
 
         setupEventListeners()
 
-        tvChannelViewModel.getListTVChannel(true)
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             handleListTVChannel(it)
         }

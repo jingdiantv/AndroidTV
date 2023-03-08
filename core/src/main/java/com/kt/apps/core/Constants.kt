@@ -12,4 +12,7 @@ object Constants {
     const val URL = "https://binhluan.90phut6.live/"
 
     const val DEEPLINK_HOST = "xemtivihd.net"
+
+    const val SCHEME_TV = "xemtv"
+    const val SCHEME_FOOTBALL = "xembongda"
 }

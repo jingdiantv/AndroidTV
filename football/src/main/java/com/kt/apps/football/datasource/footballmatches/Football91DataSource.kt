@@ -120,7 +120,7 @@ class Football91DataSource @Inject constructor(
         return FootballMatch(
             home,
             away,
-            kickOffTime,
+            date,
             kickOffWeek,
             link,
             FootballDataSourceFrom.Phut91,

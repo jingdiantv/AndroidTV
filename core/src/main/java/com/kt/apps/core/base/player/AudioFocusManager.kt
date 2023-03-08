@@ -5,7 +5,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
-import android.util.Log
+import com.kt.apps.core.base.logging.Logger
 import javax.inject.Inject
 
 class AudioFocusManager @Inject constructor(
@@ -29,22 +29,26 @@ class AudioFocusManager @Inject constructor(
         AudioManager.OnAudioFocusChangeListener {
             when (it) {
                 AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
-
+                    _onFocusChange?.onAudioFocus()
+                    Logger.d(this@AudioFocusManager, message = "AUDIO_FOCUS_REQUEST_GRANTED")
                 }
                 AudioManager.AUDIOFOCUS_REQUEST_FAILED -> {
+                    Logger.d(this@AudioFocusManager, message = "AUDIO_FOCUS_REQUEST_FAILED")
                     requestFocus(_onFocusChange)
                 }
                 AudioManager.AUDIOFOCUS_LOSS -> {
+                    Logger.d(this@AudioFocusManager, message = "AUDIO_FOCUS_LOSS")
+                    _onFocusChange?.onAudioLossFocus()
                     releaseFocus()
                     _audioSessionId = null
-                    audioRequest = null
+                    _audioRequest = null
                 }
             }
         }
     }
 
     private var _audioSessionId: Int? = null
-    private var audioRequest: AudioFocusRequest? = null
+    private var _audioRequest: AudioFocusRequest? = null
     private var _onFocusChange: OnFocusChange? = null
 
     fun requestFocus(onFocusChange: OnFocusChange? = null) {
@@ -52,15 +56,15 @@ class AudioFocusManager @Inject constructor(
             this._onFocusChange = it
         }
         val audioService = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        _audioSessionId ?: return
         _audioSessionId = audioService.generateAudioSessionId()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            _audioRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setWillPauseWhenDucked(true)
                 .setOnAudioFocusChangeListener(audioFocusChange)
                 .setAudioAttributes(audioAttributes)
                 .build()
-            audioService.requestAudioFocus(audioRequest!!)
+            audioService.requestAudioFocus(_audioRequest!!)
+            Logger.d(this,  message = "Request focus")
         } else {
             audioService.requestAudioFocus(
                 audioFocusChange,
@@ -74,7 +78,7 @@ class AudioFocusManager @Inject constructor(
         _audioSessionId = null
         val audioService = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioRequest?.let {
+            _audioRequest?.let {
                 audioService.abandonAudioFocusRequest(it)
             }
         } else {

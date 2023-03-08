@@ -8,9 +8,12 @@ import com.kt.apps.media.xemtv.ui.details.VideoDetailsFragment
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelKey
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.football.FootballFragment
+import com.kt.apps.media.xemtv.ui.football.FootballPlaybackFragment
+import com.kt.apps.media.xemtv.ui.football.FootballViewModel
 import com.kt.apps.media.xemtv.ui.main.DashboardFragment
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
-import com.kt.apps.media.xemtv.ui.playback.PlaybackVideoFragment
+import com.kt.apps.media.xemtv.ui.playback.TVPlaybackVideoFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 import dagger.Binds
 import dagger.Module
@@ -24,6 +27,11 @@ abstract class MainTVModule {
     @IntoMap
     @ViewModelKey(TVChannelViewModel::class)
     abstract fun bindTVChannelViewModel(tvChannelViewModel: TVChannelViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(FootballViewModel::class)
+    abstract fun bindFootballViewModel(footballViewModel: FootballViewModel): ViewModel
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun mainActivity(): MainActivity
@@ -41,13 +49,19 @@ abstract class MainTVModule {
     internal abstract fun playbackActivity(): PlaybackActivity
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
-    internal abstract fun playbackFragment(): PlaybackVideoFragment
+    internal abstract fun playbackFragment(): TVPlaybackVideoFragment
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun dashboardFragment(): DashboardFragment
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun tvDashboardFragment(): FragmentTVDashboard
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun footballListFragment(): FootballFragment
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun footballPlaybackFragment(): FootballPlaybackFragment
 
 
 }

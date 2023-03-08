@@ -35,19 +35,18 @@ object Logger {
                 Log.d(logTag, message)
             } else {
                 var index = 0
-                var subStr : String
+                var subStr: String
                 var range = 0
 
-                while (message.length >= index + range) {
+                while (message.length > index + 1) {
                     range = if (message.length - index > minMsgLength) minMsgLength else {
                         message.length - index
                     }
                     subStr = message.substring(index, index + range)
-                    index+=range
+                    index += range
                     Log.d(logTag, subStr)
                 }
             }
-            Log.d(logTag, message)
         }
     }
 
