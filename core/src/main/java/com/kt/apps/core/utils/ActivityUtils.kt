@@ -9,6 +9,10 @@ import android.os.Handler
 import android.os.Looper
 import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import cn.pedant.SweetAlert.SweetAlertDialog
 import java.util.*
 
@@ -87,6 +91,23 @@ fun Activity.showSweetDialog(
     successAlert.show()
     if (autoDismiss) {
         Handler(Looper.getMainLooper()).postDelayed({ successAlert.dismissWithAnimation() }, 1500)
+    } else {
+        if (this is FragmentActivity) {
+            lifecycle.addObserver(object : LifecycleEventObserver {
+                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                    when(event) {
+                        Lifecycle.Event.ON_PAUSE -> {
+                            successAlert.dismissWithAnimation()
+                            lifecycle.removeObserver(this)
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            })
+        }
     }
     Handler(Looper.getMainLooper()).postDelayed({ onSuccessListener?.let { it() } }, (delayMillis ?: 1900).toLong())
 }
