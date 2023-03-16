@@ -16,3 +16,12 @@ local.properties
 /.idea/
 /app/debug/output-metadata.json
 /app/debug/XemTV.23030201-debug.apk
+/keys/Untitled
+/app/debug/XemTV.23031601-debug.apk
+/movies/.gitignore
+/movies/build.gradle
+/movies/consumer-rules.pro
+/movies/proguard-rules.pro
+/movies/src/androidTest/java/comkt/apps/movies/ExampleInstrumentedTest.kt
+/movies/src/main/AndroidManifest.xml
+/movies/src/test/java/comkt/apps/movies/ExampleUnitTest.kt

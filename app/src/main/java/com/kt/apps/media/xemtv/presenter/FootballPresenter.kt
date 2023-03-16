@@ -9,9 +9,10 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.cardview.widget.CardView
-import androidx.core.graphics.*
-import androidx.core.view.setPadding
+import androidx.core.graphics.component1
+import androidx.core.graphics.component2
+import androidx.core.graphics.component3
+import androidx.core.graphics.toColor
 import androidx.leanback.widget.Presenter
 import com.kt.apps.core.utils.changeWithAlpha
 import com.kt.apps.core.utils.dpToPx

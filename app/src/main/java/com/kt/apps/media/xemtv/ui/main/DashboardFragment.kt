@@ -20,6 +20,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import dagger.android.AndroidInjector
@@ -55,6 +56,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector {
 
     override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this)
+        progressBarManager.disableProgressBar()
         super.onAttach(context)
     }
 
@@ -78,6 +80,9 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector {
                                 ?.findViewById<View>(androidx.leanback.R.id.fade_out_edge)
                                 ?.apply {
                                     this.setWillNotDraw(true)
+                                    val oldLayoutParams = this.layoutParams
+                                    oldLayoutParams.width = 5.dpToPx()
+                                    this.layoutParams = oldLayoutParams
                                 }
                                 ?.setBackgroundColor(Color.parseColor("#141414"))
                             headersSupportFragment.lifecycle.removeObserver(this)
@@ -96,6 +101,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector {
     }
 
     private fun initView() {
+        headersState = HEADERS_ENABLED
         isHeadersTransitionOnBackEnabled = true
         title = getString(R.string.app_name)
         prepareEntranceTransition()

@@ -6,6 +6,7 @@ import androidx.leanback.widget.Presenter
 import androidx.core.content.ContextCompat
 import android.util.Log
 import android.view.ViewGroup
+import androidx.appcompat.view.ContextThemeWrapper
 
 import com.kt.apps.core.Constants
 import com.kt.apps.core.tv.model.TVChannel
@@ -26,16 +27,22 @@ class CardPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         Log.d(TAG, "onCreateViewHolder")
 
-        sDefaultBackgroundColor = ContextCompat.getColor(parent.context, R.color.default_background)
+        sDefaultBackgroundColor = ContextCompat.getColor(parent.context, com.kt.apps.core.R.color.black)
         sSelectedBackgroundColor = ContextCompat.getColor(parent.context, R.color.selected_background)
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, R.drawable.app_icon)
 
-        val cardView = object : ImageCardView(parent.context) {
+        val wrapper = ContextThemeWrapper(parent.context, R.style.ImageCardViewStyleTitle)
+        val cardView = object : ImageCardView(wrapper) {
             override fun setSelected(selected: Boolean) {
                 updateCardBackgroundColor(this, selected)
                 super.setSelected(selected)
             }
+
+            override fun invalidate() {
+                super.invalidate()
+            }
         }
+
 
         cardView.isFocusable = true
         cardView.isFocusableInTouchMode = true

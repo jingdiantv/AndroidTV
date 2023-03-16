@@ -10,7 +10,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/transparent"
+        android:background="@null"
         android:orientation="vertical">
 
         <FrameLayout
@@ -64,7 +64,7 @@
                 android:id="@+id/home_team"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="20dp"
                 android:layout_marginTop="38dp"
                 android:src="@drawable/app_icon"
                 tools:text="Home" />
@@ -76,7 +76,7 @@
                 android:layout_height="100dp"
                 android:layout_gravity="end"
                 android:layout_marginTop="38dp"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="20dp"
                 android:src="@drawable/app_icon"
                 tools:text="Away" />
         </FrameLayout>
