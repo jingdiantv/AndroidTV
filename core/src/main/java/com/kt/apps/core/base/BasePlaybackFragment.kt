@@ -1,18 +1,28 @@
 package com.kt.apps.core.base
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.os.postDelayed
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
 import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.media.SurfaceHolderGlueHost
-import androidx.leanback.widget.ObjectAdapter
-import androidx.leanback.widget.OnChildLaidOutListener
-import androidx.leanback.widget.PlaybackControlsRow
-import androidx.leanback.widget.VerticalGridPresenter
+import androidx.leanback.widget.*
+import com.google.android.exoplayer2.PlaybackException
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
@@ -21,19 +31,21 @@ import com.kt.apps.core.R
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
-import com.kt.apps.core.utils.getHeaderFromLinkStream
+import com.kt.apps.core.utils.*
 import com.kt.skeleton.makeGone
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
+import kotlin.math.max
 
 abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     HasAndroidInjector, IKeyCodeHandler {
     private val progressManager by lazy {
         ProgressBarManager()
     }
+
     @Inject
     lateinit var injector: DispatchingAndroidInjector<Any>
 
@@ -53,7 +65,57 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     private var mVideoSurface: SurfaceView? = null
     private var mMediaPlaybackCallback: SurfaceHolder.Callback? = null
     private var mState = SURFACE_NOT_CREATED
+    private var mSelectedPosition = -1
+    private var mPlayingPosition = -1
+    private var mPlaybackInfoContainerView: View? = null
+    private var mPlayPauseIcon: ImageButton? = null
+    protected var mGridView: View? = null
+    protected var onItemClickedListener: OnItemViewClickedListener? = null
+    abstract val numOfRowColumns: Int
+    private val _playerListener by lazy {
+        object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+            }
 
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                if (isPlaying) {
+                    mPlayPauseIcon?.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            requireContext(),
+                            R.drawable.round_pause_24
+                        )
+                    )
+                } else {
+                    mPlayPauseIcon?.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            requireContext(),
+                            R.drawable.round_play_arrow_24
+                        )
+                    )
+                }
+            }
+
+            override fun onEvents(player: Player, events: Player.Events) {
+                super.onEvents(player, events)
+            }
+        }
+    }
+    private val mHandler by lazy {
+        Handler(Looper.getMainLooper())
+    }
+    private val autoHideOverlayRunnable by lazy {
+        Runnable {
+            view?.findViewById<FrameLayout>(R.id.browse_dummy)?.startHideOrShowAnimation(false) {
+
+            }
+            view?.findViewById<FrameLayout>(R.id.browse_grid_dock)?.translationY = 1000.dpToPx().toFloat()
+            view?.findViewById<FrameLayout>(R.id.browse_dummy)?.setBackgroundColor(Color.parseColor("#80000000"))
+            mSelectedPosition = 0
+            mGridViewHolder?.gridView?.setSelectedPositionSmooth(0)
+        }
+    }
 
     override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this)
@@ -92,18 +154,105 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         progressManager.initialDelay = 500
         progressManager.setRootView(root)
         backgroundType = BG_LIGHT
+        val gridView = LayoutInflater.from(context)
+            .inflate(R.layout.playback_vertical_grid_overlay, container, false)
+        val layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+        mPlaybackInfoContainerView = gridView.findViewById(R.id.browse_grid_dock)
+        gridView.layoutParams = layoutParams
+        setupVerticalGridView(gridView)
+        root.addView(gridView)
+        hideControlsOverlay(false)
+        val controlBackground = root.findViewById<View>(androidx.leanback.R.id.playback_controls_dock)
+        controlBackground.makeGone()
+        mPlayPauseIcon?.setOnClickListener {
+            mHandler.removeCallbacks(autoHideOverlayRunnable)
+            if (true == exoPlayerManager.playerAdapter?.isPlaying) {
+                exoPlayerManager.playerAdapter?.pause()
+            } else {
+                exoPlayerManager.playerAdapter?.play()
+                mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+            }
+        }
         return root
     }
 
-    fun playVideo(title: String, subTitle: String, referer: String, linkStream: List<String>) {
+    private fun setupVerticalGridView(gridView: View) {
+        mGridView = gridView
+        mPlayPauseIcon = gridView.findViewById(R.id.ic_play_pause)
+        val gridDock = gridView.findViewById<FrameLayout>(R.id.browse_grid_dock)
+        mGridPresenter = VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM).apply {
+            shadowEnabled = false
+        }
+        mGridPresenter!!.numberOfColumns = numOfRowColumns
+        mGridViewHolder = mGridPresenter!!.onCreateViewHolder(gridDock)
+        gridDock.addView(mGridViewHolder!!.view)
+        mGridPresenter?.setOnItemViewSelectedListener { _, item, _, _ ->
+//            val position = mGridViewHolder?.gridView?.selectedPosition ?: 0
+//            mSelectedPosition = position
+        }
+        mGridPresenter?.setOnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
+            (mAdapter as ArrayObjectAdapter).indexOf(item)
+                .takeIf {
+                    it > -1
+                }?.let {
+                    mSelectedPosition = it
+                }
+            onItemClickedListener?.onItemClicked(itemViewHolder, item, rowViewHolder, row)
+
+        }
+        mGridViewHolder!!.gridView.setOnChildLaidOutListener(mChildLaidOutListener)
+        mGridPresenter!!.onBindViewHolder(mGridViewHolder, mAdapter)
+        gridView.makeGone()
+    }
+
+    protected fun <T> setupRowAdapter(
+        objectList: List<T>,
+        presenterSelector: PresenterSelector
+    ) {
+        mPlayingPosition = mSelectedPosition
+        Logger.d(this, message = "setupRowAdapter: $mSelectedPosition")
+        val cardPresenterSelector: PresenterSelector = presenterSelector
+        mAdapter = ArrayObjectAdapter(cardPresenterSelector)
+        (mAdapter as ArrayObjectAdapter).addAll(0, objectList)
+        updateAdapter()
+    }
+
+    fun updateAdapter() {
+        if (mGridViewHolder != null) {
+            mGridPresenter!!.onBindViewHolder(mGridViewHolder, mAdapter)
+            setSelectedPosition(max(0, mSelectedPosition))
+        }
+    }
+
+    override fun setSelectedPosition(position: Int) {
+        mSelectedPosition = position
+        mGridViewHolder?.gridView?.setSelectedPositionSmooth(position)
+    }
+
+    fun playVideo(title: String, subTitle: String, referer: String, linkStream: List<String>, isLive: Boolean) {
+        playVideo(title, subTitle, linkStream.map {
+            LinkStream(it, referer, title)
+        }, _playerListener, isLive)
+    }
+
+    fun playVideo(
+        title: String, subTitle: String,
+        linkStreams: List<LinkStream>,
+        listener: Player.Listener? = null,
+        isLive: Boolean
+    ) {
         mTransportControlGlue.host = glueHost
         mTransportControlGlue.title = title
         mTransportControlGlue.subtitle = subTitle
         mTransportControlGlue.isSeekEnabled = false
         mTransportControlGlue.playWhenPrepared()
-        exoPlayerManager.playVideo(linkStream.map {
-            LinkStream(it, referer, title)
-        })
+        exoPlayerManager.playVideo(linkStreams, listener ?: _playerListener)
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        setVideoInfo(title, subTitle, isLive)
     }
 
     private fun buildMediaSource(referer: String): DefaultMediaSourceFactory {
@@ -139,6 +288,30 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }
     }
 
+    fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
+        requireView().findViewById<TextView>(R.id.playback_title)!!.text = title
+        view?.findViewById<TextView>(R.id.playback_info)?.text = info
+        if (isLive) {
+            view?.findViewById<TextView>(R.id.playback_live)!!.visible()
+        } else {
+            view?.findViewById<TextView>(R.id.playback_live)!!.gone()
+        }
+
+        requireView().findViewById<LinearLayout>(R.id.info_container).visible()
+        mGridView?.visibility = View.VISIBLE
+        mPlayPauseIcon?.requestFocus()
+        view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!
+            .animate()
+            ?.translationY(1000.dpToPx().toFloat())
+            ?.setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
+                    view?.findViewById<FrameLayout>(R.id.browse_dummy)?.setBackgroundColor(Color.parseColor("#80000000"))
+                }
+            })
+            ?.start()
+    }
+
     override fun onVideoSizeChanged(width: Int, height: Int) {
         val screenWidth = requireView().width
         val screenHeight = requireView().height
@@ -161,10 +334,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     fun canBackToMain(): Boolean {
-        return true
+        return mGridView?.visibility != View.VISIBLE
     }
 
     fun hideOverlay() {
+        autoHideOverlayRunnable.run()
     }
 
     override fun onDestroyView() {
@@ -174,18 +348,53 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     override fun onDpadCenter() {
+        val visible = mGridView?.visibility == View.VISIBLE
+        if (!visible) {
+            requireView().findViewById<LinearLayout>(R.id.info_container).visible()
+            mGridView?.visibility = View.VISIBLE
+            mPlayPauseIcon?.requestFocus()
+            setSelectedPosition(0)
+        }
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
     }
 
     override fun onDpadDown() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        Logger.d(this, message = "y = ${view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!.translationY}")
+
+        val visible = mGridView?.visibility == View.VISIBLE
+        if (visible) {
+            Logger.d(this, message = "y = ${view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!.translationY}")
+            if (mPlayPauseIcon?.visibility == View.VISIBLE) {
+                requireView().findViewById<LinearLayout>(R.id.info_container).startHideOrShowAnimation(false) {
+                }
+            }
+            if (view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!.translationY >= 350.dpToPx().toFloat()) {
+                view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!
+                    .animate()
+                    ?.translationY(0f)
+                    ?.setListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator?) {
+                            super.onAnimationEnd(animation)
+                            view?.findViewById<FrameLayout>(R.id.browse_dummy)?.setBackgroundColor(Color.parseColor("#B3000000"))
+                        }
+                    })
+                    ?.start()
+            }
+        }
     }
 
     override fun onDpadUp() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
     override fun onDpadLeft() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
     override fun onDpadRight() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
     override fun onKeyCodeChannelUp() {
@@ -204,6 +413,12 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     override fun onKeyCodeMediaPrevious() {
+    }
+
+    override fun onKeyCodePause() {
+    }
+
+    override fun onKeyCodePlay() {
     }
 
     class BasePlaybackSupportFragmentGlueHost(

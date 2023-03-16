@@ -37,13 +37,17 @@ object AnimationUtils {
 }
 
 fun RecyclerView.runLayoutAnimation() {
-    val layoutAnimation = AnimationUtils.loadLayoutAnimation(context, com.kt.skeleton.R.anim.recycler_view_layout_anim_fall_down)
+    val layoutAnimation =
+        AnimationUtils.loadLayoutAnimation(context, com.kt.skeleton.R.anim.recycler_view_layout_anim_fall_down)
     setLayoutAnimation(layoutAnimation)
     adapter?.notifyDataSetChanged()
     scheduleLayoutAnimation()
 }
 
-fun View.startHideOrShowAnimation(shouldShow: Boolean) {
+fun View.startHideOrShowAnimation(
+    shouldShow: Boolean,
+    onAnimationEnd: () -> Unit
+) {
     val repeatAnimView = when {
         shouldShow && visibility == View.VISIBLE -> true
         !shouldShow && visibility == View.INVISIBLE -> true
@@ -79,7 +83,8 @@ fun View.startHideOrShowAnimation(shouldShow: Boolean) {
     anim.addListener(object : AnimatorListenerAdapter() {
         override fun onAnimationEnd(animation: Animator?) {
             super.onAnimationEnd(animation)
-            inVisible()
+            gone()
+            anim.removeAllListeners()
         }
     })
     anim.start()

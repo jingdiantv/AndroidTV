@@ -2,6 +2,7 @@ package com.kt.apps.core.utils
 
 import android.util.Log
 import com.google.firebase.ktx.BuildConfig
+import com.kt.apps.core.base.CoreApp
 import io.reactivex.rxjava3.core.Observable
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -127,3 +128,6 @@ fun Map<String, String>.buildCookie(): String {
     return cookieBuilder.toString().trim().removeSuffix(";")
 }
 
+fun Int.dpToPx(): Int {
+    return (CoreApp.getInstance().resources.displayMetrics.scaledDensity * this).toInt()
+}

@@ -23,7 +23,9 @@ class ExoPlayerManager @Inject constructor(
 ) : Application.ActivityLifecycleCallbacks, AudioFocusManager.OnFocusChange {
     private var _exoPlayer: ExoPlayer? = null
     private var _playerAdapter: LeanbackPlayerAdapter? = null
-    private var isFullScreen: Boolean = false
+    private val _playerListenerObserver by lazy {
+        mutableListOf<(() -> Unit)>()
+    }
 
     init {
         _application.registerActivityLifecycleCallbacks(this)
@@ -41,7 +43,7 @@ class ExoPlayerManager @Inject constructor(
             .build()
     }
 
-    private val playerListener by lazy {
+    private val _playerListener by lazy {
         object : Player.Listener {
             override fun onIsLoadingChanged(isLoading: Boolean) {
                 super.onIsLoadingChanged(isLoading)
@@ -69,6 +71,8 @@ class ExoPlayerManager @Inject constructor(
 
             override fun onPlayerError(error: PlaybackException) {
                 super.onPlayerError(error)
+
+                Logger.d(this, message = error.message?.plus(error.errorCodeName) ?: error.errorCodeName)
             }
 
         }
@@ -80,8 +84,10 @@ class ExoPlayerManager @Inject constructor(
     val exoPlayer: ExoPlayer?
         get() = _exoPlayer
 
-    private fun updateFullScreenState(isFullScreen: Boolean) {
-        this.isFullScreen = isFullScreen
+    fun addListener() {
+        _playerListenerObserver.add {
+
+        }
     }
 
     fun prepare() {
@@ -91,11 +97,15 @@ class ExoPlayerManager @Inject constructor(
         _playerAdapter = LeanbackPlayerAdapter(_application, _exoPlayer!!, 5)
     }
 
-    fun playVideo(data: List<LinkStream>) {
+    fun playVideo(
+        data: List<LinkStream>,
+        playerListener: Player.Listener? = null
+    ) {
         if (_exoPlayer == null) {
             _exoPlayer = buildExoPlayer()
             _playerAdapter = LeanbackPlayerAdapter(_application, exoPlayer!!, 5)
         }
+        _exoPlayer?.removeListener(_playerListener)
         val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
         dfSource.setDefaultRequestProperties(
             getHeader90pLink(data.first().referer, data.first())
@@ -112,7 +122,10 @@ class ExoPlayerManager @Inject constructor(
         }
 
         _exoPlayer?.setMediaSources(mediaSources)
-        _exoPlayer?.addListener(playerListener)
+        _exoPlayer?.addListener(_playerListener)
+        playerListener?.let {
+            _exoPlayer?.addListener(it)
+        }
         _exoPlayer?.playWhenReady = true
         _exoPlayer?.prepare()
 
@@ -201,7 +214,7 @@ class ExoPlayerManager @Inject constructor(
     }
 
     fun detach() {
-        _exoPlayer?.removeListener(playerListener)
+        _exoPlayer?.removeListener(_playerListener)
         _audioFocusManager.releaseFocus()
         _playerAdapter?.onDetachedFromHost()
         _exoPlayer?.release()

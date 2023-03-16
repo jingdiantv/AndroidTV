@@ -220,7 +220,7 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_gravity="end"
-            android:background="@drawable/background_circle"
+            android:background="@drawable/background_live_football_circle"
             android:backgroundTint="#50000000"
             android:src="@drawable/ic_round_expand_less_24"
             android:visibility="gone" />

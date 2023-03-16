@@ -14,6 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import cn.pedant.SweetAlert.SweetAlertDialog
+import com.kt.apps.core.base.logging.Logger
 import java.util.*
 
 fun Context.updateLocale(language: String = "vi") {
@@ -50,7 +51,33 @@ fun Fragment.showErrorDialog(
     content: String? = null,
     delayMillis: Int? = 1900,
 ) {
-    requireActivity().showSweetDialog(SweetAlertDialog.ERROR_TYPE, onSuccessListener, content, delayMillis)
+    val successAlert = SweetAlertDialog(requireContext(), SweetAlertDialog.ERROR_TYPE)
+        .showCancelButton(false)
+        .hideConfirmButton()
+
+    successAlert.showContentText(content != null)
+    successAlert.setCancelable(true)
+    successAlert.contentText = content
+    successAlert.titleText = null
+    successAlert.confirmText = null
+    successAlert.setBackground(ColorDrawable(Color.TRANSPARENT))
+    successAlert.show()
+    lifecycle.addObserver(object : LifecycleEventObserver {
+        override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+            when(event) {
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                    Logger.d(this, message = "OnPauseCalled")
+                    successAlert.dismissWithAnimation()
+                    lifecycle.removeObserver(this)
+                }
+
+                else -> {
+
+                }
+            }
+        }
+    })
+    Handler(Looper.getMainLooper()).postDelayed({ onSuccessListener?.let { it() } }, (delayMillis ?: 1900).toLong())
 }
 
 fun Activity.showSuccessDialog(
@@ -96,7 +123,8 @@ fun Activity.showSweetDialog(
             lifecycle.addObserver(object : LifecycleEventObserver {
                 override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                     when(event) {
-                        Lifecycle.Event.ON_PAUSE -> {
+                        Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                            Logger.d(this, message = "OnPauseCalled")
                             successAlert.dismissWithAnimation()
                             lifecycle.removeObserver(this)
                         }

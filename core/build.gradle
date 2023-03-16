@@ -53,6 +53,6 @@ dependencies {
     implementation project(":dialoglib")
     implementation authen.values()
     implementation roomDatabase.values()
-//    implementation otherLibs.values()
+    implementation otherLibs.values()
 
 }

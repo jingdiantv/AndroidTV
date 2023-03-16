@@ -31,6 +31,7 @@ import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.BrowseErrorActivity
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.R
+import com.kt.apps.media.xemtv.presenter.CardPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import dagger.android.AndroidInjector

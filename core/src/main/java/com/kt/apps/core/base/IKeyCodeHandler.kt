@@ -12,4 +12,6 @@ interface IKeyCodeHandler {
     fun onKeyCodeMediaNext()
     fun onKeyCodeVolumeUp()
     fun onKeyCodeVolumeDown()
+    fun onKeyCodePause()
+    fun onKeyCodePlay()
 }

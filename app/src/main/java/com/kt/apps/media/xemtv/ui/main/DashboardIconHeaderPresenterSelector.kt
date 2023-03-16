@@ -4,25 +4,24 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.leanback.widget.HeaderItem
-import androidx.leanback.widget.Presenter
-import androidx.leanback.widget.PresenterSelector
-import androidx.leanback.widget.Row
-import androidx.leanback.widget.RowHeaderPresenter
-import androidx.leanback.widget.RowHeaderView
+import androidx.leanback.widget.*
+import com.kt.apps.core.GlideApp
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.media.xemtv.R
 
 class DashboardIconHeaderPresenterSelector : PresenterSelector() {
     override fun getPresenter(item: Any?): Presenter {
-        return HeaderIconPresenter()
+        return HeaderIconPresenter().apply {
+        }
     }
 
     class HeaderIconPresenter() : RowHeaderPresenter() {
         override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
             val view = LayoutInflater.from(parent!!.context)
                 .inflate(R.layout.header_dashboard, parent, false)
-            return HeaderIconViewHolder(view)
+            val viewHolder = HeaderIconViewHolder(view)
+            setSelectLevel(viewHolder, 0f)
+            return viewHolder
         }
 
         override fun onBindViewHolder(viewHolder: Presenter.ViewHolder?, item: Any?) {
@@ -32,6 +31,10 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
                 if (it is HeaderItemWithIcon) {
                     (viewHolder as HeaderIconViewHolder).apply {
                         this.headerView.text = it.name
+                        GlideApp.with(this.headerView)
+                            .load(it.icon)
+                            .into(this.iconView)
+                        Logger.d(this, message = "${this.selectLevel}")
                     }
                 }
             }
@@ -45,6 +48,11 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
 
             val headerView: RowHeaderView by lazy {
                 view.findViewById(R.id.row_header)
+            }
+
+            init {
+                view.isFocusable = true
+                view.isFocusableInTouchMode = true
             }
 
         }

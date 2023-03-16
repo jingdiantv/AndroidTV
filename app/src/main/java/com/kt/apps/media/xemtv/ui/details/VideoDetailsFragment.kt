@@ -21,7 +21,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.showErrorDialog
-import com.kt.apps.media.xemtv.ui.main.CardPresenter
+import com.kt.apps.media.xemtv.presenter.CardPresenter
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel

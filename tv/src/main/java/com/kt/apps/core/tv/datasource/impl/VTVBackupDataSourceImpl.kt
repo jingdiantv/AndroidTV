@@ -10,6 +10,7 @@ import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
 import com.kt.apps.core.utils.removeAllSpecialChars
 import com.kt.apps.core.utils.toOrigin
+import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import kotlinx.parcelize.Parcelize
@@ -44,6 +45,7 @@ class VTVBackupDataSourceImpl @Inject constructor(
 
     override fun getTvList(): Observable<List<TVChannel>> {
         val homepage = "${config.baseUrl.removeSuffix("/")}/${config.mainPagePath}"
+        trustEveryone()
         return Observable.create { emitter ->
             val document = Jsoup.connect(homepage)
                 .cookies(_cookie)

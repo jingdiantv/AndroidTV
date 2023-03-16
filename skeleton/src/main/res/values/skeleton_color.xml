@@ -8,7 +8,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="splash_background_color">#FFF2F2F2</color>
 
-    <color name="primary_black_gray">#212121</color>
+    <color name="primary_black_gray">#000000</color>
     <color name="item_gray_light">#707070</color>
     <color name="item_gray_selected">#4A4949</color>
     <color name="transparent">#00212121</color>

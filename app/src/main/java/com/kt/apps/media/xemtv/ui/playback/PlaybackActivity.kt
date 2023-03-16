@@ -44,6 +44,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
 
             Type.TV -> {
                 if (savedInstanceState == null) {
+                    tvChannelViewModel.getListTVChannel(false)
                     supportFragmentManager.beginTransaction()
                         .replace(android.R.id.content, TVPlaybackVideoFragment())
                         .commit()
@@ -57,7 +58,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
 
     private fun playContentByDeepLink(deepLink: Uri, savedInstanceState: Bundle?) {
         when {
-            deepLink.scheme.equals(Constants.SCHEME_FOOTBALL) -> {
+            deepLink.host.equals(Constants.HOST_FOOTBALL) -> {
                 footballViewModel.streamFootballByDeepLinks(deepLink)
                 if (savedInstanceState == null) {
                     supportFragmentManager.beginTransaction()
@@ -66,7 +67,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
                 }
             }
 
-            deepLink.scheme.equals(Constants.SCHEME_TV) -> {
+            deepLink.host.equals(Constants.HOST_TV) || deepLink.host.equals(Constants.HOST_RADIO) -> {
                 tvChannelViewModel.playTvByDeepLinks(deepLink)
                 if (savedInstanceState == null) {
                     supportFragmentManager.beginTransaction()

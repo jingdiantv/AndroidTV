@@ -18,7 +18,7 @@ class FootballModule {
     @Source91PhutConfig
     @FootballScope
     fun providesConfig(): FootballRepositoryConfig = FootballRepositoryConfig(
-        url = "https://90p.vip/",
+        url = "https://90ptv.vip/",
         regex = "(?<=urlStream\\s=\\s\").*?(?=\")"
     )
 

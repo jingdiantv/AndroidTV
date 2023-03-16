@@ -28,6 +28,7 @@ import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
+import java.security.Key
 import javax.inject.Inject
 
 abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroidInjector {
@@ -206,6 +207,18 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
 
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                 iKeyCodeHandler.onKeyCodeMediaPrevious()
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                iKeyCodeHandler.onKeyCodePause()
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                iKeyCodeHandler.onKeyCodePlay()
+            }
+
+            KeyEvent.KEYCODE_INFO -> {
+
             }
         }
         return super.onKeyDown(keyCode, event)

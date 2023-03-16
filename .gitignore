@@ -14,3 +14,5 @@
 .cxx
 local.properties
 /.idea/
+/app/debug/output-metadata.json
+/app/debug/XemTV.23030201-debug.apk

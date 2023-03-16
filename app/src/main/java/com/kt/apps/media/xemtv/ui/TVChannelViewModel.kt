@@ -25,6 +25,9 @@ data class TVChannelInteractors @Inject constructor(
 class TVChannelViewModel @Inject constructor(
     private val interactors: TVChannelInteractors
 ) : BaseViewModel() {
+    private var _lastWatchedChannel: TVChannelLinkStream? = null
+    val lastWatchedChannel: TVChannelLinkStream?
+        get() = _lastWatchedChannel
 
     private val _listTvChannelLiveData by lazy {
         MutableLiveData<DataState<List<TVChannel>>>()
@@ -69,6 +72,7 @@ class TVChannelViewModel @Inject constructor(
         lastTVStreamLinkTask = interactors.getChannelLinkStream(tvDetail, isBackup)
             .subscribe({
                 Logger.d(this, message = Gson().toJson(it))
+                markLastWatchedChannel(it)
                 _tvWithLinkStreamLiveData.postValue(DataState.Success(it))
             }, {
                 Logger.e(this, exception = it)
@@ -107,6 +111,19 @@ class TVChannelViewModel @Inject constructor(
         add(lastTVStreamLinkTask!!)
     }
 
+    fun markLastWatchedChannel(tvChannel: TVChannelLinkStream?) {
+        _lastWatchedChannel = tvChannel
+    }
+
+    fun retryGetLastWatchedChannel() {
+        _lastWatchedChannel?.let {
+            getLinkStreamForChannel(it.channel)
+        }
+    }
+
+    fun clearCurrentPlayingChannelState() {
+        _tvWithLinkStreamLiveData.postValue(DataState.None())
+    }
 
     init {
         instance++

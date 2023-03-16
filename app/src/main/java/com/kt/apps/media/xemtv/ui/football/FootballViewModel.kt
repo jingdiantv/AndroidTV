@@ -33,6 +33,10 @@ class FootballViewModel @Inject constructor(
         get() = _listFootMatchDataState
 
     fun getAllMatches() {
+        if (interactors.getListFootballMatch.cacheData != null) {
+            _listFootMatchDataState.postValue(DataState.Success(interactors.getListFootballMatch.cacheData!!))
+            return
+        }
         _listFootMatchDataState.postValue(DataState.Loading())
         add(
             interactors.getListFootballMatch(FootballDataSourceFrom.Phut91)
@@ -86,10 +90,15 @@ class FootballViewModel @Inject constructor(
                     _footMatchDataState.postValue(DataState.Success(it))
                     Logger.d(this@FootballViewModel, message = Gson().toJson(it))
                 }, {
+                    Logger.e(this@FootballViewModel, exception = it)
                     _footMatchDataState.postValue(DataState.Error(it))
                 })
         )
 
+    }
+
+    fun clearState() {
+        _footMatchDataState.postValue(DataState.None())
     }
 
 

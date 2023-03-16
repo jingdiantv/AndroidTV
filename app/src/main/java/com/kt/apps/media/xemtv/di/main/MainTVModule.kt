@@ -14,6 +14,7 @@ import com.kt.apps.media.xemtv.ui.football.FootballViewModel
 import com.kt.apps.media.xemtv.ui.main.DashboardFragment
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.ui.playback.TVPlaybackVideoFragment
+import com.kt.apps.media.xemtv.ui.radio.RadioFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 import dagger.Binds
 import dagger.Module
@@ -62,6 +63,9 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun footballPlaybackFragment(): FootballPlaybackFragment
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun radioFragment(): RadioFragment
 
 
 }

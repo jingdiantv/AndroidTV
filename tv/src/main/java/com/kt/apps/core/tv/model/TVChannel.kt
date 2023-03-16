@@ -12,6 +12,9 @@ class TVChannel(
     var sourceFrom: String,
     val channelId: String
 ) : Parcelable {
+
+    val isRadio: Boolean
+    get() = radioGroup.contains(tvGroup)
     override fun toString(): String {
         return "{" +
                 "tvGroup: $tvGroup," +
@@ -21,5 +24,11 @@ class TVChannel(
                 "sourceFrom: $sourceFrom," +
                 "channelId: $channelId" +
                 "}"
+    }
+
+    companion object {
+        private val radioGroup by lazy {
+            listOf(TVChannelGroup.VOV.name, TVChannelGroup.VOH.name)
+        }
     }
 }

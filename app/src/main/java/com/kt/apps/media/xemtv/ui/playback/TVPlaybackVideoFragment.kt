@@ -15,21 +15,21 @@ import androidx.leanback.app.VideoSupportFragmentGlueHost
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.*
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.IKeyCodeHandler
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.core.utils.getHeaderFromLinkStream
+import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
@@ -44,7 +44,7 @@ import javax.inject.Inject
 import kotlin.math.max
 
 /** Handles video playback with media controls. */
-class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
+class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector, IKeyCodeHandler {
 
     @Inject
     lateinit var injector: DispatchingAndroidInjector<Any>
@@ -89,6 +89,18 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
 
             }
         }
+    private val _playerListener by lazy {
+        object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+                retryGetLinkStream()
+            }
+        }
+    }
+
+    private fun retryGetLinkStream() {
+        tvChannelViewModel.retryGetLastWatchedChannel()
+    }
 
     override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this@TVPlaybackVideoFragment)
@@ -100,8 +112,9 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val tvChannel =
-            activity?.intent?.getParcelableExtra<TVChannelLinkStream>(DetailsActivity.TV_CHANNEL)
+        val tvChannel = activity?.intent
+            ?.getParcelableExtra<TVChannelLinkStream>(DetailsActivity.TV_CHANNEL)
+        tvChannelViewModel.markLastWatchedChannel(tvChannel)
         playerAdapter.setRepeatAction(PlaybackControlsRow.RepeatAction.INDEX_NONE)
 
         mTransportControlGlue = PlaybackTransportControlGlue(activity, playerAdapter)
@@ -122,6 +135,7 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
             )
             player.setMediaSource(mediaSource)
             player.playWhenReady = true
+            player.addListener(_playerListener)
             playerAdapter.play()
         } ?: let {
 
@@ -276,8 +290,12 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
 
             is DataState.Error -> {
                 progressBarManager.hide()
-                startActivity(Intent(requireContext(), MainActivity::class.java))
-                requireActivity().finish()
+
+                showErrorDialog(content = dataState.throwable.message,
+                    onSuccessListener = {
+                        startActivity(Intent(requireContext(), MainActivity::class.java))
+                        requireActivity().finish()
+                    })
             }
 
             else -> {
@@ -287,6 +305,7 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
     }
 
     override fun onDetach() {
+        progressBarManager.hide()
         exoPlayerManager.pause()
         Logger.d(this, message = "onDetach")
         super.onDetach()
@@ -317,7 +336,7 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
 
     }
 
-    fun onDpadCenter() {
+    override fun onDpadCenter() {
         val visible = channelGridView?.visibility == View.VISIBLE
         if (!visible) {
             channelGridView?.visibility = View.VISIBLE
@@ -325,23 +344,23 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
         }
     }
 
-    fun onDpadLeft() {
+    override fun onDpadLeft() {
 
     }
 
-    fun onDpadRight() {
+    override fun onDpadRight() {
 
     }
 
-    fun onDpadDown() {
+    override fun onDpadDown() {
 
     }
 
-    fun onDpadUp() {
+    override fun onDpadUp() {
 
     }
 
-    fun onKeyCodeChannelDown() {
+    override fun onKeyCodeChannelDown() {
         mPlayingPosition = max(0, mPlayingPosition) - 1
         setSelectedPosition(mPlayingPosition)
         Logger.d(this, message = "onKeyCodeChannelDown: $mPlayingPosition")
@@ -351,7 +370,26 @@ class TVPlaybackVideoFragment : VideoSupportFragment(), HasAndroidInjector {
         }
     }
 
-    fun onKeyCodeChannelUp() {
+    override fun onKeyCodeMediaPrevious() {
+
+    }
+
+    override fun onKeyCodeMediaNext() {
+    }
+
+    override fun onKeyCodeVolumeUp() {
+    }
+
+    override fun onKeyCodeVolumeDown() {
+    }
+
+    override fun onKeyCodePause() {
+    }
+
+    override fun onKeyCodePlay() {
+    }
+
+    override fun onKeyCodeChannelUp() {
         mPlayingPosition = max(0, mPlayingPosition) + 1
 
         setSelectedPosition(mPlayingPosition)

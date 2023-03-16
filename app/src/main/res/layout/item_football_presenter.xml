@@ -7,38 +7,84 @@
 
     </data>
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="240dp"
-        android:layout_height="170dp"
-        android:background="@null"
-        android:clipToPadding="true"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        app:cardUseCompatPadding="true"
-        app:contentPaddingLeft="8dp"
-        app:contentPaddingBottom="10dp"
-        app:contentPaddingRight="8dp">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/transparent"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/home_team"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/app_icon"
-            android:text="Home" />
+        <FrameLayout
+            android:id="@+id/card_view"
+            android:layout_width="300dp"
+            android:layout_height="170dp"
+            android:background="@drawable/main_card_background_corners_8dp"
+            android:foreground="@drawable/main_card_background_outline_w_state"
+            android:clipToOutline="true"
+            android:clipToPadding="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true">
 
 
-        <ImageView
-            android:id="@+id/away_team"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_gravity="end"
-            android:src="@drawable/app_icon"
-            android:text="Away" />
+            <View
+                android:id="@+id/background_home"
+                android:layout_width="155dp"
+                android:layout_height="170dp" />
+
+            <View
+                android:id="@+id/background_away"
+                android:layout_width="155dp"
+                android:layout_height="170dp"
+                android:layout_gravity="end" />
+
+            <TextView
+                android:id="@+id/match_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/background_corners_4dp"
+                android:backgroundTint="#30000000"
+                android:drawablePadding="5dp"
+                android:gravity="center|center_vertical"
+                android:includeFontPadding="false"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="3dp"
+                tools:drawableEnd="@drawable/background_live_football_circle"
+                tools:text="LIVE"
+                tools:textSize="12sp" />
+
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/bacground_for_football_match" />
+
+            <ImageView
+                android:id="@+id/home_team"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="38dp"
+                android:src="@drawable/app_icon"
+                tools:text="Home" />
+
+
+            <ImageView
+                android:id="@+id/away_team"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="38dp"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/app_icon"
+                tools:text="Away" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
+            android:layout_marginTop="8dp"
             android:orientation="vertical">
 
             <TextView
@@ -46,24 +92,29 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
-                android:gravity="center"
-                android:textStyle="bold"
                 android:autoSizeMaxTextSize="17sp"
                 android:autoSizeMinTextSize="12sp"
+                android:ellipsize="marquee"
+                android:gravity="center"
+                android:marqueeRepeatLimit="marquee_forever"
                 android:singleLine="true"
+                android:textStyle="bold"
+                tools:targetApi="o"
                 tools:text="Match name"
-                tools:targetApi="o" />
+                tools:textStyle="bold" />
 
             <TextView
-                android:id="@+id/match_time"
+                android:id="@+id/league"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/transparent"
+                android:ellipsize="marquee"
                 android:gravity="center"
-                android:textSize="13sp"
-                tools:text="Match time" />
+                android:singleLine="true"
+                tools:text="League"
+                tools:textSize="13sp" />
 
         </LinearLayout>
 
-
-    </androidx.cardview.widget.CardView>
+    </LinearLayout>
 </layout>

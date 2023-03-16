@@ -107,6 +107,7 @@ ext {
     ]
 
     otherLibs = [
+            palette: 'androidx.palette:palette:1.0.0'
 //            checkApi: "com.kt:api:1.1.15"
     ]
 }

@@ -60,7 +60,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
         }
     }
 
-    private val mViewSelectedListener by lazy {
+    protected val mViewSelectedListener by lazy {
         OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
             val position: Int = mGridViewHolder?.gridView?.selectedPosition ?: -1
             Logger.d(this, message = "Selected position: $position")
@@ -85,7 +85,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
     abstract fun initAction(rootView: View)
 
 
-    private fun gridOnItemSelected(position: Int) {
+    protected fun gridOnItemSelected(position: Int) {
         if (position != mSelectedPosition) {
             mSelectedPosition = position
             showOrHideTitle()

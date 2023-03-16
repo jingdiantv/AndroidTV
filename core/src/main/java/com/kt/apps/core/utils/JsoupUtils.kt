@@ -48,6 +48,7 @@ fun jsoupParse(
     if (BuildConfig.DEBUG) {
         Log.d("Jsoup", url)
     }
+    trustEveryone()
     val connection = jsoupConnect(url, cookie, *header)
         .timeout(10_000)
         .followRedirects(true)

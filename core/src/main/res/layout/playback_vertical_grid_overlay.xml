@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+    </data>
+
+    <FrameLayout
+        android:id="@+id/browse_dummy"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000">
+
+
+        <LinearLayout
+            android:id="@+id/info_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#80000000"
+            android:paddingStart="20dp"
+            android:orientation="horizontal"
+            android:paddingTop="20dp">
+
+            <ImageButton
+                android:layout_marginTop="10dp"
+                android:id="@+id/ic_play_pause"
+                android:layout_width="60dp"
+                android:nextFocusDown="@id/browse_grid_dock"
+                android:focusedByDefault="true"
+                android:layout_height="60dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:background="@drawable/main_card_background_outline_w_state"
+                android:padding="10dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/round_play_arrow_24" />
+
+            <LinearLayout
+                android:id="@+id/info"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_gravity="bottom"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="44dp">
+
+                <TextView
+                    android:id="@+id/playback_title"
+                    style="@style/TextAppearance.Leanback.Title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Video info" />
+
+                <TextView
+                    android:id="@+id/playback_info"
+                    style="@style/TextAppearance.Leanback.PlaybackControlLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="8dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="Video info"
+                    tools:drawableEnd="@drawable/background_live_football_circle" />
+
+                <TextView
+                    android:id="@+id/playback_live"
+                    style="@style/TextAppearance.Leanback.PlaybackControlLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="8dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="LIVE"
+                    android:visibility="gone"
+                    android:drawableEnd="@drawable/background_live_football_circle" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:nextFocusUp="@id/ic_play_pause"
+            android:id="@+id/browse_grid_dock"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:translationY="500dp" />
+
+    </FrameLayout>
+</layout>

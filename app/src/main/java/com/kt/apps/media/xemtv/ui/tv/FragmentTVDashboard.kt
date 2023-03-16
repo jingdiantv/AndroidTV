@@ -9,7 +9,6 @@ import android.view.View
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.widget.*
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
@@ -21,23 +20,20 @@ import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
+import com.kt.apps.media.xemtv.presenter.CardPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
-import com.kt.apps.media.xemtv.ui.main.CardPresenter
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import java.util.*
 import javax.inject.Inject
 
 class FragmentTVDashboard : BaseRowSupportFragment() {
-    private val progressBarManager by lazy {
-        ProgressBarManager()
-    }
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
     private val tvChannelViewModel by lazy {
-        ViewModelProvider(this, viewModelFactory)[TVChannelViewModel::class.java]
+        ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
     }
     private val mRowsAdapter: ArrayObjectAdapter by lazy {
         ArrayObjectAdapter(ListRowPresenter())
@@ -52,7 +48,9 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
 
     override fun initAction(rootView: View) {
         adapter = mRowsAdapter
-        tvChannelViewModel.getListTVChannel(true)
+        if (tvChannelViewModel.tvChannelLiveData.value !is DataState.Success) {
+            tvChannelViewModel.getListTVChannel(false)
+        }
         onItemViewSelectedListener = OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
             if (item is TVChannel) {
                 mBackgroundUri = item.logoChannel
@@ -68,7 +66,6 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             when (it) {
                 is DataState.Success -> {
-                    progressBarManager.hide()
                     val channelWithCategory = it.data.groupBy {
                         it.tvGroup
                     }
@@ -83,15 +80,13 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     }
                     mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
                 }
-                is DataState.Loading -> {
-                    progressBarManager.show()
-                }
-                is DataState.Error -> {
-                    progressBarManager.hide()
-                }
                 else -> {
-                    progressBarManager.hide()
                 }
+            }
+            if (it is DataState.Loading) {
+                progressManager.show()
+            } else {
+                progressManager.hide()
             }
         }
 
@@ -104,10 +99,8 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
     private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {
         when (it) {
             is DataState.Loading -> {
-                progressBarManager.show()
             }
             is DataState.Success -> {
-                progressBarManager.hide()
                 val intent = Intent(requireActivity(), PlaybackActivity::class.java)
                 intent.putExtra(DetailsActivity.TV_CHANNEL, it.data)
                 intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.TV as Parcelable)
@@ -124,19 +117,20 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 startActivity(intent, bundle)
             }
             is DataState.Error -> {
-                progressBarManager.hide()
                 showErrorDialog(content = it.throwable.message)
             }
             else -> {
             }
         }
+        if (it is DataState.Loading) {
+            progressManager.show()
+        } else {
+            progressManager.hide()
+        }
     }
 
-    override fun onPause() {
-//        mBackgroundManager.release()
-        super.onPause()
-    }
     override fun onStop() {
+        tvChannelViewModel.clearCurrentPlayingChannelState()
         super.onStop()
     }
 
@@ -163,11 +157,16 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                         drawable: Drawable,
                         transition: Transition<in Drawable>?
                     ) {
-//                        mBackgroundManager.drawable = drawable
                     }
                 })
 
         mBackgroundTimer?.cancel()
+    }
+
+    override fun onDestroyView() {
+        progressManager.disableProgressBar()
+        progressManager.setRootView(null)
+        super.onDestroyView()
     }
 
     private inner class UpdateBackgroundTask : TimerTask() {

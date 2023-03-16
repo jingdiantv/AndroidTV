@@ -34,7 +34,7 @@ class Football91DataSource @Inject constructor(
     }
 
     private val url: String
-        get() = "https://90p.vip/"
+        get() = config.url
 
     private val itemClassName: String by lazy {
         config.itemClassName ?: "matches__item col-lg-6 col-sm-6"
@@ -77,7 +77,11 @@ class Football91DataSource @Inject constructor(
 
     private fun mapHtmlElementToFootballMatch(match: Element): FootballMatch {
         val matchId = match.attributes().get("data-fid")
-        val kickOffTime = match.attributes().get("data-runtime")
+        val kickOffTimeInSecond = try {
+            match.attributes().get("data-runtime").toLong()
+        } catch (e: java.lang.Exception) {
+            System.currentTimeMillis() / 1000
+        }
         val kickOffDay = match.attributes().get("data-day")
         val kickOffWeek = match.attributes().get("data-week")
         val a = match.getElementsByTag("a")[0]
@@ -109,22 +113,23 @@ class Football91DataSource @Inject constructor(
             name = homeTeamName.replace("\n", " "),
             logo = homeTeamLogo,
             id = "${matchId}_home",
-            league = ""
+            league = league
         )
         val away = FootballTeam(
             name = awayTeamName.replace("\n", " "),
             logo = awayTeamLogo,
             id = "${matchId}_away",
-            league = ""
+            league = league
         )
         return FootballMatch(
-            home,
-            away,
-            date,
-            kickOffWeek,
-            link,
-            FootballDataSourceFrom.Phut91,
-            league
+            homeTeam = home,
+            awayTeam = away,
+            kickOffTime = date,
+            kickOffTimeInSecond = kickOffTimeInSecond,
+            statusStream = kickOffWeek,
+            detailPage = link,
+            sourceFrom = FootballDataSourceFrom.Phut91,
+            league = league
         )
     }
 
