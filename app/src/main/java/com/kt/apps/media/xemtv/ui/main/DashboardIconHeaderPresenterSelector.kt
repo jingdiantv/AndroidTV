@@ -53,6 +53,12 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
             init {
                 view.isFocusable = true
                 view.isFocusableInTouchMode = true
+                val oldOnFocus = view.onFocusChangeListener
+                view.setOnFocusChangeListener { v, hasFocus ->
+                    headerView.isSelected = hasFocus
+                    iconView.isSelected = hasFocus
+                    oldOnFocus?.onFocusChange(v, hasFocus)
+                }
             }
 
         }

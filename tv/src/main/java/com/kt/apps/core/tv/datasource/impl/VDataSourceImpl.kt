@@ -127,7 +127,9 @@ class VDataSourceImpl @Inject constructor(
                 .execute()
                 .parse()
                 .body()
-
+            if (emitter.isDisposed) {
+                return@create
+            }
             body.getElementById("__NEXT_DATA__")?.let {
                 val text = it.html()
                 val jsonObject = JSONObject(text)
@@ -136,12 +138,18 @@ class VDataSourceImpl @Inject constructor(
                     .getJSONObject("LiveTV")
                     .getJSONObject("detailChannel")
                     .optString("linkPlayHls")
+                if (emitter.isDisposed) {
+                    return@create
+                }
                 emitter.onNext(
                     TVChannelLinkStream(
                         tvChannel,
                         listOf(linkM3u8)
                     )
                 )
+            }
+            if (emitter.isDisposed) {
+                return@create
             }
             emitter.onComplete()
         }

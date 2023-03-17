@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv.presenter
 
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
@@ -27,7 +28,7 @@ class CardPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         Log.d(TAG, "onCreateViewHolder")
 
-        sDefaultBackgroundColor = ContextCompat.getColor(parent.context, com.kt.apps.core.R.color.black)
+        sDefaultBackgroundColor = Color.TRANSPARENT
         sSelectedBackgroundColor = ContextCompat.getColor(parent.context, R.color.selected_background)
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, R.drawable.app_icon)
 

@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:paddingVertical="8dp"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="10dp"
+    android:background="@drawable/background_header_selector"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal">
 
@@ -11,14 +15,17 @@
         android:layout_height="36dp"
         android:cropToPadding="true"
         android:scaleType="centerCrop"
+        app:tint="@color/color_item_header_selector"
         android:src="@drawable/app_icon" />
 
     <androidx.leanback.widget.RowHeaderView
         android:id="@+id/row_header"
-        style="?rowHeaderStyle"
-        android:layout_width="wrap_content"
+        android:includeFontPadding="false"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:minWidth="100dp"
+        android:layout_gravity="start|center_vertical"
+        android:textColor="@color/color_item_header_selector"
         android:layout_marginStart="8dp"
         android:importantForAccessibility="no" />
 

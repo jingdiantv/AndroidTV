@@ -14,7 +14,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.os.postDelayed
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
 import androidx.leanback.app.ProgressBarManager
@@ -76,6 +75,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
                 super.onPlayerError(error)
+                onHandlePlayerError(error)
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -102,6 +102,10 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             }
         }
     }
+    open fun onHandlePlayerError(error: PlaybackException) {
+        Logger.e(this, tag = "onHandlePlayerError", exception = error)
+    }
+
     private val mHandler by lazy {
         Handler(Looper.getMainLooper())
     }

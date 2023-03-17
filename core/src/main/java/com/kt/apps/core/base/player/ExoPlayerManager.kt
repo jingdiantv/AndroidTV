@@ -124,6 +124,7 @@ class ExoPlayerManager @Inject constructor(
         _exoPlayer?.setMediaSources(mediaSources)
         _exoPlayer?.addListener(_playerListener)
         playerListener?.let {
+            _exoPlayer?.removeListener(it)
             _exoPlayer?.addListener(it)
         }
         _exoPlayer?.playWhenReady = true

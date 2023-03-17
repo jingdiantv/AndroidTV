@@ -107,67 +107,6 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
         }
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        Logger.d(this, message = "onKeyDown: $keyCode")
-        val fragment: TVPlaybackVideoFragment = supportFragmentManager.findFragmentById(android.R.id.content)
-            ?.takeIf {
-                it is TVPlaybackVideoFragment
-            }?.let {
-                it as TVPlaybackVideoFragment
-            } ?: return super.onKeyDown(keyCode, event)
-
-        when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_CENTER -> {
-                fragment.onDpadCenter()
-            }
-
-            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                fragment.onDpadDown()
-            }
-
-            KeyEvent.KEYCODE_DPAD_UP -> {
-                fragment.onDpadUp()
-            }
-
-            KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> {
-                fragment.onDpadLeft()
-            }
-
-            KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                fragment.onDpadRight()
-            }
-
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-
-            }
-
-            KeyEvent.KEYCODE_VOLUME_UP -> {
-
-            }
-
-            KeyEvent.KEYCODE_BACK -> {
-            }
-
-            KeyEvent.KEYCODE_CHANNEL_UP -> {
-                fragment.onKeyCodeChannelUp()
-            }
-
-            KeyEvent.KEYCODE_CHANNEL_DOWN -> {
-                fragment.onKeyCodeChannelDown()
-            }
-
-            KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                fragment.onKeyCodeChannelUp()
-            }
-
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                fragment.onKeyCodeChannelDown()
-            }
-
-        }
-        return super.onKeyDown(keyCode, event)
-    }
-
     override fun onBackPressed() {
         val fragment: TVPlaybackVideoFragment = supportFragmentManager.findFragmentById(android.R.id.content)
             ?.takeIf {
