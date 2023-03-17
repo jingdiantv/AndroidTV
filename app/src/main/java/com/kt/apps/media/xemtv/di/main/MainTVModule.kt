@@ -3,7 +3,6 @@ package com.kt.apps.media.xemtv.di.main
 import androidx.lifecycle.ViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.main.MainActivity
-import com.kt.apps.media.xemtv.ui.main.MainFragment
 import com.kt.apps.media.xemtv.ui.details.VideoDetailsFragment
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelKey
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
@@ -36,9 +35,6 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun mainActivity(): MainActivity
-
-    @ContributesAndroidInjector(modules = [ViewModelModule::class])
-    internal abstract fun mainFragment(): MainFragment
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun detailActivity(): DetailsActivity

@@ -144,9 +144,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".BrowseErrorActivity"
-            android:exported="false" />
     </application>
 
 </manifest>

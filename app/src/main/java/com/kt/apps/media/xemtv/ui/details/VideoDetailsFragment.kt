@@ -21,7 +21,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.showErrorDialog
-import com.kt.apps.media.xemtv.presenter.CardPresenter
+import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
@@ -189,7 +189,7 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             if (it is DataState.Success) {
                 val list = it.data
-                val listRowAdapter = ArrayObjectAdapter(CardPresenter())
+                val listRowAdapter = ArrayObjectAdapter(DashboardTVChannelPresenter())
                 for (element in list) {
                     listRowAdapter.add(element)
                 }

@@ -20,7 +20,7 @@ import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
-import com.kt.apps.media.xemtv.presenter.CardPresenter
+import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
@@ -69,10 +69,10 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     val channelWithCategory = it.data.groupBy {
                         it.tvGroup
                     }
-                    val cardPresenter = CardPresenter()
+                    val dashboardTVChannelPresenter = DashboardTVChannelPresenter()
                     for ((group, channelList) in channelWithCategory) {
                         val headerItem = HeaderItem(group)
-                        val adapter = ArrayObjectAdapter(cardPresenter)
+                        val adapter = ArrayObjectAdapter(dashboardTVChannelPresenter)
                         for (channel in channelList) {
                             adapter.add(channel)
                         }

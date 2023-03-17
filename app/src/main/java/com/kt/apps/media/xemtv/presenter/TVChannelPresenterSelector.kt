@@ -15,7 +15,7 @@ class TVChannelPresenterSelector(activity: FragmentActivity) : PresenterSelector
         item ?: throw IllegalStateException("Null item")
         val presenter: Presenter? = presenterMap[item::class.java.name]
         return presenter ?: when (item) {
-            is TVChannel -> CardPresenter()
+            is TVChannel -> DashboardTVChannelPresenter()
             is FootballMatch -> FootballPresenter()
             else -> throw IllegalStateException("Not support presenter for: ${item::class.java.name}")
         }.also {

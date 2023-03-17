@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannel
-import com.kt.apps.media.xemtv.presenter.CardPresenter
+import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import javax.inject.Inject
 
@@ -47,7 +47,7 @@ class RadioFragment : BaseRowSupportFragment() {
                     var currentId = 0L
                     for ((groupName, radioChannelList) in radio) {
                         val headerItem = HeaderItem(currentId, groupName)
-                        val rowAdapter = ArrayObjectAdapter(CardPresenter())
+                        val rowAdapter = ArrayObjectAdapter(DashboardTVChannelPresenter())
                         for (radioChannel in radioChannelList) {
                             rowAdapter.add(radioChannel)
                         }
