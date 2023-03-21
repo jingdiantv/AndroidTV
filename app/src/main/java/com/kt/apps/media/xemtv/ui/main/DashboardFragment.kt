@@ -163,7 +163,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector {
                 ContextCompat.getDrawable(requireContext(), com.kt.apps.core.R.drawable.main_background)
             }
             else -> {
-                null
+                ContextCompat.getDrawable(requireContext(), R.drawable.tv_bg)
             }
         }
     }

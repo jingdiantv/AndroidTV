@@ -6,6 +6,7 @@ import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.Row
 import com.kt.apps.core.base.CoreApp
+import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
 import com.kt.apps.media.xemtv.ui.radio.RadioFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
@@ -21,14 +22,17 @@ class DashboardPageRowFactory(
         onFragmentChangeListener?.invoke(rowId)
         return when (rowId) {
             ROW_TV -> {
-                backgroundManager.drawable = null
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
                 FragmentTVDashboard()
             }
             ROW_FOOTBALL -> {
-                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), com.kt.apps.core.R.drawable.main_background)
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.bg_football)
                 FootballFragment()
             }
-            ROW_RADIO -> RadioFragment()
+            ROW_RADIO -> {
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
+                RadioFragment()
+            }
             else -> throw IllegalStateException("Not support row")
         }
     }
