@@ -15,7 +15,7 @@ android {
         applicationId "com.kt.apps.media.xemtv"
         minSdk 21
         targetSdk 32
-        versionCode 23031601
+        versionCode 23032101
         versionName "$versionCode"
         setProperty("archivesBaseName", "XemTV.$versionName")
 
@@ -36,6 +36,7 @@ android {
 dependencies {
     implementation 'androidx.leanback:leanback:1.0.0'
     implementation appDependencies.values()
+    implementation 'androidx.work:work-runtime-ktx:2.7.1'
     testImplementation testDependencies.values()
     kaptTest kotlinTestDependencies.values()
     kaptAndroidTest kotlinAndroidTestDependencies.values()

@@ -4,15 +4,27 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.kt.apps.core.storage.local.converters.RoomDBTypeConverters
 import com.kt.apps.core.storage.local.dao.MapChannelDao
+import com.kt.apps.core.storage.local.dao.TVChannelDAO
 import com.kt.apps.core.storage.local.dto.MapChannel
+import com.kt.apps.core.storage.local.dto.TVChannelEntity
 
+@TypeConverters(
+    RoomDBTypeConverters::class
+)
 @Database(
-    entities = [MapChannel::class],
+    entities = [
+        MapChannel::class,
+        TVChannelEntity::class
+    ],
     version = 1
 )
 abstract class RoomDataBase : RoomDatabase() {
     abstract fun mapChannelDao(): MapChannelDao
+
+    abstract fun tvChannelEntityDao(): TVChannelDAO
 
     companion object {
         @Volatile

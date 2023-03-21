@@ -5,7 +5,8 @@ ext {
             material          : 'com.google.android.material:material:1.6.1',
             constrainlayout   : 'androidx.constraintlayout:constraintlayout:2.1.4',
             dynamicAnimation  : 'androidx.dynamicanimation:dynamicanimation:1.0.0',
-            swipeRefreshLayout: "androidx.swiperefreshlayout:swiperefreshlayout:+"
+            swipeRefreshLayout: "androidx.swiperefreshlayout:swiperefreshlayout:+",
+            tvProvider        : "androidx.tvprovider:tvprovider:1.0.0"
     ]
 
     testDependencies = [
