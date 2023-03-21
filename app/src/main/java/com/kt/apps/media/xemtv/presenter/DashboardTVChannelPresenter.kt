@@ -29,7 +29,7 @@ class DashboardTVChannelPresenter : Presenter() {
         Log.d(TAG, "onCreateViewHolder")
 
         sDefaultBackgroundColor = Color.TRANSPARENT
-        sSelectedBackgroundColor = ContextCompat.getColor(parent.context, R.color.selected_background)
+        sSelectedBackgroundColor = Color.TRANSPARENT
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, R.drawable.app_icon)
 
         val wrapper = ContextThemeWrapper(parent.context, R.style.ImageCardViewStyleTitle)
