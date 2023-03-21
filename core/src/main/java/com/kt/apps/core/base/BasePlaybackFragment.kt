@@ -69,6 +69,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     private var mPlaybackInfoContainerView: View? = null
     private var mPlayPauseIcon: ImageButton? = null
     protected var mGridView: View? = null
+    private var backgroundView: View? = null
     protected var onItemClickedListener: OnItemViewClickedListener? = null
     abstract val numOfRowColumns: Int
     private val _playerListener by lazy {
@@ -112,7 +113,6 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     private val autoHideOverlayRunnable by lazy {
         Runnable {
             view?.findViewById<FrameLayout>(R.id.browse_dummy)?.startHideOrShowAnimation(false) {
-
             }
             view?.findViewById<FrameLayout>(R.id.browse_grid_dock)?.translationY = 1000.dpToPx().toFloat()
             view?.findViewById<FrameLayout>(R.id.browse_dummy)?.setBackgroundColor(Color.parseColor("#80000000"))
@@ -138,7 +138,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         val root = super.onCreateView(inflater, container, savedInstanceState) as ViewGroup
         mVideoSurface = LayoutInflater.from(context)
             .inflate(R.layout.core_layout_surfaces, root, false) as SurfaceView
-
+        backgroundView = root.findViewById(androidx.leanback.R.id.playback_fragment_background)
         root.addView(mVideoSurface, 0)
         mVideoSurface!!.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
@@ -270,6 +270,10 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     }
 
+    fun getBackgroundView(): View? {
+        return backgroundView
+    }
+
     fun hideProgressBar() {
         view?.findViewById<ProgressBar>(androidx.leanback.R.id.playback_progress)
             ?.makeGone()
@@ -365,11 +369,13 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     override fun onDpadDown() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
+        Logger.d(this, message = "onDpadDown")
+
         Logger.d(this, message = "y = ${view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!.translationY}")
 
-        val visible = mGridView?.visibility == View.VISIBLE
+        val visible = view?.findViewById<LinearLayout>(R.id.info_container)?.visibility == View.VISIBLE
         if (visible) {
-            Logger.d(this, message = "y = ${view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!.translationY}")
+            Logger.d(this, message = "y = ${view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!.translationY} - ${300.dpToPx().toFloat()}")
             if (mPlayPauseIcon?.visibility == View.VISIBLE) {
                 requireView().findViewById<LinearLayout>(R.id.info_container).startHideOrShowAnimation(false) {
                 }
@@ -381,7 +387,12 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                     ?.setListener(object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator?) {
                             super.onAnimationEnd(animation)
-                            view?.findViewById<FrameLayout>(R.id.browse_dummy)?.setBackgroundColor(Color.parseColor("#B3000000"))
+                            Logger.d(this@BasePlaybackFragment, message = "onAnimationEnd")
+                            mHandler.removeCallbacks(autoHideOverlayRunnable)
+                            view?.findViewById<FrameLayout>(R.id.browse_grid_dock)!!
+                                .visible()
+                            view?.findViewById<FrameLayout>(R.id.browse_dummy)
+                                ?.setBackgroundColor(Color.parseColor("#B3000000"))
                         }
                     })
                     ?.start()
@@ -435,9 +446,16 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     override fun onDetach() {
         Logger.d(this, message = "onDetach")
+        mPlaybackInfoContainerView = null
+        mPlayPauseIcon = null
+        mGridView = null
+        backgroundView = null
+        mVideoSurface = null
         mTransportControlGlue.host = null
-        exoPlayerManager.detach()
+        exoPlayerManager.detach(_playerListener)
+        glueHost.setSurfaceHolderCallback(null)
         setSurfaceHolderCallback(null)
+        mMediaPlaybackCallback = null
         super.onDetach()
     }
 

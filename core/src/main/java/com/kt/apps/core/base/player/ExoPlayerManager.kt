@@ -190,13 +190,18 @@ class ExoPlayerManager @Inject constructor(
     }
 
     override fun onActivityResumed(activity: Activity) {
-        _playerAdapter?.play()
+        if (activity::class.java.name.equals("com.kt.apps.media.xemtv.ui.playback.PlaybackActivity")) {
+            _playerAdapter?.play()
+        }
     }
 
     override fun onActivityPaused(activity: Activity) {
     }
 
     override fun onActivityStopped(activity: Activity) {
+        if (activity::class.java.name.equals("com.kt.apps.media.xemtv.ui.playback.PlaybackActivity")) {
+            _exoPlayer?.stop()
+        }
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
@@ -214,7 +219,8 @@ class ExoPlayerManager @Inject constructor(
         Logger.d(this@ExoPlayerManager, message = "onAudioLossFocus")
     }
 
-    fun detach() {
+    fun detach(listener: Player.Listener) {
+        _exoPlayer?.removeListener(listener)
         _exoPlayer?.removeListener(_playerListener)
         _audioFocusManager.releaseFocus()
         _playerAdapter?.onDetachedFromHost()

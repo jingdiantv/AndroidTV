@@ -11,6 +11,7 @@ import androidx.leanback.widget.*
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.showErrorDialog
@@ -111,7 +112,7 @@ class FootballFragment : BaseRowSupportFragment() {
                 }
 
                 is DataState.Loading -> {
-                    progressManager.show()
+                    mRowsAdapter.applyLoading()
                 }
 
                 else -> {
@@ -124,12 +125,13 @@ class FootballFragment : BaseRowSupportFragment() {
             when (it) {
                 is DataState.Success -> {
                     val data = it.data
-                    startActivity(
-                        Intent(requireActivity(), PlaybackActivity::class.java).apply {
-                            putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.FOOTBALL as Parcelable)
-                            putExtra(PlaybackActivity.EXTRA_FOOTBALL_MATCH, data)
-                        }
-                    )
+                    Logger.d(this, message = "$data")
+                    val intent = Intent(requireActivity(), PlaybackActivity::class.java).apply {
+                        this.data = null
+                        putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.FOOTBALL as Parcelable)
+                        putExtra(PlaybackActivity.EXTRA_FOOTBALL_MATCH, data as Parcelable)
+                    }
+                    startActivity(intent)
                 }
 
                 is DataState.Loading -> {

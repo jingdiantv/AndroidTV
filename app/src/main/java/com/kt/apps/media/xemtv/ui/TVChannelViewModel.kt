@@ -122,6 +122,7 @@ class TVChannelViewModel @Inject constructor(
     }
 
     fun clearCurrentPlayingChannelState() {
+        _lastWatchedChannel = null
         _tvWithLinkStreamLiveData.postValue(DataState.None())
     }
 

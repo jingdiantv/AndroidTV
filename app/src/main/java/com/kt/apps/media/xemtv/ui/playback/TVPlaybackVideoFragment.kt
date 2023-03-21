@@ -14,9 +14,9 @@ import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
+import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
-import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.main.MainActivity
 import dagger.android.AndroidInjector
 import javax.inject.Inject
@@ -66,12 +66,17 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (tvChannelViewModel.tvChannelLiveData.value !is DataState.Success) {
+            tvChannelViewModel.getListTVChannel(false)
+        }
 
-        val tvChannel = activity?.intent
-            ?.getParcelableExtra<TVChannelLinkStream>(DetailsActivity.TV_CHANNEL)
+        val tvChannel = arguments?.getParcelable<TVChannelLinkStream?>(PlaybackActivity.EXTRA_TV_CHANNEL)
         tvChannelViewModel.markLastWatchedChannel(tvChannel)
         tvChannel?.let {
             mCurrentSelectedChannel = it.channel
+            if (it.channel.isRadio) {
+                getBackgroundView()?.setBackgroundResource(R.drawable.bg_radio_playing)
+            }
             playVideo(
                 tvChannel.channel.tvChannelName,
                 tvChannel.channel.tvGroup,
@@ -129,6 +134,9 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
                 mCurrentSelectedChannel = dataState.data.channel
                 progressBarManager.hide()
                 val tvChannel = dataState.data
+                if (tvChannel.channel.isRadio) {
+                    getBackgroundView()?.setBackgroundResource(R.drawable.bg_radio_playing)
+                }
                 playVideo(
                     tvChannel.channel.tvChannelName,
                     tvChannel.channel.tvGroup,
@@ -161,7 +169,6 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
 
     override fun onDetach() {
         progressBarManager.hide()
-        exoPlayerManager.pause()
         Logger.d(this, message = "onDetach")
         super.onDetach()
     }
@@ -202,8 +209,11 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     }
 
     companion object {
-        fun newInstance(type: PlaybackActivity.Type): TVPlaybackVideoFragment {
-            return TVPlaybackVideoFragment()
+        fun newInstance(type: PlaybackActivity.Type, tvChannelLinkStream: TVChannelLinkStream) = TVPlaybackVideoFragment().apply {
+            val args = Bundle()
+            args.putParcelable(PlaybackActivity.EXTRA_PLAYBACK_TYPE, type)
+            args.putParcelable(PlaybackActivity.EXTRA_TV_CHANNEL, tvChannelLinkStream)
+            this.arguments = args
         }
     }
 }

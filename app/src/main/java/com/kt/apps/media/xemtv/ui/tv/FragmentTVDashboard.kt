@@ -16,6 +16,7 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
@@ -66,6 +67,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             when (it) {
                 is DataState.Success -> {
+                    mRowsAdapter.clear()
                     val channelWithCategory = it.data.groupBy {
                         it.tvGroup
                     }
@@ -80,13 +82,12 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     }
                     mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
                 }
+                is DataState.Loading -> {
+                    mRowsAdapter.applyLoading(R.layout.item_tv_loading_presenter)
+                    mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
+                }
                 else -> {
                 }
-            }
-            if (it is DataState.Loading) {
-                progressManager.show()
-            } else {
-                progressManager.hide()
             }
         }
 
@@ -102,7 +103,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
             }
             is DataState.Success -> {
                 val intent = Intent(requireActivity(), PlaybackActivity::class.java)
-                intent.putExtra(DetailsActivity.TV_CHANNEL, it.data)
+                intent.putExtra(PlaybackActivity.EXTRA_TV_CHANNEL, it.data)
                 intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.TV as Parcelable)
                 val bundle = try {
                     ActivityOptionsCompat.makeSceneTransitionAnimation(

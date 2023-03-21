@@ -1,13 +1,22 @@
 package com.kt.apps.media.xemtv.ui.radio
 
+import android.content.Intent
+import android.os.Parcelable
 import android.view.View
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.os.bundleOf
 import androidx.leanback.widget.*
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.details.DetailsActivity
+import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import javax.inject.Inject
 
 class RadioFragment : BaseRowSupportFragment() {
@@ -20,6 +29,8 @@ class RadioFragment : BaseRowSupportFragment() {
         ArrayObjectAdapter(ListRowPresenter())
     }
 
+    private var selectedView: ImageCardView? = null
+
     override fun initView(rootView: View) {
         adapter = mRowsAdapter
         onItemViewSelectedListener = OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
@@ -27,6 +38,7 @@ class RadioFragment : BaseRowSupportFragment() {
 
         onItemViewClickedListener = OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
             tvChannelViewModel.getLinkStreamForChannel(tvDetail = item as TVChannel)
+            selectedView = itemViewHolder.view as ImageCardView
         }
     }
 
@@ -58,7 +70,7 @@ class RadioFragment : BaseRowSupportFragment() {
                 }
 
                 is DataState.Loading -> {
-                    progressManager.show()
+                    mRowsAdapter.applyLoading()
                 }
 
                 else -> {
@@ -66,7 +78,50 @@ class RadioFragment : BaseRowSupportFragment() {
                 }
             }
         }
+        tvChannelViewModel.tvWithLinkStreamLiveData
+            .observe(viewLifecycleOwner) {
+                handleGetTVChannelLinkStream(it)
+            }
     }
+
+    private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {
+        when (it) {
+            is DataState.Loading -> {
+                progressManager.show()
+            }
+            is DataState.Success -> {
+                progressManager.hide()
+
+                val intent = Intent(requireActivity(), PlaybackActivity::class.java)
+                intent.putExtra(PlaybackActivity.EXTRA_TV_CHANNEL, it.data)
+                intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.RADIO as Parcelable)
+                val bundle = try {
+                    ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        requireActivity(),
+                        selectedView!!.mainImageView,
+                        DetailsActivity.SHARED_ELEMENT_NAME
+                    ).toBundle()
+                } catch (e: Exception) {
+                    bundleOf()
+                }
+
+                startActivity(intent, bundle)
+            }
+            is DataState.Error -> {
+                progressManager.hide()
+                showErrorDialog(content = it.throwable.message)
+            }
+            else -> {
+                progressManager.hide()
+            }
+        }
+        if (it is DataState.Loading) {
+            progressManager.show()
+        } else {
+            progressManager.hide()
+        }
+    }
+
 
     override fun onStop() {
         super.onStop()

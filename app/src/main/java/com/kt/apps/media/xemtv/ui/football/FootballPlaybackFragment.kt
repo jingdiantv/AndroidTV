@@ -1,19 +1,15 @@
 package com.kt.apps.media.xemtv.ui.football
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.View
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.exoplayer2.PlaybackException
-import com.google.android.exoplayer2.Player
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.base.player.LinkStream
-import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.football.model.FootballMatch
 import com.kt.apps.football.model.FootballMatchWithStreamLink
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
@@ -34,7 +30,8 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         footballViewModel.getAllMatches()
-        activity?.intent?.extras?.getParcelable<FootballMatchWithStreamLink>(PlaybackActivity.EXTRA_FOOTBALL_MATCH)
+
+        arguments?.getParcelable<FootballMatchWithStreamLink?>(PlaybackActivity.EXTRA_FOOTBALL_MATCH)
             ?.let {
                 playVideo(
                     it.match.getMatchName(),
@@ -50,6 +47,7 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
                 )
             }
         observer = Observer { dataState ->
+            Logger.e(this, message = dataState::class.java.name)
             when (dataState) {
                 is DataState.Success -> {
                     progressBarManager.hide()
@@ -75,15 +73,6 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
 
                 is DataState.Error -> {
                     progressBarManager.hide()
-                    Logger.e(this, exception = dataState.throwable)
-                    showErrorDialog(
-                        content = dataState.throwable.message,
-                        onSuccessListener = {
-                            startActivity(Intent().apply {
-                                data = Uri.parse("xemtv://bongda/dashboard")
-                            })
-                        },
-                    )
                 }
 
                 else -> {
@@ -120,14 +109,26 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
         super.onPause()
     }
 
+    override fun onDetach() {
+        Logger.d(this, message = "onStop")
+        super.onDetach()
+    }
+
     override fun onStop() {
         super.onStop()
-        Logger.d(this, message = "onStop")
-        footballViewModel.clearState()
     }
 
 
     override fun onDestroyView() {
         super.onDestroyView()
+    }
+
+    companion object {
+        fun newInstance(footballMatchWithStreamLink: FootballMatchWithStreamLink) = FootballPlaybackFragment().apply {
+            val args = Bundle()
+            args.putParcelable(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.FOOTBALL as Parcelable)
+            args.putParcelable(PlaybackActivity.EXTRA_FOOTBALL_MATCH, footballMatchWithStreamLink)
+            this.arguments = args
+        }
     }
 }
