@@ -25,3 +25,7 @@ local.properties
 /movies/src/androidTest/java/comkt/apps/movies/ExampleInstrumentedTest.kt
 /movies/src/main/AndroidManifest.xml
 /movies/src/test/java/comkt/apps/movies/ExampleUnitTest.kt
+/app/release/output-metadata.json
+/app/debug
+/app/release
+/icon
