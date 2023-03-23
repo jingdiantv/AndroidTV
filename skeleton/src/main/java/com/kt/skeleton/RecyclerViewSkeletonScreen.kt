@@ -6,7 +6,7 @@ import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.kt.skeleton.AdapterSkeleton
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
 
 class RecyclerViewSkeletonScreen(
     val recyclerView: RecyclerView,
@@ -20,13 +20,19 @@ class RecyclerViewSkeletonScreen(
     layoutManager: RecyclerView.LayoutManager?,
     val showAsGridLayoutManager: Boolean,
     val numGridLayout: Int,
+    val parentSkeletonResLayout: Int? = null
 ) : KunSkeleton.SkeletonScreen {
     var isRunning: Boolean = false
     private var startTime: Long = 0
     private var endTime: Long = 0
     private val adapterSkeleton by lazy {
         try {
-            if (isSectionList) {
+            if (parentSkeletonResLayout != null) {
+                AdapterSkeleton(
+                    parentSkeletonResLayout,
+                    AdapterSkeleton(layoutRes!!, itemCount)
+                )
+            } else if (isSectionList) {
                 AdapterSectionSkeleton(titleLayout, layoutRes, itemCount, false)
             } else {
                 AdapterSkeleton(layoutRes!!, itemCount)
@@ -57,7 +63,7 @@ class RecyclerViewSkeletonScreen(
                 is GridLayoutManager, is GridLayoutManager? -> {
                     recyclerView.layoutManager = layoutManager
                 }
-                is LinearLayoutManager, is LinearLayoutManager? -> {
+                is LinearLayoutManager -> {
                     recyclerView.layoutManager = object : LinearLayoutManager(recyclerView.context) {
                         override fun canScrollVertically(): Boolean {
                             return false
@@ -96,6 +102,7 @@ class RecyclerViewSkeletonScreen(
         private var adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>? = null
         private var duration: Long? = null
         private var layoutItem: Int? = null
+        private var parentItemViewRes: Int? = null
         private var itemCount: Int? = null
         private var runLayoutAnimation: Boolean = true
         private var layoutManager: RecyclerView.LayoutManager? = null
@@ -130,6 +137,16 @@ class RecyclerViewSkeletonScreen(
             return this
         }
 
+        fun recyclerViewLayoutItem(
+            @LayoutRes recyclerViewRes: Int,
+            @LayoutRes itemLayoutRes: Int,
+            layoutManager: LayoutManager? = null
+        ): Builder {
+            this.parentItemViewRes = recyclerViewRes
+            this.layoutItem = itemLayoutRes
+            return this
+        }
+
         fun itemCount(itemCount: Int): Builder {
             this.itemCount = itemCount
             return this
@@ -161,7 +178,8 @@ class RecyclerViewSkeletonScreen(
             isSectionRecyclerView,
             layoutManager,
             isShowAsGridLayoutManager,
-            numGridLayoutColumn
+            numGridLayoutColumn,
+            parentItemViewRes
         )
 
         fun run(): RecyclerViewSkeletonScreen = build().also {

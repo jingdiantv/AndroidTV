@@ -5,7 +5,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 
-class AdapterSkeleton(private val layoutRes: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class AdapterSkeleton(
+    private val layoutRes: Int,
+    private val childAdapterSkeleton: AdapterSkeleton? = null
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var itemCount: Int? = null
 
     constructor(layoutRes: Int, itemCount: Int?) : this(layoutRes) {
@@ -13,7 +16,18 @@ class AdapterSkeleton(private val layoutRes: Int) : RecyclerView.Adapter<Recycle
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return ViewHolder(LayoutInflater.from(parent.context).inflate(layoutRes, parent, false), layoutRes)
+        val view = LayoutInflater.from(parent.context).inflate(layoutRes, parent, false)
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val childView = view.getChildAt(i)
+                if (childView is RecyclerView) {
+                    childView.adapter = childAdapterSkeleton
+                    childView.runLayoutAnimation()
+                    break
+                }
+            }
+        }
+        return ViewHolder(view, layoutRes)
     }
 
 

@@ -192,12 +192,17 @@ fun ViewGroup.replaceView(currentView: View, targetView: View) {
 
 
 fun ViewGroup.runChildAnimDrawable() {
+    if (this is RecyclerView) {
+        return
+    }
     forEach {
-        while (it is ViewGroup) {
+        while (it is ViewGroup && it !is RecyclerView) {
             runChildAnimDrawable()
         }
-        it.bindAnimationDrawable()
-        it.runAnimationChangeBackground()
+        if (it !is RecyclerView) {
+            it.bindAnimationDrawable()
+            it.runAnimationChangeBackground()
+        }
     }
 }
 
