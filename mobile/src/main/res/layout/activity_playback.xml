@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        tools:context=".ui.playback.PlaybackActivity"
+        tools:ignore="MissingDefaultResource">
+
+        <com.google.android.exoplayer2.ui.StyledPlayerView
+            android:id="@+id/exo_player"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:controller_layout_id="@layout/exo_player_custom_controller"
+            app:player_layout_id="@layout/exo_player_custom_ui"
+            app:use_controller="true" />
+
+
+        <include
+            android:id="@+id/progress_container_layout"
+            layout="@layout/layout_progress_dialog" />
+
+    </FrameLayout>
+</layout>

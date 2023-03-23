@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.XemTv">
+        <activity
+            android:name=".ui.playback.PlaybackActivity"
+            android:exported="true"
+            android:launchMode="singleInstance">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="xemtivihd.net"
+                    android:scheme="https" />
+                <data
+                    android:host="xemtivihd.net/xemtv"
+                    android:scheme="https" />
+                <data
+                    android:host="xemtivihd.net"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="xemtivihd.net/xemtv/"
+                    android:scheme="xemtv" />
+
+                <data
+                    android:host="xemtivihd.net/"
+                    android:scheme="xembongda" />
+
+                <data
+                    android:host="bongda"
+                    android:pathPrefix="/match"
+                    android:scheme="xemtv" />
+
+                <data
+                    android:host="tv"
+                    android:pathPrefix="/channel"
+                    android:scheme="xemtv" />
+
+                <data
+                    android:host="radio"
+                    android:pathPrefix="/channel"
+                    android:scheme="xemtv" />
+
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ui.main.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="tv"
+                    android:pathPrefix="/dashboard"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="bongda"
+                    android:pathPrefix="/dashboard"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="radio"
+                    android:pathPrefix="/dashboard"
+                    android:scheme="xemtv" />
+
+                <data android:host="tv" />
+
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

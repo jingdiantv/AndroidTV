@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="item"
+            type="com.kt.apps.core.tv.model.TVChannel" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:foreground="@drawable/ripple_selected_item"
+        android:foregroundTint="@color/white"
+        android:gravity="center"
+        android:orientation="vertical"
+        tools:background="@color/black"
+        tools:targetApi="m">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="150dp"
+            android:layout_height="90dp"
+            android:contentDescription="TODO" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:paddingVertical="10dp"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="@{item.tvChannelName}"
+            android:textColor="@color/white"
+            tools:text="Channel name" />
+    </LinearLayout>
+</layout>
