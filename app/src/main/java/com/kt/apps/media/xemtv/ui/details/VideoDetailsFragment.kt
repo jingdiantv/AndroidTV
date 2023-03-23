@@ -112,7 +112,7 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
         Glide.with(requireActivity())
             .asBitmap()
             .centerCrop()
-            .error(R.drawable.default_background)
+            .error(com.kt.apps.core.R.drawable.default_background)
             .load(movie?.logoChannel)
             .into<SimpleTarget<Bitmap>>(object : SimpleTarget<Bitmap>() {
                 override fun onResourceReady(
@@ -128,13 +128,13 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
     private fun setupDetailsOverviewRow() {
         Log.d(TAG, "doInBackground: " + mSelectedMovie?.toString())
         val row = DetailsOverviewRow(mSelectedMovie)
-        row.imageDrawable = ContextCompat.getDrawable(requireActivity(), R.drawable.default_background)
+        row.imageDrawable = ContextCompat.getDrawable(requireActivity(), defaultBackground)
         val width = convertDpToPixel(requireActivity(), DETAIL_THUMB_WIDTH)
         val height = convertDpToPixel(requireActivity(), DETAIL_THUMB_HEIGHT)
         Glide.with(requireActivity())
             .load(mSelectedMovie?.logoChannel)
             .centerCrop()
-            .error(R.drawable.default_background)
+            .error(defaultBackground)
             .into<SimpleTarget<Drawable>>(object : SimpleTarget<Drawable>(width, height) {
                 override fun onResourceReady(
                     drawable: Drawable,
@@ -165,7 +165,7 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
         // Set detail background.
         val detailsPresenter = FullWidthDetailsOverviewRowPresenter(DetailsDescriptionPresenter())
         detailsPresenter.backgroundColor =
-            ContextCompat.getColor(requireActivity(), R.color.selected_background)
+            ContextCompat.getColor(requireActivity(), com.kt.apps.core.R.color.selected_background)
 
         // Hook up transition element.
         val sharedElementHelper = FullWidthDetailsOverviewSharedElementHelper()
@@ -230,6 +230,9 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
     }
 
     companion object {
+        private val defaultBackground by lazy {
+            com.kt.apps.core.R.drawable.default_background
+        }
         private const val TAG = "VideoDetailsFragment"
 
         private const val ACTION_WATCH_TRAILER = 1L

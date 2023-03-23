@@ -6,6 +6,7 @@ import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.core.tv.usecase.GetChannelLinkStreamById
 import com.kt.apps.core.tv.usecase.GetListTVChannel
 import com.kt.apps.core.tv.usecase.GetTVChannelLinkStreamFrom
+import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
 import dagger.Component
 import javax.inject.Named
 
@@ -15,6 +16,8 @@ import javax.inject.Named
 )
 @TVScope
 interface TVComponents {
+
+    fun providesInteractors(): TVChannelInteractors
     fun providesTVDataSourceMap(): Map<TVDataSourceFrom, @JvmSuppressWildcards ITVDataSource>
     fun getChannelLinkStreamFrom(): GetTVChannelLinkStreamFrom
     fun getListTVChannel(): GetListTVChannel

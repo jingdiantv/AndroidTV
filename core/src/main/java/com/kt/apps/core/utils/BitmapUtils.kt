@@ -97,7 +97,7 @@ fun ImageView.loadImgByDrawableIdResName(
     backupUrl: String? = null,
     scaleType: ScaleType = ScaleType.CENTER_INSIDE
 ) {
-    val context = context
+    val context = context.applicationContext
     val id = context.resources.getIdentifier(
         name.removeSuffix(".png")
             .removeSuffix(".jpg"),

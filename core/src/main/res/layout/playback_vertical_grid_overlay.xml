@@ -13,6 +13,14 @@
         android:layout_height="match_parent"
         android:background="#80000000">
 
+        <FrameLayout
+            android:nextFocusUp="@id/ic_play_pause"
+            android:id="@+id/browse_grid_dock"
+            android:elevation="1dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:translationY="500dp" />
 
         <LinearLayout
             android:id="@+id/info_container"
@@ -21,6 +29,7 @@
             android:layout_gravity="bottom"
             android:background="#80000000"
             android:paddingStart="20dp"
+            android:paddingBottom="15dp"
             android:orientation="horizontal"
             android:paddingTop="20dp">
 
@@ -80,13 +89,6 @@
 
         </LinearLayout>
 
-        <FrameLayout
-            android:nextFocusUp="@id/ic_play_pause"
-            android:id="@+id/browse_grid_dock"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:translationY="500dp" />
 
     </FrameLayout>
 </layout>

@@ -12,7 +12,7 @@ class GetListTVChannel @Inject constructor(
 ) : BaseUseCase<List<TVChannel>>() {
 
     override fun prepareExecute(params: Map<String, Any>): Observable<List<TVChannel>> {
-        if (cacheData != null && (params[EXTRA_REFRESH_DATA] as Boolean)) {
+        if (cacheData != null && !(params[EXTRA_REFRESH_DATA] as Boolean)) {
             return Observable.just(cacheData!!)
         }
 

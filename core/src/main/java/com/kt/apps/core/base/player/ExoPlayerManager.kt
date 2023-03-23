@@ -71,7 +71,6 @@ class ExoPlayerManager @Inject constructor(
 
             override fun onPlayerError(error: PlaybackException) {
                 super.onPlayerError(error)
-
                 Logger.d(this, message = error.message?.plus(error.errorCodeName) ?: error.errorCodeName)
             }
 
@@ -129,6 +128,7 @@ class ExoPlayerManager @Inject constructor(
         }
         _exoPlayer?.playWhenReady = true
         _exoPlayer?.prepare()
+        _exoPlayer?.play()
 
     }
 
@@ -219,8 +219,10 @@ class ExoPlayerManager @Inject constructor(
         Logger.d(this@ExoPlayerManager, message = "onAudioLossFocus")
     }
 
-    fun detach(listener: Player.Listener) {
-        _exoPlayer?.removeListener(listener)
+    fun detach(listener: Player.Listener? = null) {
+        if (listener != null) {
+            _exoPlayer?.removeListener(listener)
+        }
         _exoPlayer?.removeListener(_playerListener)
         _audioFocusManager.releaseFocus()
         _playerAdapter?.onDetachedFromHost()

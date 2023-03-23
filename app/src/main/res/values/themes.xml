@@ -4,5 +4,6 @@
 
     <style name="ImageCardViewStyleTitle" parent="Widget.Leanback.ImageCardViewStyle">
         <item name="lbImageCardViewType">Title</item>
+        <item name="android:background">@null</item>
     </style>
 </resources>

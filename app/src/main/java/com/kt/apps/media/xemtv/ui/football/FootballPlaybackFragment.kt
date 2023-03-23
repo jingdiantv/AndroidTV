@@ -24,7 +24,7 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
         ViewModelProvider(requireActivity(), factory)[FootballViewModel::class.java]
     }
     override val numOfRowColumns: Int
-        get() = 4
+        get() = 5
     private var observer: Observer<DataState<FootballMatchWithStreamLink>>? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

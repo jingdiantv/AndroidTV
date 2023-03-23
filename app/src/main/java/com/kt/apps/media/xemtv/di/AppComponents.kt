@@ -9,6 +9,7 @@ import com.kt.apps.football.di.FootballComponents
 import com.kt.apps.football.model.FootballDataSourceFrom
 import com.kt.apps.media.xemtv.App
 import com.kt.apps.media.xemtv.di.main.MainTVModule
+import com.kt.apps.media.xemtv.di.workers.WorkerModule
 import dagger.BindsInstance
 import dagger.Component
 import dagger.android.AndroidInjector
@@ -21,7 +22,9 @@ import dagger.android.support.AndroidSupportInjectionModule
     modules = [
         ViewModelModule::class,
         AndroidSupportInjectionModule::class,
-        MainTVModule::class
+        MainTVModule::class,
+        WorkerModule::class,
+        AppModule::class
     ]
 )
 @AppScope

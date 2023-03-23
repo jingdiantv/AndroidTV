@@ -9,6 +9,7 @@ import android.view.ViewAnimationUtils
 import android.view.animation.AnimationUtils
 import android.view.animation.RotateAnimation
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -42,6 +43,63 @@ fun RecyclerView.runLayoutAnimation() {
     setLayoutAnimation(layoutAnimation)
     adapter?.notifyDataSetChanged()
     scheduleLayoutAnimation()
+}
+
+fun View.translateY(
+    toValue: Float,
+    onAnimationEnd: () -> Unit
+) {
+    this.animate()
+        .translationY(toValue)
+        .setListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator?) {
+                super.onAnimationEnd(animation)
+                onAnimationEnd()
+            }
+
+            override fun onAnimationCancel(animation: Animator?) {
+                super.onAnimationCancel(animation)
+            }
+        })
+}
+
+fun View.fadeOut(onAnimationEnd: () -> Unit = {}) {
+    if (isVisible) {
+        this.animate()
+            .alpha(0f)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
+                    onAnimationEnd()
+                    gone()
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {
+                    super.onAnimationCancel(animation)
+                    onAnimationEnd()
+                    gone()
+                }
+            })
+    }
+}
+
+fun View.fadeIn(onAnimationEnd: () -> Unit = {}) {
+    if (!isVisible || alpha <= 0f) {
+        this.animate()
+            .alpha(1f)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
+                    visible()
+                    onAnimationEnd()
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {
+                    super.onAnimationCancel(animation)
+                    visible()
+                }
+            })
+    }
 }
 
 fun View.startHideOrShowAnimation(

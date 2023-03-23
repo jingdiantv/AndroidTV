@@ -19,9 +19,9 @@ class TVChannelPresenter : Presenter() {
     private var sDefaultBackgroundColor: Int by Delegates.notNull()
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
-        sDefaultBackgroundColor = ContextCompat.getColor(parent.context, R.color.default_background)
-        sSelectedBackgroundColor = ContextCompat.getColor(parent.context, R.color.selected_background)
-        mDefaultCardImage = ContextCompat.getDrawable(parent.context, R.drawable.app_icon)
+        sDefaultBackgroundColor = ContextCompat.getColor(parent.context, com.kt.apps.core.R.color.default_background)
+        sSelectedBackgroundColor = ContextCompat.getColor(parent.context, com.kt.apps.core.R.color.selected_background)
+        mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
 
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_channel_overlay, parent, false)

@@ -6,7 +6,7 @@ import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.Row
 import com.kt.apps.core.base.CoreApp
-import com.kt.apps.media.xemtv.R
+import com.kt.apps.core.R
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
 import com.kt.apps.media.xemtv.ui.radio.RadioFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard

@@ -14,7 +14,11 @@ class TVChannel(
 ) : Parcelable {
 
     val isRadio: Boolean
-    get() = radioGroup.contains(tvGroup)
+        get() = radioGroup.contains(tvGroup)
+
+    val tvGroupLocalName: String
+        get() = TVChannelGroup.valueOf(tvGroup).value
+
     override fun toString(): String {
         return "{" +
                 "tvGroup: $tvGroup," +
@@ -24,6 +28,23 @@ class TVChannel(
                 "sourceFrom: $sourceFrom," +
                 "channelId: $channelId" +
                 "}"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other is TVChannel) {
+            return other.channelId.equals(channelId, ignoreCase = true)
+        }
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        var result = tvGroup.hashCode()
+        result = 31 * result + logoChannel.hashCode()
+        result = 31 * result + tvChannelName.hashCode()
+        result = 31 * result + tvChannelWebDetailPage.hashCode()
+        result = 31 * result + sourceFrom.hashCode()
+        result = 31 * result + channelId.hashCode()
+        return result
     }
 
     companion object {

@@ -40,7 +40,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     private var mSelectedPosition: Int = 0
     private var mPlayingPosition: Int = 0
     override val numOfRowColumns: Int
-        get() = 4
+        get() = 5
 
     private fun setupRowAdapter(tvChannelList: List<TVChannel>) {
         mSelectedPosition = mCurrentSelectedChannel?.let {
@@ -75,11 +75,11 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
         tvChannel?.let {
             mCurrentSelectedChannel = it.channel
             if (it.channel.isRadio) {
-                getBackgroundView()?.setBackgroundResource(R.drawable.bg_radio_playing)
+                getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
             }
             playVideo(
                 tvChannel.channel.tvChannelName,
-                tvChannel.channel.tvGroup,
+                null,
                 tvChannel.channel.tvChannelWebDetailPage,
                 tvChannel.linkStream,
                 true
@@ -135,11 +135,11 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
                 progressBarManager.hide()
                 val tvChannel = dataState.data
                 if (tvChannel.channel.isRadio) {
-                    getBackgroundView()?.setBackgroundResource(R.drawable.bg_radio_playing)
+                    getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
                 }
                 playVideo(
                     tvChannel.channel.tvChannelName,
-                    tvChannel.channel.tvGroup,
+                    null,
                     tvChannel.channel.tvChannelWebDetailPage,
                     tvChannel.linkStream,
                     true

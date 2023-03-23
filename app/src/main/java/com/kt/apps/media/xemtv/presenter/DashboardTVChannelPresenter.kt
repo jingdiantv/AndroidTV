@@ -7,6 +7,7 @@ import androidx.leanback.widget.Presenter
 import androidx.core.content.ContextCompat
 import android.util.Log
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
 
 import com.kt.apps.core.Constants
@@ -25,12 +26,12 @@ class DashboardTVChannelPresenter : Presenter() {
     private var sSelectedBackgroundColor: Int by Delegates.notNull()
     private var sDefaultBackgroundColor: Int by Delegates.notNull()
 
-    override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         Log.d(TAG, "onCreateViewHolder")
 
         sDefaultBackgroundColor = Color.TRANSPARENT
         sSelectedBackgroundColor = Color.TRANSPARENT
-        mDefaultCardImage = ContextCompat.getDrawable(parent.context, R.drawable.app_icon)
+        mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
 
         val wrapper = ContextThemeWrapper(parent.context, R.style.ImageCardViewStyleTitle)
         val cardView = object : ImageCardView(wrapper) {
@@ -48,10 +49,10 @@ class DashboardTVChannelPresenter : Presenter() {
         cardView.isFocusable = true
         cardView.isFocusableInTouchMode = true
         updateCardBackgroundColor(cardView, false)
-        return Presenter.ViewHolder(cardView)
+        return ViewHolder(cardView)
     }
 
-    override fun onBindViewHolder(viewHolder: Presenter.ViewHolder, item: Any) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: Any) {
         val movie = item as TVChannel
         val cardView = viewHolder.view as ImageCardView
 
@@ -69,9 +70,10 @@ class DashboardTVChannelPresenter : Presenter() {
                     .loadImgByDrawableIdResName(it, item.logoChannel)
             } ?: imgView.mainImageView.loadImgByUrl(item.logoChannel)
         }
+        updateCardBackgroundColor(cardView, false)
     }
 
-    override fun onUnbindViewHolder(viewHolder: Presenter.ViewHolder) {
+    override fun onUnbindViewHolder(viewHolder: ViewHolder) {
         Log.d(TAG, "onUnbindViewHolder")
         val cardView = viewHolder.view as ImageCardView
         // Remove references to images so that the garbage collector can free up memory
@@ -83,8 +85,10 @@ class DashboardTVChannelPresenter : Presenter() {
         val color = if (selected) sSelectedBackgroundColor else sDefaultBackgroundColor
         // Both background colors should be set because the view"s background is temporarily visible
         // during animations.
-        view.setBackgroundColor(color)
-        view.setInfoAreaBackgroundColor(color)
+        view.findViewById<TextView>(androidx.leanback.R.id.title_text)
+            .background = null
+        view.background = null
+        view.infoAreaBackground = null
     }
 
     companion object {

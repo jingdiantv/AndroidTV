@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
+import android.database.Cursor
 import android.net.Uri
-import android.os.StrictMode
 import android.util.Log
 import androidx.tvprovider.media.tv.*
 import androidx.work.ListenableWorker
@@ -19,13 +19,15 @@ import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.media.xemtv.App
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.workers.factory.ChildWorkerFactory
+import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import java.util.Calendar
+import java.util.*
+import javax.inject.Inject
 
 class TVRecommendationWorkers(
     private val context: Context,
-    params: WorkerParameters
+    private val params: WorkerParameters
 ) : Worker(context, params) {
 
     private val disposable by lazy {
@@ -38,7 +40,17 @@ class TVRecommendationWorkers(
 
     override fun doWork(): Result {
         return try {
-            insertOrUpdatePreviewChannel()
+            when (params.inputData.getInt(EXTRA_TYPE, Type.ALL.value)) {
+                Type.WATCH_NEXT.value -> {
+                    insertOrUpdateWatchNextChannel(
+                        params.inputData.getString(EXTRA_TV_PROGRAM_ID)!!
+                    )
+                }
+
+                else -> {
+                    insertOrUpdatePreviewChannel()
+                }
+            }
             Result.success()
         } catch (e: Exception) {
             Result.failure()
@@ -53,6 +65,73 @@ class TVRecommendationWorkers(
         .build()
 
     @SuppressLint("RestrictedApi")
+    fun insertOrUpdateWatchNextChannel(programId: String) {
+        val watchNextTask = tvChannelDAO.getChannelByID(programId)
+            .flatMapCompletable { tvChannelEntity ->
+                val allWatchNext = getWatchNextPrograms(context)
+                allWatchNext.forEach {
+                    Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$it")
+                }
+                allWatchNext.filter {
+                    it.contentId != programId
+                }.forEach {
+                    val programUri = TvContractCompat.buildWatchNextProgramUri(it.id)
+                    context.contentResolver.delete(
+                        programUri, null, null
+                    )
+                }
+                val existWatchNextProgram = allWatchNext.find {
+                    it.contentId == programId
+                }
+                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$existWatchNextProgram")
+                val builder = existWatchNextProgram?.let {
+                    WatchNextProgram.Builder(it)
+                } ?: WatchNextProgram.Builder()
+
+                val continueProgram = builder.setLastEngagementTimeUtcMillis(System.currentTimeMillis())
+                    .setIntentUri(Uri.parse("xemtv://tv/channel/${tvChannelEntity.channelId}"))
+                    .setContentId(tvChannelEntity.channelId)
+                    .setBrowsable(true)
+                    .setTitle(tvChannelEntity.tvChannelName)
+                    .setThumbnailUri(tvChannelEntity.logoChannel)
+                    .setSearchable(true)
+                    .setDurationMillis(3 * 60 * 1000)
+                    .setReleaseDate(Calendar.getInstance(Locale.TAIWAN).time)
+                    .setSearchable(true)
+                    .setType(TvContractCompat.WatchNextPrograms.TYPE_MOVIE)
+                    .setWatchNextType(TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE)
+                    .setLogoUri(tvChannelEntity.logoChannel)
+                    .build()
+                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$continueProgram")
+
+                val id = existWatchNextProgram?.let {
+                    PreviewChannelHelper(context)
+                        .updateWatchNextProgram(continueProgram, it.id)
+                    it.id
+                } ?: let {
+                    PreviewChannelHelper(context)
+                        .publishWatchNextProgram(continueProgram)
+                }
+                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "Insert id: $id")
+
+
+                context.contentResolver
+                    .insert(
+                        TvContractCompat.WatchNextPrograms.CONTENT_URI,
+                        continueProgram.toContentValues()
+                    )
+                Completable.complete()
+            }
+            .subscribe({
+                Logger.d(this@TVRecommendationWorkers, message = "Update success")
+            }, {
+                Logger.e(this@TVRecommendationWorkers, exception = it)
+            })
+
+        disposable.add(watchNextTask)
+    }
+
+    @SuppressLint("RestrictedApi")
     @Synchronized
     fun insertOrUpdatePreviewChannel() {
         val tvChannelUseCase = (context.applicationContext as App)
@@ -61,16 +140,14 @@ class TVRecommendationWorkers(
 
         disposable.add(
             tvChannelUseCase.invoke(false)
-                .observeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
                 .flatMapCompletable { channelList ->
-                    Logger.d(this, "Thread", Thread.currentThread().name)
                     val allChannels: List<PreviewChannel> = try {
-                        PreviewChannelHelper(context).allChannels
+                        getAllChannels(context)
                     } catch (exc: IllegalArgumentException) {
                         listOf()
                     }
-
-                    PreviewChannelHelper(context).allChannels.forEach {
+                    allChannels.forEach {
                         Logger.d(this, message = "$it")
                     }
 
@@ -85,7 +162,7 @@ class TVRecommendationWorkers(
                     }
 
                     val channelUpdate = channelBuilder.setDisplayName("XemTV")
-                        .setLogo(resourceUri(App.get().resources, R.mipmap.ic_launcher))
+                        .setLogo(resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg))
                         .setDescription("iMedia")
                         .setInternalProviderId("tvChannelIMedia")
                         .setAppLinkIntentUri(Uri.parse("xemtv://tv/dashboard"))
@@ -134,7 +211,7 @@ class TVRecommendationWorkers(
                             .setBrowsable(true)
                             .setDurationMillis(0)
                             .setPosterArtUri(tvChannel.logoChannel)
-                            .setReleaseDate(Calendar.getInstance().time)
+                            .setReleaseDate(Calendar.getInstance(Locale.TAIWAN).time)
                             .setSearchable(true)
                             .setPosterArtUri(tvChannel.logoChannel)
                             .setIntentUri(Uri.parse("xemtv://tv/channel/${tvChannel.channelId}"))
@@ -194,7 +271,37 @@ class TVRecommendationWorkers(
         )
     }
 
+    enum class Type(val value: Int) {
+        ALL(1), WATCH_NEXT(2)
+    }
+
     companion object {
+
+        const val EXTRA_TYPE = "extra:type"
+        const val EXTRA_TV_PROGRAM_ID = "extra:program_id"
+
+        @SuppressLint("RestrictedApi")
+        fun getAllChannels(context: Context): List<PreviewChannel> {
+            val cursor: Cursor? = context.contentResolver
+                .query(
+                    TvContractCompat.Channels.CONTENT_URI,
+                    PreviewChannel.Columns.PROJECTION,
+                    null,
+                    null,
+                    null
+                )
+            val channels: MutableList<PreviewChannel> = ArrayList()
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    try {
+                        val channel = PreviewChannel.fromCursor(cursor)
+                        channels.add(channel)
+                    } catch (_: java.lang.Exception) {
+                    }
+                } while (cursor.moveToNext())
+            }
+            return channels
+        }
 
         @SuppressLint("RestrictedApi")
         fun getPreviewPrograms(context: Context, channelId: Long? = null): List<PreviewProgram> {
@@ -224,9 +331,35 @@ class TVRecommendationWorkers(
 
             return programs
         }
+
+        @SuppressLint("RestrictedApi")
+        fun getWatchNextPrograms(context: Context): List<WatchNextProgram> {
+            val programs: MutableList<WatchNextProgram> = mutableListOf()
+
+            try {
+                val cursor = context.contentResolver.query(
+                    TvContractCompat.WatchNextPrograms.CONTENT_URI,
+                    WatchNextProgram.PROJECTION,
+                    null,
+                    null,
+                    null
+                )
+                if (cursor != null && cursor.moveToFirst()) {
+                    do {
+                        programs.add(WatchNextProgram.fromCursor(cursor))
+                    } while (cursor.moveToNext())
+                }
+                cursor?.close()
+
+            } catch (exc: IllegalArgumentException) {
+                Logger.e(this, "Error retrieving Watch Next programs", exc)
+            }
+
+            return programs
+        }
     }
 
-    class Factory : ChildWorkerFactory {
+    class Factory @Inject constructor() : ChildWorkerFactory {
         override fun create(appContext: Context, params: WorkerParameters): ListenableWorker {
             return TVRecommendationWorkers(appContext, params)
         }

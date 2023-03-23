@@ -3,6 +3,7 @@ package com.kt.apps.core.base.player
 import android.graphics.Color
 import com.kt.apps.core.R
 import com.kt.apps.core.base.adapter.BaseAdapter
+import com.kt.apps.core.base.adapter.BaseViewHolder
 import com.kt.apps.core.databinding.ItemLinkStreamBinding
 
 class AdapterListM3u8Link(private val opacityBackground: Float = 1f) : BaseAdapter<LinkStream, ItemLinkStreamBinding>() {
@@ -12,7 +13,8 @@ class AdapterListM3u8Link(private val opacityBackground: Float = 1f) : BaseAdapt
     override fun bindItem(
         item: LinkStream,
         binding: ItemLinkStreamBinding,
-        position: Int
+        position: Int,
+        holder: BaseViewHolder<LinkStream, ItemLinkStreamBinding>
     ) {
         binding.item = item
         binding.position  = position

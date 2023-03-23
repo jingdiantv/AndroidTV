@@ -121,12 +121,16 @@ class VDataSourceImpl @Inject constructor(
         isBackup: Boolean
     ): Observable<TVChannelLinkStream> {
         return Observable.create { emitter ->
-            val body = Jsoup.connect(tvChannel.tvChannelWebDetailPage)
-                .header("referer", tvChannel.tvChannelWebDetailPage)
-                .header("origin", tvChannel.tvChannelWebDetailPage.getBaseUrl())
-                .execute()
-                .parse()
-                .body()
+            val body = try {
+                Jsoup.connect(tvChannel.tvChannelWebDetailPage)
+                    .header("referer", tvChannel.tvChannelWebDetailPage)
+                    .header("origin", tvChannel.tvChannelWebDetailPage.getBaseUrl())
+                    .execute()
+                    .parse()
+                    .body()
+            } catch (e: java.lang.Exception) {
+                return@create
+            }
             if (emitter.isDisposed) {
                 return@create
             }

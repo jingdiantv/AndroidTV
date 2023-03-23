@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.StrictMode
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
@@ -21,6 +22,7 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.kt.apps.core.BuildConfig
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.core.utils.updateLocale
@@ -28,7 +30,6 @@ import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
-import java.security.Key
 import javax.inject.Inject
 
 abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroidInjector {
@@ -66,6 +67,24 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (BuildConfig.DEBUG) {
+//            StrictMode.setThreadPolicy(
+//                StrictMode.ThreadPolicy.Builder()
+//                    .detectDiskReads()
+//                    .detectDiskWrites()
+//                    .detectAll()
+//                    .penaltyLog()
+//                    .build()
+//            )
+//            StrictMode.setVmPolicy(
+//                StrictMode.VmPolicy.Builder()
+//                    .detectLeakedSqlLiteObjects()
+//                    .detectLeakedClosableObjects()
+//                    .penaltyLog()
+//                    .penaltyDeath()
+//                    .build()
+//            )
+        }
         AndroidInjection.inject(this)
         window.decorView.setBackgroundColor(Color.WHITE)
         super.onCreate(savedInstanceState)
@@ -219,6 +238,10 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
 
             KeyEvent.KEYCODE_INFO -> {
 
+            }
+
+            KeyEvent.KEYCODE_MENU -> {
+                iKeyCodeHandler.onKeyCodeMenu()
             }
         }
         return super.onKeyDown(keyCode, event)

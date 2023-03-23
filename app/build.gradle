@@ -15,7 +15,7 @@ android {
         applicationId "com.kt.apps.media.xemtv"
         minSdk 21
         targetSdk 32
-        versionCode 23032101
+        versionCode 23032202
         versionName "$versionCode"
         setProperty("archivesBaseName", "XemTV.$versionName")
 
@@ -23,7 +23,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

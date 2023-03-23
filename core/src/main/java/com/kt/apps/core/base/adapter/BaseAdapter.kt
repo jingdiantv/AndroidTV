@@ -60,13 +60,13 @@ abstract class BaseAdapter<T, VB : ViewDataBinding> : RecyclerView.Adapter<BaseV
         val viewBinding: VB = DataBindingUtil.bind(view)!!
         return object : BaseViewHolder<T, VB>(viewBinding) {
             override fun onBind(item: T, position: Int) {
-                bindItem(item, viewBinding, adapterPosition)
+                bindItem(item, viewBinding, adapterPosition, this)
             }
 
         }
     }
 
-    abstract fun bindItem(item: T, binding: VB, position: Int)
+    abstract fun bindItem(item: T, binding: VB, position: Int, holder: BaseViewHolder<T, VB>)
 
     open fun onRefresh(items: List<T>, notifyDataSetChange: Boolean = true) {
         _listItem.clear()
@@ -106,11 +106,16 @@ abstract class BaseAdapter<T, VB : ViewDataBinding> : RecyclerView.Adapter<BaseV
 
 }
 
-abstract class BaseViewHolder<T, VB : ViewDataBinding>(viewBinding: VB) : RecyclerView.ViewHolder(viewBinding.root) {
+abstract class BaseViewHolder<T, VB : ViewDataBinding>(val viewBinding: VB) : RecyclerView.ViewHolder(viewBinding.root) {
+    var cacheItem: Any? = null
     fun bindItem(item: T, itemClickListener: OnItemRecyclerViewCLickListener<T>? = null) {
         onBind(item, adapterPosition)
+        var mLastClick = 0L
         itemView.setOnClickListener {
-            itemClickListener?.invoke(item, adapterPosition)
+            if (System.currentTimeMillis() - mLastClick > 300L) {
+                mLastClick = System.currentTimeMillis()
+                itemClickListener?.invoke(item, adapterPosition)
+            }
         }
     }
 

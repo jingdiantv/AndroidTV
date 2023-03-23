@@ -18,6 +18,10 @@ object Constants {
     const val HOST_RADIO = "radio"
     const val SCHEME_DEFAULT = "xemtv"
 
+    const val EXTRA_PLAYBACK_TYPE = "extra:playback_type"
+    const val EXTRA_FOOTBALL_MATCH = "extra:football_match"
+    const val EXTRA_TV_CHANNEL = "extra:tv_channel"
+
     val mapChannel: Map<String, String> by lazy {
         mapOf(
             "ABC Australia" to "icon_channel_australia_plus_16564921977.png",

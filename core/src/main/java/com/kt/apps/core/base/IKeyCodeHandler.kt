@@ -14,4 +14,5 @@ interface IKeyCodeHandler {
     fun onKeyCodeVolumeDown()
     fun onKeyCodePause()
     fun onKeyCodePlay()
+    fun onKeyCodeMenu()
 }

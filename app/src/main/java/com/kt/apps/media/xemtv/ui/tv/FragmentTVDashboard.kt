@@ -18,10 +18,12 @@ import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
+import com.kt.apps.media.xemtv.presenter.TVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
@@ -37,7 +39,9 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
     }
     private val mRowsAdapter: ArrayObjectAdapter by lazy {
-        ArrayObjectAdapter(ListRowPresenter())
+        ArrayObjectAdapter(ListRowPresenter().apply {
+            shadowEnabled = false
+        })
     }
     private var selectedView: ImageCardView? = null
     private var mBackgroundUri: String? = null
@@ -73,7 +77,12 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     }
                     val dashboardTVChannelPresenter = DashboardTVChannelPresenter()
                     for ((group, channelList) in channelWithCategory) {
-                        val headerItem = HeaderItem(group)
+                        val headerItem = try {
+                            val gr = TVChannelGroup.valueOf(group)
+                            HeaderItem(gr.value)
+                        } catch (e: Exception) {
+                            HeaderItem(group)
+                        }
                         val adapter = ArrayObjectAdapter(dashboardTVChannelPresenter)
                         for (channel in channelList) {
                             adapter.add(channel)
@@ -115,7 +124,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     bundleOf()
                 }
 
-                startActivity(intent, bundle)
+                startActivity(intent)
             }
             is DataState.Error -> {
                 showErrorDialog(content = it.throwable.message)
@@ -151,7 +160,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         Glide.with(requireActivity())
             .load(uri)
             .centerCrop()
-            .error(ContextCompat.getDrawable(requireActivity(), R.drawable.default_background))
+            .error(ContextCompat.getDrawable(requireActivity(), com.kt.apps.core.R.drawable.default_background))
             .into<SimpleTarget<Drawable>>(
                 object : SimpleTarget<Drawable>(width, height) {
                     override fun onResourceReady(

@@ -1,5 +1,14 @@
 package com.kt.apps.core.tv.model
 
-enum class TVChannelGroup {
-    VTV, HTV, VTC, HTVC, THVL, DiaPhuong, AnNinh, VOV, VOH, Intenational
+enum class TVChannelGroup(val value: String) {
+    VTV("VTV"),
+    HTV("HTV"),
+    VTC("VTC"),
+    HTVC("HTVC"),
+    THVL("THVL"),
+    DiaPhuong("Địa phương"),
+    AnNinh("An Ninh"),
+    VOV("VOV"),
+    VOH("VOH"),
+    Intenational("Quốc tế")
 }

@@ -37,4 +37,7 @@ abstract class TVChannelDAO {
 
     @Query("SELECT * from TVChannelEntity")
     abstract fun getAll(): Observable<List<TVChannelEntity>>
+
+    @Query("SELECT * from TVChannelEntity WHERE channelId=:channelID LIMIT 1")
+    abstract fun getChannelByID(channelID: String): Observable<TVChannelEntity>
 }

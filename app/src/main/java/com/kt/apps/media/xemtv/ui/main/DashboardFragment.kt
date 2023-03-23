@@ -22,7 +22,7 @@ import com.kt.apps.core.Constants
 import com.kt.apps.core.base.logging.Logger
 import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.core.utils.gone
-import com.kt.apps.media.xemtv.R
+import com.kt.apps.core.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
@@ -43,7 +43,9 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector {
     private var currentPageIdSelected: Long = -1
 
     private val rowsAdapter by lazy {
-        ArrayObjectAdapter(ListRowPresenter())
+        ArrayObjectAdapter(ListRowPresenter().apply {
+            shadowEnabled = false
+        })
     }
 
     private val pageRowFactory by lazy {
@@ -172,8 +174,8 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector {
         private val defaultPages by lazy {
             mapOf(
                 DashboardPageRowFactory.ROW_TV to "Truyền hình",
-                DashboardPageRowFactory.ROW_FOOTBALL to "Bóng đá",
-                DashboardPageRowFactory.ROW_RADIO to "Truyền thanh"
+//                DashboardPageRowFactory.ROW_FOOTBALL to "Bóng đá",
+                DashboardPageRowFactory.ROW_RADIO to "Phát thanh"
             )
         }
         private val defaultPagesIcon by lazy {

@@ -23,16 +23,6 @@ import dagger.multibindings.IntoMap
 @Module
 abstract class MainTVModule {
 
-    @Binds
-    @IntoMap
-    @ViewModelKey(TVChannelViewModel::class)
-    abstract fun bindTVChannelViewModel(tvChannelViewModel: TVChannelViewModel): ViewModel
-
-    @Binds
-    @IntoMap
-    @ViewModelKey(FootballViewModel::class)
-    abstract fun bindFootballViewModel(footballViewModel: FootballViewModel): ViewModel
-
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun mainActivity(): MainActivity
 

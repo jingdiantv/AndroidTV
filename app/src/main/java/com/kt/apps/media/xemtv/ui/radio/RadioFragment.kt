@@ -26,7 +26,9 @@ class RadioFragment : BaseRowSupportFragment() {
         ViewModelProvider(requireActivity(), factory)[TVChannelViewModel::class.java]
     }
     private val mRowsAdapter: ArrayObjectAdapter by lazy {
-        ArrayObjectAdapter(ListRowPresenter())
+        ArrayObjectAdapter(ListRowPresenter().apply {
+            shadowEnabled = false
+        })
     }
 
     private var selectedView: ImageCardView? = null
