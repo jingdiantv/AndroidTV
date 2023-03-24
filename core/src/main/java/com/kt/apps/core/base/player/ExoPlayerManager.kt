@@ -11,7 +11,7 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.trustEveryone
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import javax.inject.Inject

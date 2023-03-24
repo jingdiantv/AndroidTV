@@ -19,7 +19,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.Constants
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.core.utils.gone
 import com.kt.apps.core.R

@@ -21,7 +21,7 @@ import com.kt.apps.core.GlideApp
 import com.kt.apps.core.GlideRequest
 import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 
 fun Bitmap.getMainColor(): Int = Palette.from(this)
     .generate()

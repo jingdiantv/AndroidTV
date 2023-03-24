@@ -14,7 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import cn.pedant.SweetAlert.SweetAlertDialog
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import java.util.*
 
 fun Context.updateLocale(language: String = "vi") {

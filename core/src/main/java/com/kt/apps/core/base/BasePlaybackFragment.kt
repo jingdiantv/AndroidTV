@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Message
 import android.view.*
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.FrameLayout
@@ -15,6 +16,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
 import androidx.leanback.app.ProgressBarManager
@@ -28,7 +30,7 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy
 import com.kt.apps.core.R
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.utils.*
@@ -115,8 +117,15 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         Logger.e(this, tag = "onHandlePlayerError", exception = error)
     }
 
+    private var mAutoHideTimeout: Long = 0
+
     private val mHandler by lazy {
-        Handler(Looper.getMainLooper())
+        object : Handler(Looper.getMainLooper()) {
+            override fun handleMessage(msg: Message) {
+                super.handleMessage(msg)
+                Logger.d(this@BasePlaybackFragment, "HandlerUI", "${msg.what}")
+            }
+        }
     }
     private val autoHideOverlayRunnable by lazy {
         Runnable {
@@ -125,6 +134,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                 mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
                 mSelectedPosition = 0
                 mGridViewHolder?.gridView?.setSelectedPositionSmooth(0)
+                mPlayPauseIcon?.clearFocus()
+                mGridViewHolder?.gridView?.clearFocus()
             }
         }
     }
@@ -282,6 +293,15 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)
         setVideoInfo(title, subTitle, isLive)
+
+        mPlaybackOverlaysContainerView?.fadeIn()
+        mPlaybackInfoContainerView?.fadeIn()
+        if (mGridViewPickHeight > 0) {
+            mGridViewOverlays?.translationY = mGridViewPickHeight
+        }
+        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+        mPlayPauseIcon?.requestFocus()
+        setSelectedPosition(0)
     }
 
     private fun buildMediaSource(referer: String): DefaultMediaSourceFactory {
@@ -384,9 +404,16 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     override fun onDpadCenter() {
         if (mPlaybackInfoContainerView == null) {
+            Logger.d(this, "DpadCenter", "{" +
+                    "mPlaybackInfoContainerView null" +
+                    "}")
             return
         }
         val visible = mPlaybackOverlaysContainerView?.visibility == View.VISIBLE
+        Logger.d(this, "DpadCenter", "{" +
+                "mPlaybackOverlaysContainerView visibility: ${mPlaybackOverlaysContainerView?.visibility}" +
+                "mPlaybackOverlaysContainerView alpha: ${mPlaybackOverlaysContainerView?.alpha}" +
+                "}")
         if (!visible || mPlaybackOverlaysContainerView!!.alpha < 1f) {
             mPlaybackOverlaysContainerView?.fadeIn()
             mPlaybackInfoContainerView?.fadeIn()
@@ -432,9 +459,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     override fun onKeyCodeChannelUp() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
     override fun onKeyCodeChannelDown() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
     override fun onKeyCodeMediaNext() {
@@ -471,6 +500,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                 mGridViewOverlays?.visible()
                 mBrowseDummyView?.setBackgroundColor(mDarkOverlayColor)
                 mGridViewHolder?.gridView?.requestFocus()
+                mPlaybackInfoContainerView?.gone()
             }
         }
 

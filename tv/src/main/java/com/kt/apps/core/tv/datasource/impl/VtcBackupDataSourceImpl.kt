@@ -1,7 +1,7 @@
 package com.kt.apps.core.tv.datasource.impl
 
 import com.kt.apps.core.Constants
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.tv.datasource.ITVDataSource
 import com.kt.apps.core.tv.model.*

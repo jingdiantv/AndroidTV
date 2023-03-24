@@ -6,7 +6,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.util.Log
 import com.kt.apps.core.base.CoreApp
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 
 class TVContentProvider : ContentProvider() {

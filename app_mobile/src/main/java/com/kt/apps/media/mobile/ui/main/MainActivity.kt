@@ -17,7 +17,7 @@ import com.google.android.material.navigation.NavigationBarView
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut

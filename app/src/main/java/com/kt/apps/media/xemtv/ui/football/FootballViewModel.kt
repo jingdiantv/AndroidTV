@@ -7,7 +7,7 @@ import com.google.gson.Gson
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.football.model.FootballDataSourceFrom
 import com.kt.apps.football.model.FootballMatch
 import com.kt.apps.football.model.FootballMatchWithStreamLink
