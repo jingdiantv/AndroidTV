@@ -1,24 +1,18 @@
 package com.kt.apps.media.xemtv.di.main
 
-import androidx.lifecycle.ViewModel
-import com.kt.apps.media.xemtv.ui.details.DetailsActivity
-import com.kt.apps.media.xemtv.ui.main.MainActivity
-import com.kt.apps.media.xemtv.ui.details.VideoDetailsFragment
-import com.kt.apps.media.xemtv.di.viewmodels.ViewModelKey
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
-import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.details.DetailsActivity
+import com.kt.apps.media.xemtv.ui.details.VideoDetailsFragment
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
 import com.kt.apps.media.xemtv.ui.football.FootballPlaybackFragment
-import com.kt.apps.media.xemtv.ui.football.FootballViewModel
 import com.kt.apps.media.xemtv.ui.main.DashboardFragment
+import com.kt.apps.media.xemtv.ui.main.MainActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.ui.playback.TVPlaybackVideoFragment
 import com.kt.apps.media.xemtv.ui.radio.RadioFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
-import dagger.Binds
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
-import dagger.multibindings.IntoMap
 
 @Module
 abstract class MainTVModule {

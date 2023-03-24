@@ -14,7 +14,7 @@ import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.transition.TransitionHelper
 import androidx.leanback.widget.*
 import com.kt.apps.core.R
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.databinding.DefaultGridFragmentBinding
 import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector

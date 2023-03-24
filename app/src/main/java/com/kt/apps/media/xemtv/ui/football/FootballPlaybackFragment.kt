@@ -8,7 +8,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.football.model.FootballMatch
 import com.kt.apps.football.model.FootballMatchWithStreamLink

@@ -3,10 +3,11 @@ package com.kt.apps.media.xemtv.ui
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.viewmodels.BaseTVChannelViewModel
 import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
+import com.kt.apps.media.xemtv.App
 import com.kt.apps.media.xemtv.workers.TVRecommendationWorkers
 import javax.inject.Inject
 

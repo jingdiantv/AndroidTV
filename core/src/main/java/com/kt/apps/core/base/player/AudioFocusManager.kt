@@ -5,7 +5,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import javax.inject.Inject
 
 class AudioFocusManager @Inject constructor(

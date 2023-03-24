@@ -1,4 +1,4 @@
-package com.kt.apps.core.base.logging
+package com.kt.apps.core.logging
 
 import android.util.Log
 import com.kt.apps.core.BuildConfig

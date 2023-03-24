@@ -1,6 +1,6 @@
 package com.kt.apps.core.tv.usecase
 
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.rxjava.BaseUseCase
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import io.reactivex.rxjava3.core.Observable

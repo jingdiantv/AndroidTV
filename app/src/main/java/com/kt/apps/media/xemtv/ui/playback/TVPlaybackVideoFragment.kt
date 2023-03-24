@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.PlaybackException
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
@@ -77,13 +77,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
             if (it.channel.isRadio) {
                 getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
             }
-            playVideo(
-                tvChannel.channel.tvChannelName,
-                null,
-                tvChannel.channel.tvChannelWebDetailPage,
-                tvChannel.linkStream,
-                true
-            )
+            playVideo(tvChannel)
         } ?: let {
         }
         onItemClickedListener = OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
@@ -137,13 +131,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
                 if (tvChannel.channel.isRadio) {
                     getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
                 }
-                playVideo(
-                    tvChannel.channel.tvChannelName,
-                    null,
-                    tvChannel.channel.tvChannelWebDetailPage,
-                    tvChannel.linkStream,
-                    true
-                )
+                playVideo(tvChannel)
                 Logger.d(this, message = "Play media source")
             }
 
@@ -167,6 +155,25 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
         }
     }
 
+    private fun playVideo(tvChannel: TVChannelLinkStream) {
+        playVideo(
+            tvChannel.channel.tvChannelName,
+            null,
+            tvChannel.channel.tvChannelWebDetailPage,
+            tvChannel.linkStream,
+            true
+        )
+        if (tvChannelViewModel.tvChannelLiveData.value is DataState.Success) {
+            val listChannel = (tvChannelViewModel.tvChannelLiveData.value as DataState.Success<List<TVChannel>>).data
+            mPlayingPosition = listChannel.indexOfLast {
+                it.channelId == mCurrentSelectedChannel!!.channelId
+            }.takeIf {
+                it >= 0
+            } ?: 0
+        }
+
+    }
+
     override fun onDetach() {
         progressBarManager.hide()
         Logger.d(this, message = "onDetach")
@@ -185,6 +192,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     }
 
     override fun onKeyCodeChannelUp() {
+        super.onKeyCodeChannelUp()
         mPlayingPosition = max(0, mPlayingPosition) + 1
 
         setSelectedPosition(mPlayingPosition)
@@ -194,10 +202,6 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
             val item = mAdapter?.get(mPlayingPosition)
             tvChannelViewModel.getLinkStreamForChannel(item as TVChannel)
         }
-    }
-
-    fun hideChannelMenu() {
-        hideOverlay()
     }
 
     override fun onPause() {

@@ -2,12 +2,14 @@ package com.kt.apps.media.xemtv.di
 
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.di.CoreComponents
+import com.kt.apps.core.di.CoreLoggerModule
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
 import com.kt.apps.core.tv.di.TVComponents
 import com.kt.apps.football.datasource.IFootballMatchDataSource
 import com.kt.apps.football.di.FootballComponents
 import com.kt.apps.football.model.FootballDataSourceFrom
 import com.kt.apps.media.xemtv.App
+import com.kt.apps.media.xemtv.di.logger.PlatformLoggerModule
 import com.kt.apps.media.xemtv.di.main.MainTVModule
 import com.kt.apps.media.xemtv.di.workers.WorkerModule
 import dagger.BindsInstance
@@ -24,7 +26,8 @@ import dagger.android.support.AndroidSupportInjectionModule
         AndroidSupportInjectionModule::class,
         MainTVModule::class,
         WorkerModule::class,
-        AppModule::class
+        AppModule::class,
+        PlatformLoggerModule::class,
     ]
 )
 @AppScope

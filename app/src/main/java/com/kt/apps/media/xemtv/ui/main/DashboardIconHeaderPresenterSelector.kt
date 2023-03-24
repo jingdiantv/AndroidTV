@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.leanback.widget.*
 import com.kt.apps.core.GlideApp
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.media.xemtv.R
 
 class DashboardIconHeaderPresenterSelector : PresenterSelector() {

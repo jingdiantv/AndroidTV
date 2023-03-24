@@ -23,7 +23,7 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.kt.apps.core.BuildConfig
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.core.utils.updateLocale
 import dagger.android.AndroidInjection

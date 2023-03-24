@@ -1,21 +1,27 @@
 package com.kt.apps.core.tv.viewmodels
 
 import android.net.Uri
+import androidx.core.os.bundleOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.IActionLogger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import io.reactivex.rxjava3.disposables.Disposable
 import javax.inject.Inject
 
-open class BaseTVChannelViewModel @Inject constructor(
+open class BaseTVChannelViewModel constructor(
     private val interactors: TVChannelInteractors,
 ) : BaseViewModel() {
+
+    @Inject
+    lateinit var actionLogger: IActionLogger
+
     private var _lastWatchedChannel: TVChannelLinkStream? = null
     val lastWatchedChannel: TVChannelLinkStream?
         get() = _lastWatchedChannel
@@ -29,6 +35,7 @@ open class BaseTVChannelViewModel @Inject constructor(
 
     fun getListTVChannel(forceRefresh: Boolean) {
         if (!forceRefresh && interactors.getListChannel.cacheData != null) {
+            Logger.d(this, "ListChannel", "Get from cache")
             _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
             return
         }
@@ -66,6 +73,11 @@ open class BaseTVChannelViewModel @Inject constructor(
                 markLastWatchedChannel(it)
                 enqueueInsertWatchNextTVChannel(it.channel)
                 _tvWithLinkStreamLiveData.postValue(DataState.Success(it))
+                actionLogger.log(
+                    "Streaming", bundleOf(
+                        "channel" to it.channel.tvChannelName
+                    )
+                )
             }, {
                 Logger.e(this, exception = it)
                 _tvWithLinkStreamLiveData.postValue(DataState.Error(it))
@@ -97,6 +109,17 @@ open class BaseTVChannelViewModel @Inject constructor(
                             "uri: $uri, " +
                             "channel: $it" +
                             "}"
+                )
+                actionLogger.log(
+                    "PlayByDeepLink", bundleOf(
+                        "uri" to "$uri",
+                        "channel" to it.channel.tvChannelName
+                    )
+                )
+                actionLogger.log(
+                    "Streaming", bundleOf(
+                        "channel" to it.channel.tvChannelName
+                    )
                 )
             }, {
                 _tvWithLinkStreamLiveData.postValue(DataState.Error(it))

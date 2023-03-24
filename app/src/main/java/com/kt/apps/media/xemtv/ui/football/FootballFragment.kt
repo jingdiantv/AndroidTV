@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.leanback.applyLoading
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.football.model.FootballMatch

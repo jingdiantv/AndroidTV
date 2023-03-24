@@ -8,7 +8,7 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.media.xemtv.workers.TVRecommendationWorkers
 
 class RunOnInstallReceiver : BroadcastReceiver() {

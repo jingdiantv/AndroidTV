@@ -11,7 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.football.model.FootballMatchWithStreamLink
 import com.kt.apps.media.xemtv.R

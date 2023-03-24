@@ -9,7 +9,7 @@ import androidx.tvprovider.media.tv.*
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.kt.apps.core.GlideApp
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.provider.RecommendationProvider
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.tv.model.TVChannel
