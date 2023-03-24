@@ -29,10 +29,10 @@ class VDataSourceImpl @Inject constructor(
     private val firebaseDatabase: FirebaseDatabase
 ) : ITVDataSource {
 
-    private fun needRefresh(name: String): Boolean {
-        val needRefresh = remoteConfig.getBoolean(name)
-        val version = remoteConfig.getLong("${name}_refresh")
-        val refreshedInVersion = keyValueStorage.getVersionRefreshed(name)
+    private fun needRefresh(): Boolean {
+        val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
+        val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
+        val refreshedInVersion = keyValueStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
         return needRefresh && version > refreshedInVersion
     }
 
@@ -47,7 +47,7 @@ class VDataSourceImpl @Inject constructor(
             val totalChannel = mutableListOf<TVChannel>()
             var count = 0
             listGroup.forEach { group ->
-                val needRefresh = true
+                val needRefresh = needRefresh()
                 if (keyValueStorage.getTvByGroup(group).isNotEmpty() && !needRefresh) {
                     isOnline = false
                     totalChannel.addAll(keyValueStorage.getTvByGroup(group))
@@ -60,18 +60,18 @@ class VDataSourceImpl @Inject constructor(
                 } else {
                     isOnline = true
                     fetchTvList(group) {
-                        if (needRefresh) {
-                            keyValueStorage.saveRefreshInVersion(
-                                group,
-                                remoteConfig.getLong("${group}_refresh")
-                            )
-                        }
                         keyValueStorage.saveTVByGroup(group, it)
                         saveToRoomDB(group, it)
                         totalChannel.addAll(it)
                         count++
                         if (count == listGroup.size) {
                             emitter.onNext(totalChannel)
+                            if (needRefresh) {
+                                keyValueStorage.saveRefreshInVersion(
+                                    group,
+                                    remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
+                                )
+                            }
                             emitter.onComplete()
                         }
                     }.addOnFailureListener {
@@ -183,5 +183,10 @@ class VDataSourceImpl @Inject constructor(
                         )
                     })
             }
+    }
+    
+    companion object {
+        private const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
+        private const val EXTRA_KEY_USE_ONLINE = "use_online_data"
     }
 }
