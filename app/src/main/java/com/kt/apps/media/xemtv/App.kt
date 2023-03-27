@@ -5,6 +5,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.DaggerCoreComponents
@@ -57,6 +58,8 @@ class App : CoreApp() {
         app = this
         Firebase.initialize(this)
         (applicationInjector() as AppComponents).inject(this)
+        Firebase.remoteConfig
+            .fetchAndActivate()
         workManager.enqueue(
             OneTimeWorkRequestBuilder<TVRecommendationWorkers>()
                 .setInputData(Data.Builder()

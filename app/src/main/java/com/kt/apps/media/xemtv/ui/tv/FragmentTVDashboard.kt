@@ -72,7 +72,11 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
             when (it) {
                 is DataState.Success -> {
                     mRowsAdapter.clear()
-                    val channelWithCategory = it.data.groupBy {
+                    val channelWithCategory = it.data
+                        .filter {
+                            !it.isRadio
+                        }
+                        .groupBy {
                         it.tvGroup
                     }
                     val dashboardTVChannelPresenter = DashboardTVChannelPresenter()

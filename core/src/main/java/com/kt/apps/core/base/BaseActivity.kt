@@ -181,7 +181,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
             } ?: return super.onKeyDown(keyCode, event)
 
         when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_CENTER -> {
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                 iKeyCodeHandler.onDpadCenter()
             }
 

@@ -19,6 +19,10 @@ class TVChannel(
     val tvGroupLocalName: String
         get() = TVChannelGroup.valueOf(tvGroup).value
 
+    val isHls: Boolean
+        get() = tvChannelWebDetailPage.contains("m3u8")
+                || tvGroup != TVChannelGroup.VOV.name
+
     override fun toString(): String {
         return "{" +
                 "tvGroup: $tvGroup," +

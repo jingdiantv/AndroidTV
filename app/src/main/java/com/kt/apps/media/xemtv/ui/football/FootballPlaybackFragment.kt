@@ -43,7 +43,8 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
                             streamWithReferer.m3u8Link
                         )
                     },
-                    isLive = it.match.isLiveMatch
+                    isLive = it.match.isLiveMatch,
+                    isHls = true
                 )
             }
         observer = Observer { dataState ->
@@ -63,7 +64,8 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
                         data.match.getMatchName(),
                         data.match.league,
                         linkStreams,
-                        isLive = data.match.isLiveMatch
+                        isLive = data.match.isLiveMatch,
+                        isHls = true
                     )
                 }
 

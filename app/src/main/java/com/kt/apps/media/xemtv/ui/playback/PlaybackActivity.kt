@@ -110,6 +110,12 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
             deepLink.host.equals(Constants.HOST_TV) || deepLink.host.equals(Constants.HOST_RADIO) -> {
                 tvChannelViewModel.playTvByDeepLinks(deepLink)
                 if (savedInstanceState == null) {
+                    supportFragmentManager.fragments
+                        .forEach {
+                            supportFragmentManager.beginTransaction()
+                                .remove(it)
+                                .commitNow()
+                        }
                     supportFragmentManager.beginTransaction()
                         .replace(android.R.id.content, TVPlaybackVideoFragment())
                         .commit()

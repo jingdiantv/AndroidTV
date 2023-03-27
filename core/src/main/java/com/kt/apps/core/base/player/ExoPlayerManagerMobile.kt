@@ -6,8 +6,8 @@ import android.os.Build
 import android.os.Bundle
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
-import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
+import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
@@ -93,6 +93,7 @@ class ExoPlayerManagerMobile @Inject constructor(
 
     fun playVideo(
         data: List<LinkStream>,
+        isHls: Boolean,
         playerListener: Player.Listener? = null
     ) {
         if (_exoPlayer == null) {
@@ -108,10 +109,17 @@ class ExoPlayerManagerMobile @Inject constructor(
         dfSource.setUserAgent(_application.getString(R.string.user_agent))
         trustEveryone()
 
-        val mediaSources = data.map { it.m3u8Link }.map {
-            DefaultMediaSourceFactory(dfSource)
-                .setServerSideAdInsertionMediaSourceFactory(DefaultMediaSourceFactory(dfSource))
-                .createMediaSource(MediaItem.fromUri(it.trim()))
+        val mediaSources = if (isHls) {
+            data.map { it.m3u8Link }.map {
+                DefaultMediaSourceFactory(dfSource)
+                    .setServerSideAdInsertionMediaSourceFactory(DefaultMediaSourceFactory(dfSource))
+                    .createMediaSource(MediaItem.fromUri(it.trim()))
+            }
+        } else {
+            data.map { it.m3u8Link }.map {
+                ProgressiveMediaSource.Factory(dfSource)
+                    .createMediaSource(MediaItem.fromUri(it.trim()))
+            }
         }
 
         _exoPlayer?.setMediaSources(mediaSources)

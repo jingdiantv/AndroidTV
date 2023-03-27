@@ -6,6 +6,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.MapChannel
 import com.kt.apps.core.tv.FirebaseLogUtils
@@ -46,8 +47,8 @@ class VDataSourceImpl @Inject constructor(
         return Observable.create<List<TVChannel>> { emitter ->
             val totalChannel = mutableListOf<TVChannel>()
             var count = 0
+            val needRefresh = needRefresh()
             listGroup.forEach { group ->
-                val needRefresh = needRefresh()
                 if (keyValueStorage.getTvByGroup(group).isNotEmpty() && !needRefresh) {
                     isOnline = false
                     totalChannel.addAll(keyValueStorage.getTvByGroup(group))
@@ -68,7 +69,7 @@ class VDataSourceImpl @Inject constructor(
                             emitter.onNext(totalChannel)
                             if (needRefresh) {
                                 keyValueStorage.saveRefreshInVersion(
-                                    group,
+                                    EXTRA_KEY_VERSION_NEED_REFRESH,
                                     remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
                                 )
                             }
@@ -166,9 +167,9 @@ class VDataSourceImpl @Inject constructor(
         return firebaseDatabase.reference.child(name)
             .get()
             .addOnSuccessListener {
-                val value = it.getValue<List<DataFromFirebase>>() ?: return@addOnSuccessListener
+                val value = it.getValue<List<DataFromFirebase?>>() ?: return@addOnSuccessListener
                 onComplete(
-                    value.map { dataFromFirebase ->
+                    value.filterNotNull().map { dataFromFirebase ->
                         TVChannel(
                             name,
                             tvChannelName = dataFromFirebase.name,
