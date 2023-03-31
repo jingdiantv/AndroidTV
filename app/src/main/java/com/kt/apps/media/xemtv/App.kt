@@ -1,5 +1,7 @@
 package com.kt.apps.media.xemtv
 
+import android.app.Activity
+import android.os.Bundle
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -9,6 +11,7 @@ import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.DaggerCoreComponents
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.di.DaggerTVComponents
 import com.kt.apps.core.tv.di.TVComponents
 import com.kt.apps.football.di.DaggerFootballComponents
@@ -58,8 +61,15 @@ class App : CoreApp() {
         app = this
         Firebase.initialize(this)
         (applicationInjector() as AppComponents).inject(this)
+        Firebase.remoteConfig.fetch(20)
         Firebase.remoteConfig
             .fetchAndActivate()
+            .addOnSuccessListener {
+                Logger.d(this, tag = "RemoteConfig", message = "Success")
+            }
+            .addOnFailureListener {
+                Logger.d(this, tag = "RemoteConfig", message = "Failure")
+            }
         workManager.enqueue(
             OneTimeWorkRequestBuilder<TVRecommendationWorkers>()
                 .setInputData(Data.Builder()

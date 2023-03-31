@@ -7,6 +7,10 @@ import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.Row
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.R
+import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.logging.Logger
+import com.kt.apps.media.xemtv.ui.extensions.FragmentAddExtensions
+import com.kt.apps.media.xemtv.ui.extensions.FragmentExtensions
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
 import com.kt.apps.media.xemtv.ui.radio.RadioFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
@@ -14,6 +18,7 @@ import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 typealias OnFragmentChange = (pageID: Long) -> Unit
 class DashboardPageRowFactory(
     private val backgroundManager: BackgroundManager,
+    private val listExtensions: List<ExtensionsConfig>
 ) : BrowseSupportFragment.FragmentFactory<Fragment>() {
     var onFragmentChangeListener: OnFragmentChange? = null
     override fun createFragment(row: Any?): Fragment {
@@ -30,16 +35,26 @@ class DashboardPageRowFactory(
                 FootballFragment()
             }
             ROW_RADIO -> {
-                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.ic_tv)
                 RadioFragment()
             }
-            else -> throw IllegalStateException("Not support row")
+            ROW_ADD_EXTENSION -> {
+                return FragmentAddExtensions()
+            }
+            else -> {
+                try {
+                    FragmentExtensions.newInstance(listExtensions[rowId.toInt()].sourceUrl)
+                } catch (e: Exception) {
+                    throw IllegalStateException("Not support row")
+                }
+            }
         }
     }
 
     companion object {
-        const val ROW_TV = 1L
-        const val ROW_FOOTBALL = 2L
-        const val ROW_RADIO = 3L
+        const val ROW_TV = 10999L
+        const val ROW_FOOTBALL = 10998L
+        const val ROW_RADIO = 10997L
+        const val ROW_ADD_EXTENSION = 10996L
     }
 }

@@ -47,8 +47,9 @@ fun RecyclerView.runLayoutAnimation() {
 
 fun View.translateY(
     toValue: Float,
-    onAnimationEnd: () -> Unit
-) {
+    onAnimationCancel: () -> Unit = {},
+    onAnimationEnd: () -> Unit,
+    ) {
     this.animate()
         .translationY(toValue)
         .setListener(object : AnimatorListenerAdapter() {
@@ -59,6 +60,7 @@ fun View.translateY(
 
             override fun onAnimationCancel(animation: Animator?) {
                 super.onAnimationCancel(animation)
+                onAnimationCancel()
             }
         })
 }

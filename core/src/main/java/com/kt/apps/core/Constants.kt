@@ -165,6 +165,7 @@ object Constants {
             "VOV4 Hồ Chí Minh" to "icon_channel_vov_hcm.png",
             "VOV4 Miền Trung" to "icon_channel_vov_mientrung.png",
             "VOV4 Tây Bắc" to "icon_channel_vov_taybac.png",
+            "VOV4 Đông Bắc" to "icon_channel_vov_dongbac.png",
             "VOV4 Tây Nguyên" to "icon_channel_vov_taynguyen.png",
             "VOV5" to "icon_channel_vov5.png",
             "VOV5-chinese" to "icon_channel_vov5.png",

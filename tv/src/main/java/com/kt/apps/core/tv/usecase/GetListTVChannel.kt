@@ -18,6 +18,14 @@ class GetListTVChannel @Inject constructor(
 
         return (params[EXTRA_TV_SOURCE_FROM]?.let { source ->
             when (source as TVDataSourceFrom) {
+                TVDataSourceFrom.GG -> return (tvDataSources[source]!!.getTvList())
+                    .onErrorResumeNext {
+                        invoke(
+                            params[EXTRA_REFRESH_DATA] as Boolean,
+                            TVDataSourceFrom.V
+                        )
+                    }
+
                 TVDataSourceFrom.V -> return (tvDataSources[source]!!.getTvList())
                     .onErrorResumeNext {
                         Observable.concat(

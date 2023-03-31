@@ -227,11 +227,15 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     private fun onPlayPauseIconClicked() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
-        if (true == exoPlayerManager.playerAdapter?.isPlaying) {
-            exoPlayerManager.playerAdapter?.pause()
-        } else {
-            exoPlayerManager.playerAdapter?.play()
-            mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        try {
+            if (true == exoPlayerManager.playerAdapter?.isPlaying) {
+                exoPlayerManager.playerAdapter?.pause()
+            } else {
+                exoPlayerManager.playerAdapter?.play()
+                mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+            }
+        } catch (e: Exception) {
+            Logger.e(this, exception = e)
         }
     }
 
@@ -296,12 +300,13 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         isLive: Boolean,
         isHls: Boolean
     ) {
+        exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener)
+        mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
         mTransportControlGlue.host = mGlueHost
         mTransportControlGlue.title = title
         mTransportControlGlue.subtitle = subTitle
         mTransportControlGlue.isSeekEnabled = false
         mTransportControlGlue.playWhenPrepared()
-        exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener)
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)
         setVideoInfo(title, subTitle, isLive)
@@ -585,7 +590,6 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mBackgroundView = null
         mVideoSurface = null
         mBrowseDummyView = null
-        mTransportControlGlue.host = null
         exoPlayerManager.detach(mPlayerListener)
         mGlueHost.setSurfaceHolderCallback(null)
         setSurfaceHolderCallback(null)

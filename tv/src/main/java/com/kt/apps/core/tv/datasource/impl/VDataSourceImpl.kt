@@ -29,18 +29,39 @@ class VDataSourceImpl @Inject constructor(
     private val remoteConfig: FirebaseRemoteConfig,
     private val firebaseDatabase: FirebaseDatabase
 ) : ITVDataSource {
+    private fun getSupportTVGroup(): List<TVChannelGroup> {
+        return listOf(
+            TVChannelGroup.VTV,
+            TVChannelGroup.HTV,
+            TVChannelGroup.VTC,
+            TVChannelGroup.HTVC,
+            TVChannelGroup.THVL,
+            TVChannelGroup.DiaPhuong,
+            TVChannelGroup.AnNinh,
+            TVChannelGroup.VOV,
+            TVChannelGroup.VOH,
+            TVChannelGroup.Intenational
+        )
+    }
 
     private fun needRefresh(): Boolean {
         val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
         val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
         val refreshedInVersion = keyValueStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
+        Logger.d(
+            this@VDataSourceImpl, message = "{" +
+                    "useOnlineData: $needRefresh, " +
+                    "version: $version, " +
+                    "refreshedVersion: $refreshedInVersion" +
+                    "}"
+        )
         return needRefresh && version > refreshedInVersion
     }
 
     private var isOnline: Boolean = false
 
     override fun getTvList(): Observable<List<TVChannel>> {
-        val listGroup = TVChannelGroup.values().map {
+        val listGroup = getSupportTVGroup().map {
             it.name
         }
 
@@ -185,9 +206,9 @@ class VDataSourceImpl @Inject constructor(
                     })
             }
     }
-    
+
     companion object {
-        private const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
-        private const val EXTRA_KEY_USE_ONLINE = "use_online_data"
+        const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
+        const val EXTRA_KEY_USE_ONLINE = "use_online_data"
     }
 }

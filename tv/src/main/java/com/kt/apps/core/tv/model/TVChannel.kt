@@ -1,6 +1,8 @@
 package com.kt.apps.core.tv.model
 
 import android.os.Parcelable
+import com.kt.apps.core.extensions.ParserExtensionsSource
+import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -22,6 +24,8 @@ class TVChannel(
     val isHls: Boolean
         get() = tvChannelWebDetailPage.contains("m3u8")
                 || tvGroup != TVChannelGroup.VOV.name
+
+    var isFreeContent: Boolean = true
 
     override fun toString(): String {
         return "{" +
@@ -55,5 +59,24 @@ class TVChannel(
         private val radioGroup by lazy {
             listOf(TVChannelGroup.VOV.name, TVChannelGroup.VOH.name)
         }
+
+        fun fromEntity(entity: TVChannelEntity) = TVChannel(
+            tvChannelName = entity.tvChannelName,
+            tvGroup = entity.tvGroup,
+            tvChannelWebDetailPage = entity.tvChannelWebDetailPage,
+            sourceFrom = entity.sourceFrom,
+            channelId = entity.channelId,
+            logoChannel = entity.logoChannel.toString()
+        )
+
+        fun fromChannelExtensions(entity: ParserExtensionsSource.ExtensionsChannel) = TVChannel(
+            tvChannelName = entity.tvChannelName,
+            tvGroup = entity.tvGroup,
+            tvChannelWebDetailPage = entity.tvStreamLink,
+            sourceFrom = entity.sourceFrom,
+            channelId = entity.channelId,
+            logoChannel = entity.logoChannel.toString(),
+
+        )
     }
 }

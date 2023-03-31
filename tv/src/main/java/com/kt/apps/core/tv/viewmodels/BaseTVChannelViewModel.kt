@@ -12,6 +12,7 @@ import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.tv.model.TVDataSourceFrom
 import io.reactivex.rxjava3.disposables.Disposable
 import javax.inject.Inject
 
@@ -33,7 +34,7 @@ open class BaseTVChannelViewModel constructor(
     val tvChannelLiveData: LiveData<DataState<List<TVChannel>>>
         get() = _listTvChannelLiveData
 
-    fun getListTVChannel(forceRefresh: Boolean) {
+    fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.SCTV) {
         if (!forceRefresh && interactors.getListChannel.cacheData != null) {
             Logger.d(this, "ListChannel", "Get from cache")
             _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
@@ -43,7 +44,7 @@ open class BaseTVChannelViewModel constructor(
         _listTvChannelLiveData.postValue(DataState.Loading())
 
         add(
-            interactors.getListChannel(forceRefresh)
+            interactors.getListChannel(forceRefresh, sourceFrom)
                 .subscribe({
                     Logger.d(this, message = "Response data: ${Gson().toJson(it)}")
                     finalList.addAll(it)

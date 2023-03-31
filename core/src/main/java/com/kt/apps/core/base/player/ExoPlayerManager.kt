@@ -1,241 +1,49 @@
 package com.kt.apps.core.base.player
 
-import android.app.Activity
-import android.app.Application
-import android.os.Build
-import android.os.Bundle
-import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.logging.Logger
-import com.kt.apps.core.utils.trustEveryone
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import javax.inject.Inject
 
 
 class ExoPlayerManager @Inject constructor(
     private val _application: CoreApp,
     private val _audioFocusManager: AudioFocusManager
-) : Application.ActivityLifecycleCallbacks, AudioFocusManager.OnFocusChange {
-    private var _exoPlayer: ExoPlayer? = null
+) : AbstractExoPlayerManager(_application, _audioFocusManager) {
     private var _playerAdapter: LeanbackPlayerAdapter? = null
-    private val _playerListenerObserver by lazy {
-        mutableListOf<(() -> Unit)>()
-    }
-
-    init {
-        _application.registerActivityLifecycleCallbacks(this)
-    }
-
-    private val audioAttr by lazy {
-        AudioAttributes.Builder()
-            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-            .setUsage(C.USAGE_MEDIA)
-            .apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    setAllowedCapturePolicy(C.ALLOW_CAPTURE_BY_NONE)
-                }
-            }
-            .build()
-    }
-
-    private val _playerListener by lazy {
-        object : Player.Listener {
-            override fun onIsLoadingChanged(isLoading: Boolean) {
-                super.onIsLoadingChanged(isLoading)
-            }
-
-            override fun onPlaybackStateChanged(state: Int) {
-                super.onPlaybackStateChanged(state)
-                when (state) {
-                    ExoPlayer.STATE_IDLE -> {
-                        Logger.d(this, message = "state: STATE_IDLE")
-                    }
-                    ExoPlayer.STATE_BUFFERING -> {
-                        Logger.d(this, message = "state: STATE_BUFFERING")
-                    }
-                    ExoPlayer.STATE_READY -> {
-                        Logger.d(this, message = "state: STATE_READY")
-                    }
-                    ExoPlayer.STATE_ENDED -> {
-                        Logger.d(this, message = "state: STATE_ENDED")
-                    }
-                    else -> {
-                    }
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                super.onPlayerError(error)
-                Logger.d(this, message = error.message?.plus(error.errorCodeName) ?: error.errorCodeName)
-            }
-
-        }
-    }
 
     val playerAdapter: LeanbackPlayerAdapter?
         get() = _playerAdapter
 
-    val exoPlayer: ExoPlayer?
-        get() = _exoPlayer
-
-    fun addListener() {
-        _playerListenerObserver.add {
-
+    override fun prepare() {
+        if (mExoPlayer == null || _playerAdapter == null) {
+            mExoPlayer?.stop()
+            mExoPlayer?.release()
+            mExoPlayer = buildExoPlayer()
+            _playerAdapter = LeanbackPlayerAdapter(_application, mExoPlayer!!, 5)
         }
     }
 
-    fun prepare() {
-        _exoPlayer?.stop()
-        _exoPlayer?.release()
-        _exoPlayer = buildExoPlayer()
-        _playerAdapter = LeanbackPlayerAdapter(_application, _exoPlayer!!, 5)
-    }
-
-    fun playVideo(
-        data: List<LinkStream>,
-        isHls: Boolean,
-        playerListener: Player.Listener? = null
-    ) {
-        if (_exoPlayer == null) {
-            _exoPlayer = buildExoPlayer()
-            _playerAdapter = LeanbackPlayerAdapter(_application, exoPlayer!!, 5)
-        }
-        _exoPlayer?.removeListener(_playerListener)
-        val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
-        dfSource.setDefaultRequestProperties(
-            getHeader90pLink(data.first().referer, data.first())
-        )
-        dfSource.setKeepPostFor302Redirects(true)
-        dfSource.setAllowCrossProtocolRedirects(true)
-        dfSource.setUserAgent(_application.getString(R.string.user_agent))
-        trustEveryone()
-
-        val mediaSources = if (isHls) {
-            data.map { it.m3u8Link }.map {
-                DefaultMediaSourceFactory(dfSource)
-                    .setServerSideAdInsertionMediaSourceFactory(DefaultMediaSourceFactory(dfSource))
-                    .createMediaSource(MediaItem.fromUri(it.trim()))
-            }
-        } else {
-            data.map { it.m3u8Link }.map {
-                ProgressiveMediaSource.Factory(dfSource)
-                    .createMediaSource(MediaItem.fromUri(it.trim()))
-            }
-        }
-
-        _exoPlayer?.setMediaSources(mediaSources)
-        _exoPlayer?.addListener(_playerListener)
-        playerListener?.let {
-            _exoPlayer?.removeListener(it)
-            _exoPlayer?.addListener(it)
-        }
-        _exoPlayer?.playWhenReady = true
-        _exoPlayer?.prepare()
-
-    }
-
-    private fun buildExoPlayer() = ExoPlayer.Builder(_application)
-        .setWakeMode(C.WAKE_MODE_NETWORK)
-        .setAudioAttributes(audioAttr, true)
-        .setHandleAudioBecomingNoisy(true)
-        .build()
-
-    fun pause() {
-        Logger.d(this, message = "Pause")
-        _exoPlayer?.pause()
-        _playerAdapter?.pause()
-    }
-
-    private fun getHeader90pLink(referer: String, currentLinkStream: LinkStream): Map<String, String> {
-        val needHost = referer.contains("auth_key")
-        val host = try {
-            referer.trim().toHttpUrl().host
-        } catch (e: Exception) {
-            ""
-        }
-        return mutableMapOf(
-            "Accept" to "*/*",
-            "accept-encoding" to "gzip, deflate, br",
-            "origin" to referer.getBaseUrl(),
-            "referer" to referer.trim(),
-            "sec-fetch-dest" to "empty",
-            "sec-fetch-site" to "cross-site",
-            "user-agent" to _application.getString(R.string.user_agent),
-        ).apply {
-            if (needHost) {
-                this["Host"] = host
-            }
-            currentLinkStream.token?.let {
-                this["token"] = it
-                this["Authorization"] = it
-            }
-            currentLinkStream.host?.let {
-                this["host"] = host
-            }
-        }
-    }
-
-    private fun String.getBaseUrl(): String {
-        val isUrl = this.trim().startsWith("http")
-        val isHttps = this.trim().startsWith("https")
-        if (!isUrl) return ""
-        val baseUrl = this.toHttpUrl().host
-        return if (isHttps) "https://${baseUrl.trim()}" else "http://${baseUrl.trim()}"
-    }
-
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-
-    }
-
-    override fun onActivityStarted(activity: Activity) {
-
-    }
-
-    override fun onActivityResumed(activity: Activity) {
-        if (activity::class.java.name.equals("com.kt.apps.media.xemtv.ui.playback.PlaybackActivity")) {
-            _playerAdapter?.play()
-        }
-    }
-
-    override fun onActivityPaused(activity: Activity) {
-    }
-
-    override fun onActivityStopped(activity: Activity) {
-        if (activity::class.java.name.equals("com.kt.apps.media.xemtv.ui.playback.PlaybackActivity")) {
-            _exoPlayer?.stop()
-        }
-    }
-
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
-    }
-
-    override fun onActivityDestroyed(activity: Activity) {
-    }
-
-    override fun onAudioFocus() {
+    override fun playVideo(data: List<LinkStream>, isHls: Boolean, playerListener: Player.Listener?) {
+        super.playVideo(data, isHls, playerListener)
     }
 
     override fun onAudioLossFocus() {
-        _exoPlayer?.pause()
+        super.onAudioFocus()
         _playerAdapter?.pause()
         Logger.d(this@ExoPlayerManager, message = "onAudioLossFocus")
     }
 
-    fun detach(listener: Player.Listener? = null) {
+    override fun detach(listener: Player.Listener?) {
         if (listener != null) {
-            _exoPlayer?.removeListener(listener)
+            mExoPlayer?.removeListener(listener)
         }
-        _exoPlayer?.removeListener(_playerListener)
+        mExoPlayer?.removeListener(this.playerListener)
         _audioFocusManager.releaseFocus()
         _playerAdapter?.onDetachedFromHost()
-        _exoPlayer?.release()
-        _exoPlayer = null
+        mExoPlayer?.release()
+        mExoPlayer = null
         _playerAdapter = null
     }
 

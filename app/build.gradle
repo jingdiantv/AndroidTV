@@ -9,13 +9,13 @@ plugins {
 
 android {
     namespace 'com.kt.apps.media.xemtv'
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.kt.apps.media.xemtv"
         minSdk 21
-        targetSdk 32
-        versionCode 23032401
+        targetSdk 33
+        versionCode 23032803
         versionName "$versionCode"
         setProperty("archivesBaseName", "iMedia.$versionName")
 
@@ -37,6 +37,9 @@ dependencies {
     implementation 'androidx.leanback:leanback:1.0.0'
     implementation appDependencies.values()
     implementation 'androidx.work:work-runtime-ktx:2.7.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     testImplementation testDependencies.values()
     kaptTest kotlinTestDependencies.values()
     kaptAndroidTest kotlinAndroidTestDependencies.values()
@@ -58,5 +61,6 @@ dependencies {
     implementation project(":tv")
     implementation project(":football")
     implementation otherLibs.values()
+    implementation rxJavaDependencies.values()
 
 }

@@ -9,6 +9,10 @@ ext {
             tvProvider        : "androidx.tvprovider:tvprovider:1.0.0"
     ]
 
+    media = [
+            androidMedia: "androidx.media:media:1.6.0"
+    ]
+
     testDependencies = [
             jUnit  : 'junit:junit:4.13.2',
             jupiter: 'org.junit.jupiter:junit-jupiter:5.9.1',
@@ -87,12 +91,13 @@ ext {
     ]
 
     exoPlayerDependencies = [
-            player  : 'com.google.android.exoplayer:exoplayer:2.18.1',
-            core    : 'com.google.android.exoplayer:exoplayer-core:2.18.1',
-            leanback: 'com.google.android.exoplayer:extension-leanback:2.18.1',
-            ui      : 'com.google.android.exoplayer:exoplayer-ui:2.18.1',
-            hls     : 'com.google.android.exoplayer:exoplayer-hls:2.18.1',
-            ima     : 'com.google.android.exoplayer:extension-ima:2.18.1',
+            player      : 'com.google.android.exoplayer:exoplayer:2.18.1',
+            core        : 'com.google.android.exoplayer:exoplayer-core:2.18.1',
+            leanback    : 'com.google.android.exoplayer:extension-leanback:2.18.1',
+            ui          : 'com.google.android.exoplayer:exoplayer-ui:2.18.1',
+            hls         : 'com.google.android.exoplayer:exoplayer-hls:2.18.1',
+            ima         : 'com.google.android.exoplayer:extension-ima:2.18.1',
+            mediaSession: 'com.google.android.exoplayer:extension-mediasession:2.18.1'
     ]
 
     authen = [

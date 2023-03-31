@@ -6,7 +6,10 @@ import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import androidx.core.content.ContextCompat
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
 
@@ -15,6 +18,7 @@ import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.loadImgByDrawableIdResName
 import com.kt.apps.core.utils.loadImgByUrl
 import com.kt.apps.media.xemtv.R
+import org.w3c.dom.Text
 import kotlin.properties.Delegates
 
 /**
@@ -34,7 +38,7 @@ class DashboardTVChannelPresenter : Presenter() {
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
 
         val wrapper = ContextThemeWrapper(parent.context, R.style.ImageCardViewStyleTitle)
-        val cardView = object : ImageCardView(wrapper) {
+        val cardView:ImageCardView = object : ImageCardView(wrapper) {
             override fun setSelected(selected: Boolean) {
                 updateCardBackgroundColor(this, selected)
                 super.setSelected(selected)
@@ -64,7 +68,7 @@ class DashboardTVChannelPresenter : Presenter() {
         cardView.let { imgView ->
             val channelName = item.tvChannelName
             val name = Constants.mapChannel[channelName]
-
+            imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
             name?.let {
                 imgView.mainImageView
                     .loadImgByDrawableIdResName(it, item.logoChannel)

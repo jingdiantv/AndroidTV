@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="600dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="100dp"
+        android:layout_marginTop="80dp"
+        android:theme="@style/Theme.MaterialComponents">
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/TextAppearance.Leanback.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp"
+            android:text="Thêm nguồn video"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:hint="Tên nguồn"
+            android:theme="@style/TextInputLayout"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxStrokeColor="@color/box_stroke_color"
+            app:hintTextColor="@color/box_stroke_color"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/textInputEditText"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:paddingTop="10dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+                android:textSize="22sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayout_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:hint="Đường dẫn"
+            android:nextFocusUp="@id/textInputEditText"
+            android:nextFocusForward="@id/textInputEditText"
+            android:theme="@style/TextInputLayout"
+            app:boxBackgroundMode="outline"
+            app:boxCollapsedPaddingTop="0dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxStrokeColor="@color/box_stroke_color"
+            app:hintTextColor="@color/box_stroke_color"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textInputLayout">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/textInputEditText_2"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:paddingTop="10dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+                android:textSize="22sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/white"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:insetTop="0dp"
+            app:cornerRadius="8dp"
+            android:insetBottom="0dp"
+            android:nextFocusUp="@id/textInputLayout_2"
+            android:text="Lưu"
+            android:textAllCaps="false"
+            android:textSize="22sp"
+            app:layout_constraintEnd_toEndOf="@id/textInputLayout_2"
+            app:layout_constraintStart_toStartOf="@id/textInputLayout_2"
+            app:layout_constraintTop_toBottomOf="@id/textInputLayout_2" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

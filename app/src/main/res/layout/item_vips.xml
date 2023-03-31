@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/txt_vips_tags"
+    android:layout_width="wrap_content"
+    android:visibility="visible"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal|bottom"
+    android:background="@drawable/background_corners_8dp"
+    android:backgroundTint="@color/black"
+    android:drawableStart="@drawable/round_star_24"
+    android:drawablePadding="10dp"
+    android:gravity="center"
+    android:includeFontPadding="false"
+    android:paddingHorizontal="24dp"
+    android:paddingVertical="8dp"
+    android:text="VIP"
+    android:textColor="#FFC600">
+
+</TextView>
