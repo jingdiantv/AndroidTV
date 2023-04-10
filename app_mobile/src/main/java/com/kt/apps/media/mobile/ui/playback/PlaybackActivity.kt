@@ -124,11 +124,6 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>() {
                 exoControllerRecyclerView.alpha = exoControllerBackgroundView.alpha
             }
             currentAlpha = exoControllerBackgroundView.alpha
-            Logger.d(this@PlaybackActivity, "ExoBackground", "Alpha = ${exoControllerBackgroundView.alpha}")
-        }
-
-        exoControllerBackgroundView.viewTreeObserver.addOnGlobalLayoutListener {
-            Logger.d(this@PlaybackActivity, "ExoBackground", "OnGlobal")
         }
 
     }
@@ -214,7 +209,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>() {
         currentPlayingItem = data
         exoPlayerManager.playVideo(data.linkStream.map {
             LinkStream(it, data.channel.tvChannelWebDetailPage, data.channel.tvChannelWebDetailPage)
-        })
+        }, data.channel.isHls)
         titleVideoView.text = data.channel.tvChannelName
         binding.exoPlayer.player = exoPlayerManager.exoPlayer
     }

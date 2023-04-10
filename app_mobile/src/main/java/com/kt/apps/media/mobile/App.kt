@@ -1,11 +1,14 @@
 package com.kt.apps.media.mobile
 
+import androidx.work.Configuration
 import androidx.work.WorkManager
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.DaggerCoreComponents
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.di.DaggerTVComponents
 import com.kt.apps.core.tv.di.TVComponents
 import com.kt.apps.football.di.DaggerFootballComponents
@@ -16,7 +19,7 @@ import dagger.android.AndroidInjector
 import dagger.android.DaggerApplication
 import javax.inject.Inject
 
-class App : CoreApp() {
+class App : CoreApp(), Configuration.Provider {
 
     private val _coreComponents by lazy {
         DaggerCoreComponents.builder()
@@ -37,6 +40,9 @@ class App : CoreApp() {
             .build()
     }
 
+    val appComponents: AppComponents
+        get() = applicationInjector() as AppComponents
+
     val coreComponents: CoreComponents
         get() = _coreComponents
 
@@ -53,6 +59,15 @@ class App : CoreApp() {
         super.onCreate()
         app = this
         Firebase.initialize(this)
+        Firebase.remoteConfig.fetch(20)
+        Firebase.remoteConfig
+            .fetchAndActivate()
+            .addOnSuccessListener {
+                Logger.d(this, tag = "RemoteConfig", message = "Success")
+            }
+            .addOnFailureListener {
+                Logger.d(this, tag = "RemoteConfig", message = "Failure")
+            }
         (applicationInjector() as AppComponents).inject(this)
     }
 
@@ -68,6 +83,12 @@ class App : CoreApp() {
     companion object {
         private lateinit var app: App
         fun get() = app
+    }
+
+    override fun getWorkManagerConfiguration(): Configuration {
+        return Configuration.Builder()
+            .setDefaultProcessName("com.kt.apps")
+            .build()
     }
 
 

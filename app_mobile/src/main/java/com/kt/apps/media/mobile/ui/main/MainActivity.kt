@@ -1,11 +1,14 @@
 package com.kt.apps.media.mobile.ui.main
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
+import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.os.Parcelable
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewTreeObserver
+import android.util.Log
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,11 +22,14 @@ import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannelGroup
+import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.core.utils.gone
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
+import com.kt.apps.media.mobile.services.TVService
+import com.kt.apps.media.mobile.ui.playback.ITVServiceAidlInterface
 import com.kt.apps.media.mobile.ui.playback.PlaybackActivity
 import com.kt.skeleton.KunSkeleton
 import javax.inject.Inject
@@ -32,6 +38,19 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     @Inject
     lateinit var factory: ViewModelProvider.Factory
+    private var service: ITVServiceAidlInterface? = null
+    private var iServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Log.e("TAG", "onServiceConnected")
+            this@MainActivity.service = ITVServiceAidlInterface.Stub.asInterface(service!!)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.e("TAG", "onServiceDisconnected")
+
+        }
+
+    }
 
     private val adapter by lazy {
         TVDashboardAdapter().apply {
@@ -41,12 +60,15 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
+    private var navigationRailView: NavigationBarView? = null
+
     private val onItemSelected by lazy {
         NavigationBarView.OnItemSelectedListener {
             when (it.itemId) {
                 R.id.radio -> {
-                    if (binding.navigationRailView.selectedItemId != R.id.radio) {
-                        Logger.d(this@MainActivity, "OnSelectedChange", "Radio")
+                    Logger.d(this@MainActivity, "OnSelectedChange", "Radio")
+                    service?.sendData("Radio")
+                    if (navigationRailView?.selectedItemId != R.id.radio) {
                         onScrollListener?.let { it1 -> binding.mainChannelRecyclerView.removeOnScrollListener(it1) }
                         binding.mainChannelRecyclerView.smoothScrollToPosition(8)
                         binding.mainChannelRecyclerView.addOnScrollListener(object : OnScrollListener() {
@@ -67,7 +89,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
 
                 R.id.tv -> {
-                    if (binding.navigationRailView.selectedItemId != R.id.tv) {
+                    if (navigationRailView?.selectedItemId != R.id.tv) {
                         Logger.d(this@MainActivity, "OnSelectedChange", "TV")
                         onScrollListener?.let { it1 -> binding.mainChannelRecyclerView.removeOnScrollListener(it1) }
                         binding.mainChannelRecyclerView.smoothScrollToPosition(0)
@@ -109,22 +131,20 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
                 val itemTitle = adapter.listItem[item].first
                 if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                    if (binding.navigationRailView.selectedItemId != R.id.radio && System.currentTimeMillis() - lastDetectedTime > 300) {
+                    if (navigationRailView?.selectedItemId != R.id.radio && System.currentTimeMillis() - lastDetectedTime > 300) {
                         Logger.d(this@MainActivity, message = "Change item Radio")
-                        binding.navigationRailView.setOnItemSelectedListener(null)
+                        navigationRailView?.setOnItemSelectedListener(null)
                         lastDetectedTime = System.currentTimeMillis()
-                        binding.navigationRailView.findViewById<View>(R.id.radio)
-                            .performClick()
-                        binding.navigationRailView.setOnItemSelectedListener(onItemSelected)
+                        navigationRailView?.selectedItemId = R.id.radio
+                        navigationRailView?.setOnItemSelectedListener(onItemSelected)
                     }
                 } else {
-                    if (binding.navigationRailView.selectedItemId != R.id.tv && System.currentTimeMillis() - lastDetectedTV > 300) {
+                    if (navigationRailView?.selectedItemId != R.id.tv && System.currentTimeMillis() - lastDetectedTV > 300) {
                         lastDetectedTV = System.currentTimeMillis()
                         Logger.d(this@MainActivity, message = "Change item TV")
-                        binding.navigationRailView.setOnItemSelectedListener(null)
-                        binding.navigationRailView.findViewById<View>(R.id.tv)
-                            .performClick()
-                        binding.navigationRailView.setOnItemSelectedListener(onItemSelected)
+                        navigationRailView?.setOnItemSelectedListener(null)
+                        navigationRailView?.selectedItemId = R.id.tv
+                        navigationRailView?.setOnItemSelectedListener(onItemSelected)
                     }
                 }
             }
@@ -153,6 +173,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         if (savedInstanceState == null) {
             tvChannelViewModel.getListTVChannel(true)
         }
+        navigationRailView = binding.navigationRailView as NavigationBarView
+        binding.mainChannelRecyclerView.isNestedScrollingEnabled = false
+        binding.mainChannelRecyclerView.layoutManager = LinearLayoutManager(this).apply {
+            this.isItemPrefetchEnabled = true
+            this.initialPrefetchItemCount = 9
+        }
+        binding.mainChannelRecyclerView.setHasFixedSize(true)
+        binding.mainChannelRecyclerView.setItemViewCacheSize(9)
         binding.mainChannelRecyclerView.viewTreeObserver
             .addOnGlobalLayoutListener {
                 adapter.spanCount =
@@ -165,11 +193,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override fun initAction(savedInstanceState: Bundle?) {
         onScrollListener = _onScrollListener
         binding.swipeRefreshLayout.setOnRefreshListener {
-            tvChannelViewModel.getListTVChannel(true)
+            tvChannelViewModel.getListTVChannel(true, TVDataSourceFrom.MAIN_SOURCE)
         }
         binding.mainChannelRecyclerView.addOnScrollListener(onScrollListener!!)
         binding.mainChannelRecyclerView.setHasFixedSize(true)
-        binding.navigationRailView.setOnItemSelectedListener(onItemSelected)
+        navigationRailView?.setOnItemSelectedListener(onItemSelected)
         tvChannelViewModel.tvChannelLiveData.observe(this) {
             when (it) {
                 is DataState.Success -> {
@@ -177,7 +205,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     skeletonScreen.hide {
                         adapter.onRefresh(
                             it.data.groupBy {
-                                it.tvGroupLocalName
+                                it.tvGroup
                             }.toList()
                                 .sortedWith(Comparator { o1, o2 ->
                                     if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value) {
@@ -230,12 +258,37 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent()
+        intent.component = ComponentName("com.kt.apps.media.mobile.xemtv", "com.kt.apps.media.mobile.services.TVService")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            applicationContext.startForegroundService(intent)
+        } else {
+            applicationContext.startService(intent)
+        }
+        bindService(intent, iServiceConnection, Context.BIND_IMPORTANT)
+
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        navigationRailView = binding.navigationRailView as NavigationBarView
+    }
+
+
     override fun onStop() {
         binding.progressDialog.fadeOut {
             binding.progressDialog.gone()
             progressHelper.stopSpinning()
         }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        navigationRailView = null
     }
 
     override fun onNewIntent(intent: Intent?) {
