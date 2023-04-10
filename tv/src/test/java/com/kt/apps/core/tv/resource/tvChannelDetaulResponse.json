@@ -1,0 +1,22 @@
+{
+  "id": "a6d06ff3-aec4-469d-b011-67f2edb86d4b",
+  "slug": "sctv3-hd-cf3adaca",
+  "link_play": "https://e1.endpoint.cdn.sctvonline.vn/channel/sctv3/s1/index.m3u8",
+  "is_favorite": false,
+  "progress": 0,
+  "is_watchable": true,
+  "youtube_video_id": "",
+  "payment_infors": null,
+  "drm_session_info": null,
+  "play_info": {
+    "detail": "Chương trình này không có link play. Xin thử lại",
+    "error": 1,
+    "time": 1680154602.1847134,
+    "data": {
+      "link_play": null,
+      "hls_link_play": null,
+      "dash_link_play": null
+    }
+  },
+  "current_season": null
+}

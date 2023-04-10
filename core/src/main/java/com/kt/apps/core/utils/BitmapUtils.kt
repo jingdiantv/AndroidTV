@@ -80,7 +80,9 @@ fun ImageView.loadImgByUrl(url: String, scaleType: ScaleType = ScaleType.CENTER_
     GlideApp.with(this)
         .load(url)
         .error(R.drawable.app_icon)
+        .override(170, 120)
         .scaleType(scaleType)
+        .fitCenter()
         .into(this)
 }
 
@@ -100,7 +102,9 @@ fun ImageView.loadImgByDrawableIdResName(
     val context = context.applicationContext
     val id = context.resources.getIdentifier(
         name.removeSuffix(".png")
-            .removeSuffix(".jpg"),
+            .removeSuffix(".jpg")
+            .removeSuffix(".webp")
+            .removeSuffix(".jpeg"),
         "drawable",
         context.packageName
     )

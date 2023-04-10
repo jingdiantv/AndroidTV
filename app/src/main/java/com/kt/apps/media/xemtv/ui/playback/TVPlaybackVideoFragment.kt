@@ -1,6 +1,8 @@
 package com.kt.apps.media.xemtv.ui.playback
 
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -8,13 +10,14 @@ import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.PresenterSelector
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.PlaybackException
+import com.kt.apps.core.R
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
-import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.main.MainActivity
@@ -33,7 +36,19 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
 
     override fun onHandlePlayerError(error: PlaybackException) {
         super.onHandlePlayerError(error)
-        tvChannelViewModel.retryGetLastWatchedChannel()
+        Logger.e(this, exception = error.cause ?: Throwable("Error playback"))
+        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+            || error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
+            || error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+        ) {
+            showErrorDialog(content = "Kênh ${tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "TV"} hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.message} ${error.errorCode}")
+        } else {
+            tvChannelViewModel.retryGetLastWatchedChannel()
+        }
+    }
+
+    override fun onError(errorCode: Int, errorMessage: CharSequence?) {
+        super.onError(errorCode, errorMessage)
     }
 
     private var mCurrentSelectedChannel: TVChannel? = null
@@ -74,9 +89,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
         tvChannelViewModel.markLastWatchedChannel(tvChannel)
         tvChannel?.let {
             mCurrentSelectedChannel = it.channel
-            if (it.channel.isRadio) {
-                getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
-            }
+            setBackgroundByStreamingType(it)
             playVideo(tvChannel)
         } ?: let {
         }
@@ -95,6 +108,14 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
 
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             loadChannelListByDataState(it)
+        }
+    }
+
+    private fun setBackgroundByStreamingType(it: TVChannelLinkStream) {
+        if (it.channel.isRadio) {
+            getBackgroundView()?.setBackgroundResource(R.drawable.bg_radio_playing)
+        } else {
+            getBackgroundView()?.background = ColorDrawable(Color.TRANSPARENT)
         }
     }
 
@@ -130,6 +151,8 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
                 val tvChannel = dataState.data
                 if (tvChannel.channel.isRadio) {
                     getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
+                } else {
+                    getBackgroundView()?.background = ColorDrawable(Color.TRANSPARENT)
                 }
                 playVideo(tvChannel)
                 Logger.d(this, message = "Play media source")
@@ -161,7 +184,8 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
             null,
             tvChannel.channel.tvChannelWebDetailPage,
             tvChannel.linkStream,
-            true
+            true,
+            isHls = tvChannel.channel.isHls
         )
         if (tvChannelViewModel.tvChannelLiveData.value is DataState.Success) {
             val listChannel = (tvChannelViewModel.tvChannelLiveData.value as DataState.Success<List<TVChannel>>).data

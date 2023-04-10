@@ -1,7 +1,5 @@
 package com.kt.apps.core.base
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -16,7 +14,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
 import androidx.leanback.app.ProgressBarManager
@@ -35,11 +32,11 @@ import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.utils.*
 import com.kt.skeleton.makeGone
-import com.kt.skeleton.setMarginBottomToParent
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -129,6 +126,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
     private val autoHideOverlayRunnable by lazy {
         Runnable {
+            isAnimationHideGridMenuShowVideoInfoRunning.set(false)
             mBrowseDummyView?.fadeOut{
                 mGridViewOverlays?.translationY = mGridViewPickHeight
                 mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
@@ -147,11 +145,6 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        exoPlayerManager.prepare()
-        exoPlayerManager.playerAdapter?.setRepeatAction(PlaybackControlsRow.RepeatAction.INDEX_NONE)
-        mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
-        mTransportControlGlue.host = mGlueHost
-        mTransportControlGlue.isSeekEnabled = false
     }
 
 
@@ -214,13 +207,35 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         return root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        exoPlayerManager.prepare()
+        exoPlayerManager.playerAdapter?.setRepeatAction(PlaybackControlsRow.RepeatAction.INDEX_NONE)
+        mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
+        mTransportControlGlue.host = mGlueHost
+        mTransportControlGlue.isSeekEnabled = false
+    }
+
+    override fun onStart() {
+        super.onStart()
+        hideControlsOverlay(false)
+        val controlBackground = view?.findViewById<View>(androidx.leanback.R.id.playback_controls_dock)
+        controlBackground?.makeGone()
+    }
+
+
+
     private fun onPlayPauseIconClicked() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
-        if (true == exoPlayerManager.playerAdapter?.isPlaying) {
-            exoPlayerManager.playerAdapter?.pause()
-        } else {
-            exoPlayerManager.playerAdapter?.play()
-            mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        try {
+            if (true == exoPlayerManager.playerAdapter?.isPlaying) {
+                exoPlayerManager.playerAdapter?.pause()
+            } else {
+                exoPlayerManager.playerAdapter?.play()
+                mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+            }
+        } catch (e: Exception) {
+            Logger.e(this, exception = e)
         }
     }
 
@@ -272,24 +287,26 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mGridViewHolder?.gridView?.setSelectedPositionSmooth(position)
     }
 
-    fun playVideo(title: String, subTitle: String?, referer: String, linkStream: List<String>, isLive: Boolean) {
+    fun playVideo(title: String, subTitle: String?, referer: String, linkStream: List<String>, isLive: Boolean, isHls: Boolean) {
         playVideo(title, subTitle, linkStream.map {
             LinkStream(it, referer, title)
-        }, mPlayerListener, isLive)
+        }, mPlayerListener, isLive, isHls)
     }
 
     fun playVideo(
         title: String, subTitle: String?,
         linkStreams: List<LinkStream>,
         listener: Player.Listener? = null,
-        isLive: Boolean
+        isLive: Boolean,
+        isHls: Boolean
     ) {
+        exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener)
+        mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
         mTransportControlGlue.host = mGlueHost
         mTransportControlGlue.title = title
         mTransportControlGlue.subtitle = subTitle
         mTransportControlGlue.isSeekEnabled = false
         mTransportControlGlue.playWhenPrepared()
-        exoPlayerManager.playVideo(linkStreams, listener ?: mPlayerListener)
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)
         setVideoInfo(title, subTitle, isLive)
@@ -403,17 +420,31 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     override fun onDpadCenter() {
+        showGridMenu()
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+    }
+
+    fun isMenuShowed(): Boolean {
+        return mPlaybackOverlaysContainerView?.visibility == View.VISIBLE
+    }
+
+    private fun showGridMenu(): Boolean {
         if (mPlaybackInfoContainerView == null) {
-            Logger.d(this, "DpadCenter", "{" +
-                    "mPlaybackInfoContainerView null" +
-                    "}")
-            return
+            Logger.d(
+                this, "DpadCenter", "{" +
+                        "mPlaybackInfoContainerView null" +
+                        "}"
+            )
+            return true
         }
         val visible = mPlaybackOverlaysContainerView?.visibility == View.VISIBLE
-        Logger.d(this, "DpadCenter", "{" +
-                "mPlaybackOverlaysContainerView visibility: ${mPlaybackOverlaysContainerView?.visibility}" +
-                "mPlaybackOverlaysContainerView alpha: ${mPlaybackOverlaysContainerView?.alpha}" +
-                "}")
+        Logger.d(
+            this, "DpadCenter", "{" +
+                    "mPlaybackOverlaysContainerView visibility: ${mPlaybackOverlaysContainerView?.visibility}" +
+                    "mPlaybackOverlaysContainerView alpha: ${mPlaybackOverlaysContainerView?.alpha}" +
+                    "}"
+        )
         if (!visible || mPlaybackOverlaysContainerView!!.alpha < 1f) {
             mPlaybackOverlaysContainerView?.fadeIn()
             mPlaybackInfoContainerView?.fadeIn()
@@ -424,17 +455,18 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             mPlayPauseIcon?.requestFocus()
             setSelectedPosition(0)
         }
-        mHandler.removeCallbacks(autoHideOverlayRunnable)
-        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        return false
     }
 
     override fun onDpadDown() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
 
         val visible = mPlaybackInfoContainerView?.visibility == View.VISIBLE
-        if (visible) {
+        if (isMenuShowed()) {
             Logger.d(this, message = "y = ${mGridViewOverlays?.translationY} - $mGridViewPickHeight")
-            mPlaybackInfoContainerView?.fadeOut()
+            mPlaybackInfoContainerView?.fadeOut{
+                isAnimationHideGridMenuShowVideoInfoRunning.set(false)
+            }
             if (mGridViewOverlays!!.translationY == mGridViewPickHeight) {
                 mGridViewOverlays?.translateY(0f) {
                     Logger.d(this, message = "translateY = ${mGridViewOverlays?.translationY} - $mGridViewPickHeight")
@@ -443,10 +475,46 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                     mBrowseDummyView?.setBackgroundColor(mDarkOverlayColor)
                 }
             }
+        } else {
+            showGridMenu()
         }
     }
 
+    private val isAnimationHideGridMenuShowVideoInfoRunning by lazy {
+        AtomicBoolean()
+    }
     override fun onDpadUp() {
+        if (isAnimationHideGridMenuShowVideoInfoRunning.get()) {
+            return
+        }
+        when {
+            !isMenuShowed() -> {
+                showGridMenu()
+            }
+            mPlayPauseIcon?.isFocused == true -> {
+                autoHideOverlayRunnable.run()
+                isAnimationHideGridMenuShowVideoInfoRunning.set(false)
+            }
+            mGridViewHolder!!.gridView.selectedPosition in 0..4 -> {
+                isAnimationHideGridMenuShowVideoInfoRunning.set(true)
+                mGridViewHolder?.gridView?.clearFocus()
+                mPlaybackInfoContainerView?.fadeIn {
+                    mPlayPauseIcon?.requestFocus()
+                    isAnimationHideGridMenuShowVideoInfoRunning.set(false)
+                }
+                mGridViewOverlays?.translateY(mGridViewPickHeight, onAnimationEnd = {
+                    mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+                    mPlaybackInfoContainerView?.alpha = 1f
+                    mPlayPauseIcon?.requestFocus()
+                    isAnimationHideGridMenuShowVideoInfoRunning.set(false)
+                }, onAnimationCancel = {
+                    isAnimationHideGridMenuShowVideoInfoRunning.set(false)
+                    mPlaybackInfoContainerView?.alpha = 1f
+                    mPlayPauseIcon?.requestFocus()
+                    mGridViewOverlays?.translationY = mGridViewPickHeight
+                })
+            }
+        }
         mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
@@ -522,7 +590,6 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mBackgroundView = null
         mVideoSurface = null
         mBrowseDummyView = null
-        mTransportControlGlue.host = null
         exoPlayerManager.detach(mPlayerListener)
         mGlueHost.setSurfaceHolderCallback(null)
         setSurfaceHolderCallback(null)

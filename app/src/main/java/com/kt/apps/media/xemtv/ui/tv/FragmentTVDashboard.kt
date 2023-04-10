@@ -23,7 +23,6 @@ import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
-import com.kt.apps.media.xemtv.presenter.TVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
@@ -34,6 +33,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
+
 
     private val tvChannelViewModel by lazy {
         ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
@@ -64,6 +64,10 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         }
 
         onItemViewClickedListener = OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
+            if (!(item as TVChannel).isFreeContent) {
+                showErrorDialog(content = "Đây là nội dung tính phí\r\nLiên hệ đội phát triển để có thêm thông tin")
+                return@OnItemViewClickedListener
+            }
             tvChannelViewModel.getLinkStreamForChannel(tvDetail = item as TVChannel)
             selectedView = itemViewHolder.view as ImageCardView
         }
@@ -72,9 +76,13 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
             when (it) {
                 is DataState.Success -> {
                     mRowsAdapter.clear()
-                    val channelWithCategory = it.data.groupBy {
-                        it.tvGroup
-                    }
+                    val channelWithCategory = it.data
+                        .filter {
+                            !it.isRadio
+                        }
+                        .groupBy {
+                            it.tvGroup
+                        }
                     val dashboardTVChannelPresenter = DashboardTVChannelPresenter()
                     for ((group, channelList) in channelWithCategory) {
                         val headerItem = try {

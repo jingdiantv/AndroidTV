@@ -9,7 +9,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.MapChannel
 import com.kt.apps.core.tv.FirebaseLogUtils
+import com.kt.apps.core.tv.datasource.EXTRA_KEY_VERSION_NEED_REFRESH
 import com.kt.apps.core.tv.datasource.ITVDataSource
+import com.kt.apps.core.tv.datasource.needRefreshData
+import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
 import com.kt.apps.core.utils.getBaseUrl
@@ -21,6 +24,7 @@ import org.json.JSONObject
 import org.jsoup.Jsoup
 import javax.inject.Inject
 
+@TVScope
 class VDataSourceImpl @Inject constructor(
     private val compositeDisposable: DisposableContainer,
     private val keyValueStorage: TVStorage,
@@ -28,26 +32,36 @@ class VDataSourceImpl @Inject constructor(
     private val remoteConfig: FirebaseRemoteConfig,
     private val firebaseDatabase: FirebaseDatabase
 ) : ITVDataSource {
-
-    private fun needRefresh(): Boolean {
-        val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
-        val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
-        val refreshedInVersion = keyValueStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
-        return needRefresh && version > refreshedInVersion
+    private fun getSupportTVGroup(): List<TVChannelGroup> {
+        return listOf(
+            TVChannelGroup.VTV,
+            TVChannelGroup.HTV,
+            TVChannelGroup.VTC,
+            TVChannelGroup.HTVC,
+            TVChannelGroup.THVL,
+            TVChannelGroup.DiaPhuong,
+            TVChannelGroup.AnNinh,
+            TVChannelGroup.VOV,
+            TVChannelGroup.VOH,
+            TVChannelGroup.Intenational
+        )
     }
+
+    private val _needRefresh: Boolean
+        get() = this.needRefreshData(remoteConfig, keyValueStorage)
 
     private var isOnline: Boolean = false
 
     override fun getTvList(): Observable<List<TVChannel>> {
-        val listGroup = TVChannelGroup.values().map {
+        val listGroup = getSupportTVGroup().map {
             it.name
         }
 
         return Observable.create<List<TVChannel>> { emitter ->
             val totalChannel = mutableListOf<TVChannel>()
             var count = 0
+            val needRefresh = _needRefresh
             listGroup.forEach { group ->
-                val needRefresh = needRefresh()
                 if (keyValueStorage.getTvByGroup(group).isNotEmpty() && !needRefresh) {
                     isOnline = false
                     totalChannel.addAll(keyValueStorage.getTvByGroup(group))
@@ -68,7 +82,7 @@ class VDataSourceImpl @Inject constructor(
                             emitter.onNext(totalChannel)
                             if (needRefresh) {
                                 keyValueStorage.saveRefreshInVersion(
-                                    group,
+                                    EXTRA_KEY_VERSION_NEED_REFRESH,
                                     remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
                                 )
                             }
@@ -166,9 +180,9 @@ class VDataSourceImpl @Inject constructor(
         return firebaseDatabase.reference.child(name)
             .get()
             .addOnSuccessListener {
-                val value = it.getValue<List<DataFromFirebase>>() ?: return@addOnSuccessListener
+                val value = it.getValue<List<DataFromFirebase?>>() ?: return@addOnSuccessListener
                 onComplete(
-                    value.map { dataFromFirebase ->
+                    value.filterNotNull().map { dataFromFirebase ->
                         TVChannel(
                             name,
                             tvChannelName = dataFromFirebase.name,
@@ -184,9 +198,5 @@ class VDataSourceImpl @Inject constructor(
                     })
             }
     }
-    
-    companion object {
-        private const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
-        private const val EXTRA_KEY_USE_ONLINE = "use_online_data"
-    }
+
 }

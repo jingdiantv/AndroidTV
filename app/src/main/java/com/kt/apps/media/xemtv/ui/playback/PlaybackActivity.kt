@@ -12,11 +12,13 @@ import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.football.model.FootballMatchWithStreamLink
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.databinding.ActivityPlaybackBinding
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.extensions.FragmentExtensionsPlayback
 import com.kt.apps.media.xemtv.ui.football.FootballPlaybackFragment
 import com.kt.apps.media.xemtv.ui.football.FootballViewModel
 import com.kt.apps.media.xemtv.ui.main.MainActivity
@@ -58,6 +60,12 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
                             )
                         )
                         .commit()
+                }
+            }
+
+            Type.EXTENSION -> {
+                if (savedInstanceState == null) {
+                    startPlaybackExtensionsChannel(intent)
                 }
             }
 
@@ -110,6 +118,12 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
             deepLink.host.equals(Constants.HOST_TV) || deepLink.host.equals(Constants.HOST_RADIO) -> {
                 tvChannelViewModel.playTvByDeepLinks(deepLink)
                 if (savedInstanceState == null) {
+                    supportFragmentManager.fragments
+                        .forEach {
+                            supportFragmentManager.beginTransaction()
+                                .remove(it)
+                                .commitNow()
+                        }
                     supportFragmentManager.beginTransaction()
                         .replace(android.R.id.content, TVPlaybackVideoFragment())
                         .commit()
@@ -176,11 +190,27 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
 
             }
 
+            Type.EXTENSION -> {
+                startPlaybackExtensionsChannel(intent)
+
+            }
+
             else -> {
 
             }
         }
 
+    }
+
+    private fun startPlaybackExtensionsChannel(intent: Intent) {
+        supportFragmentManager.beginTransaction()
+            .replace(
+                android.R.id.content, FragmentExtensionsPlayback.newInstance(
+                    intent.extras!!.getParcelable(EXTRA_ITEM_TO_PLAY)!!,
+                    intent.extras!!.getString(EXTRA_EXTENSIONS_ID)!!
+                )
+            )
+            .commit()
     }
 
     override fun onPause() {
@@ -189,15 +219,23 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
         footballViewModel.clearState()
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+    }
+
     @Parcelize
     enum class Type : Parcelable {
-        TV, FOOTBALL, RADIO
+        TV, FOOTBALL, RADIO, EXTENSION
     }
 
     companion object {
         const val EXTRA_PLAYBACK_TYPE = "extra:playback_type"
         const val EXTRA_FOOTBALL_MATCH = "extra:football_match"
         const val EXTRA_TV_CHANNEL = "extra:tv_channel"
+
+        const val EXTRA_ITEM_TO_PLAY = "extra:item_to_play"
+        const val EXTRA_CHANNEL_LIST = "extra:channel_list"
+        const val EXTRA_EXTENSIONS_ID = "extra:extensions_id"
         fun start(activity: FragmentActivity, type: Type) {
             val intent = Intent(activity, PlaybackActivity::class.java)
             intent.putExtra(EXTRA_PLAYBACK_TYPE, type as Parcelable)

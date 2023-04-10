@@ -23,3 +23,4 @@
 -keep class com.kt.apps.core.tv.datasource.** {*;}
 -keep class com.kt.apps.core.utils** {*;}
 -keepclassmembers class com.google.firebase.database.GenericTypeIndicator { *; }
+-keep class cn.pedant.SweetAlert.** {*; }

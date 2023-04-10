@@ -10,5 +10,10 @@ enum class TVChannelGroup(val value: String) {
     AnNinh("An Ninh"),
     VOV("VOV"),
     VOH("VOH"),
-    Intenational("Quốc tế")
+    Intenational("Quốc tế"),
+    SCTV("SCTV"),
+    Kid("Trẻ em"),
+    Radio("Radio"),
+    VTVCAB("VTVCAB"),
+    Music("Âm nhạc")
 }

@@ -15,7 +15,7 @@ import com.google.android.exoplayer2.Player
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.logging.Logger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.player.ExoPlayerManagerMobile
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.tv.model.TVChannelLinkStream

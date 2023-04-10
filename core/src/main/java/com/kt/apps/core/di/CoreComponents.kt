@@ -7,6 +7,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.CoreApp
+import com.kt.apps.core.base.player.ExoPlayerManagerMobile
+import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.logging.ActionLoggerFactory
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
@@ -35,6 +37,10 @@ interface CoreComponents {
     fun coreApp(): CoreApp
     fun context(): Context
 
+    fun exoPlayerManager(): ExoPlayerManagerMobile
+
+    fun parserExtensionsSource(): ParserExtensionsSource
+
     fun inject(scope: BaseViewModel)
 
     fun keyValueStorage(): IKeyValueStorage
@@ -43,6 +49,7 @@ interface CoreComponents {
     interface Builder {
         @BindsInstance
         fun application(context: CoreApp): Builder
+
         @BindsInstance
         fun context(context: Context): Builder
         fun storageModule(storageModule: StorageModule): Builder

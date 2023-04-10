@@ -9,13 +9,18 @@ import com.kt.apps.core.GlideApp
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.media.xemtv.R
 
+typealias HeaderItemLongClickListener = ((headerId: Long) -> Unit)
+
 class DashboardIconHeaderPresenterSelector : PresenterSelector() {
+    var onHeaderLongClickedListener: HeaderItemLongClickListener? = null
     override fun getPresenter(item: Any?): Presenter {
-        return HeaderIconPresenter().apply {
+        return HeaderIconPresenter(onHeaderLongClickedListener).apply {
         }
     }
 
-    class HeaderIconPresenter() : RowHeaderPresenter() {
+    class HeaderIconPresenter(
+        val onHeaderLongClickedListener: HeaderItemLongClickListener? = null
+    ) : RowHeaderPresenter() {
         override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
             val view = LayoutInflater.from(parent!!.context)
                 .inflate(R.layout.header_dashboard, parent, false)
@@ -30,6 +35,12 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
             headerItem?.let {
                 if (it is HeaderItemWithIcon) {
                     (viewHolder as HeaderIconViewHolder).apply {
+                        this.view.isLongClickable = true
+                        this.view.setOnLongClickListener {
+                            Logger.d(this, message = "HeaderID: ${headerItem.id}")
+                            onHeaderLongClickedListener?.invoke(headerItem.id)
+                            return@setOnLongClickListener true
+                        }
                         this.headerView.text = it.name
                         GlideApp.with(this.headerView)
                             .load(it.icon)

@@ -3,7 +3,8 @@ package com.kt.apps.core.base.player
 data class LinkStream(
     val m3u8Link: String,
     val referer: String,
-    val streamId: String
+    val streamId: String,
+    val isHls: Boolean = true
 ) {
     var token: String? = null
     var host: String? = null

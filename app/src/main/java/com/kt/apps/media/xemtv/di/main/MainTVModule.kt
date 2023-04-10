@@ -1,8 +1,12 @@
 package com.kt.apps.media.xemtv.di.main
 
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
+import com.kt.apps.media.xemtv.ui.DialogActivity
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.details.VideoDetailsFragment
+import com.kt.apps.media.xemtv.ui.extensions.FragmentAddExtensions
+import com.kt.apps.media.xemtv.ui.extensions.FragmentExtensions
+import com.kt.apps.media.xemtv.ui.extensions.FragmentExtensionsPlayback
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
 import com.kt.apps.media.xemtv.ui.football.FootballPlaybackFragment
 import com.kt.apps.media.xemtv.ui.main.DashboardFragment
@@ -22,6 +26,9 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun detailActivity(): DetailsActivity
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun dialogActivity(): DialogActivity
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun detailFragment(): VideoDetailsFragment
@@ -47,5 +54,14 @@ abstract class MainTVModule {
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun radioFragment(): RadioFragment
 
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun fragmentExtensions(): FragmentExtensions
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun fragmentExtensionsPlayback(): FragmentExtensionsPlayback
+
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun fragmentAddExtensions(): FragmentAddExtensions
 
 }

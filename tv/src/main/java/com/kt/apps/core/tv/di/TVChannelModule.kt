@@ -45,6 +45,25 @@ class TVChannelModule {
     @TVScope
     fun providesHTVDataSource(vDataSourceImpl: HTVBackUpDataSourceImpl): ITVDataSource = vDataSourceImpl
 
+
+    @Provides
+    @IntoMap
+    @TVDataSourceMapKey(TVDataSourceFrom.GG)
+    @TVScope
+    fun providesGGDataSource(dataSourceImpl: GGDataSourceImpl): ITVDataSource = dataSourceImpl
+
+    @Provides
+    @IntoMap
+    @TVDataSourceMapKey(TVDataSourceFrom.SCTV)
+    @TVScope
+    fun providesSCTVDataSource(vDataSourceImpl: SCTVDataSourceImpl): ITVDataSource = vDataSourceImpl
+
+    @Provides
+    @IntoMap
+    @TVDataSourceMapKey(TVDataSourceFrom.MAIN_SOURCE)
+    @TVScope
+    fun providesMainDataSourceDataSource(dataSourceImpl: MainTVDataSource): ITVDataSource = dataSourceImpl
+
     @Provides
     @Singleton
     fun providesMapBackupDataSource(): Map<String, TVDataSourceFrom> = mapOf(

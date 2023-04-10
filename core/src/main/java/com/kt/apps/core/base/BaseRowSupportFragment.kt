@@ -49,7 +49,10 @@ abstract class BaseRowSupportFragment : RowsSupportFragment(), HasAndroidInjecto
     }
 
     override fun onDestroyView() {
-        progressManager.hide()
+        try {
+            progressManager.hide()
+        } catch (_: Exception) {
+        }
         super.onDestroyView()
     }
 

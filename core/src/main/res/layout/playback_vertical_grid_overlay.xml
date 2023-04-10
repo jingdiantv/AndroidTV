@@ -37,6 +37,7 @@
                 android:layout_marginTop="10dp"
                 android:id="@+id/ic_play_pause"
                 android:layout_width="60dp"
+                android:nextFocusUp="@null"
                 android:nextFocusDown="@id/browse_grid_dock"
                 android:focusedByDefault="true"
                 android:layout_height="60dp"

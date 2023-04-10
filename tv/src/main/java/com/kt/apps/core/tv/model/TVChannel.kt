@@ -1,6 +1,9 @@
 package com.kt.apps.core.tv.model
 
 import android.os.Parcelable
+import androidx.room.PrimaryKey
+import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -10,14 +13,32 @@ class TVChannel(
     var tvChannelName: String,
     var tvChannelWebDetailPage: String,
     var sourceFrom: String,
-    val channelId: String
+    @PrimaryKey
+    val channelId: String,
+    val urls: List<Url> = listOf(),
+    var isFreeContent: Boolean = true,
 ) : Parcelable {
+
+    @Parcelize
+    data class Url(
+        val dataSource: String? = null,
+        val type: String,
+        val url: String
+    ) : Parcelable {
+        val isHls: Boolean
+            get() = url.contains("m3u8")
+    }
 
     val isRadio: Boolean
         get() = radioGroup.contains(tvGroup)
 
     val tvGroupLocalName: String
         get() = TVChannelGroup.valueOf(tvGroup).value
+
+    val isHls: Boolean
+        get() = tvChannelWebDetailPage.contains("m3u8")
+                || tvGroup != TVChannelGroup.VOV.name
+
 
     override fun toString(): String {
         return "{" +
@@ -51,5 +72,26 @@ class TVChannel(
         private val radioGroup by lazy {
             listOf(TVChannelGroup.VOV.name, TVChannelGroup.VOH.name)
         }
+
+        fun fromEntity(entity: TVChannelEntity) = TVChannel(
+            tvChannelName = entity.tvChannelName,
+            tvGroup = entity.tvGroup,
+            tvChannelWebDetailPage = entity.tvChannelWebDetailPage,
+            sourceFrom = entity.sourceFrom,
+            channelId = entity.channelId,
+            logoChannel = entity.logoChannel.toString(),
+            urls = listOf()
+        )
+
+        fun fromChannelExtensions(entity: ExtensionsChannel) = TVChannel(
+            tvChannelName = entity.tvChannelName,
+            tvGroup = entity.tvGroup,
+            tvChannelWebDetailPage = entity.tvStreamLink,
+            sourceFrom = entity.sourceFrom,
+            channelId = entity.channelId,
+            logoChannel = entity.logoChannel,
+            urls = listOf()
+
+        )
     }
 }

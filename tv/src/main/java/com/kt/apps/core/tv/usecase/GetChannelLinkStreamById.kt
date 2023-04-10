@@ -12,6 +12,10 @@ class GetChannelLinkStreamById @Inject constructor(
 ) : BaseUseCase<TVChannelLinkStream>() {
     override fun prepareExecute(params: Map<String, Any>): Observable<TVChannelLinkStream> {
         val channelId = params["channelId"] as String
+        Logger.d(
+            this, message = "{" +
+                    "channelId: $channelId}"
+        )
         return getTvLinks().flatMap { totalChannel ->
             try {
                 Logger.d(
@@ -24,7 +28,8 @@ class GetChannelLinkStreamById @Inject constructor(
                 }
                 getStreamLinkStreamFrom(chanel)
             } catch (e: Exception) {
-                Observable.error(e)
+                Logger.e(this, exception = e)
+                Observable.empty()
             }
         }
     }

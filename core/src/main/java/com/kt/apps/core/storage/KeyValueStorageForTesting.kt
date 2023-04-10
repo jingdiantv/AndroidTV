@@ -5,26 +5,27 @@ import androidx.annotation.VisibleForTesting
 @VisibleForTesting
 class KeyValueStorageForTesting : IKeyValueStorage {
     override fun <T> get(key: String, clazz: Class<T>): T {
-        TODO("Not yet implemented")
+        return clazz.newInstance()
     }
 
     override fun <T, U> get(key: String, clazz: Class<T>, clazz2: Class<U>): Map<T, U> {
-        TODO("Not yet implemented")
+       return mapOf()
     }
 
     override fun <T> save(key: String, value: T, clazz: Class<T>) {
-        TODO("Not yet implemented")
+        println(key)
     }
 
     override fun <T, U> save(key: String, value: Map<T, U>) {
-        TODO("Not yet implemented")
+        println(key)
     }
 
     override fun <T> save(key: String, value: List<T>) {
-        TODO("Not yet implemented")
+        println(key)
     }
 
     override fun <T> getList(key: String, clazz: Class<T>): List<T> {
-        TODO("Not yet implemented")
+        println(key)
+        return listOf()
     }
 }

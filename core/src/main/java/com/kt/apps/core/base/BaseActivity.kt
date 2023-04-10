@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.FragmentActivity
@@ -23,6 +25,7 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.kt.apps.core.BuildConfig
+import com.kt.apps.core.R
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.core.utils.updateLocale
@@ -178,10 +181,16 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
                 it is IKeyCodeHandler
             }?.let {
                 it as IKeyCodeHandler
-            } ?: return super.onKeyDown(keyCode, event)
+            }
+            ?: supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
+                ?.takeIf {
+                    it is IKeyCodeHandler
+                }?.let {
+                    it as IKeyCodeHandler
+                } ?: return super.onKeyDown(keyCode, event)
 
         when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_CENTER -> {
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                 iKeyCodeHandler.onDpadCenter()
             }
 
@@ -255,7 +264,22 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
                 it as BasePlaybackFragment
             } ?: return super.onBackPressed()
         if (fragment.canBackToMain()) {
-            super.onBackPressed()
+            Logger.d(
+                this, "BackPressed", message = "" +
+                        "{" +
+                        "className: ${this.componentName.className}, " +
+                        "isTaskRoot: $isTaskRoot" +
+                        "}"
+            )
+            if (this.componentName.className.contains("PlaybackActivity") && CoreApp.activityCount == 1) {
+                startActivity(Intent().apply {
+                    this.data = Uri.parse("xemtv://tv/dashboard")
+                    this.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+                finish()
+            } else {
+                super.onBackPressed()
+            }
         } else {
             fragment.hideOverlay()
         }

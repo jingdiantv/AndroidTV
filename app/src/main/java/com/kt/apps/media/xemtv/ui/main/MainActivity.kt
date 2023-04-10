@@ -2,15 +2,17 @@ package com.kt.apps.media.xemtv.ui.main
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseActivity
-import com.kt.apps.core.utils.showErrorDialog
+import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.media.xemtv.BuildConfig
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.databinding.ActivityMainBinding
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import javax.inject.Inject
 
 /**
@@ -20,6 +22,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     @Inject
     lateinit var factory: ViewModelProvider.Factory
+
+    @Inject
+    lateinit var roomDataBase: RoomDataBase
+
+    private val disposable by lazy {
+        CompositeDisposable()
+    }
 
     private val tvChannelViewModel by lazy {
         ViewModelProvider(this, factory)[TVChannelViewModel::class.java]
@@ -32,11 +41,22 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.main_browse_fragment, DashboardFragment())
-                .commitNow()
+        if (BuildConfig.DEBUG) {
+            disposable.add(
+                roomDataBase.extensionsConfig()
+                    .insert(ExtensionsConfig.test)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe({
+                        Logger.e(this, message = "Complete")
+                    }, {
+                        Logger.e(this, exception = it)
+                    })
+            )
         }
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.main_browse_fragment, DashboardFragment())
+            .commitNow()
     }
 
     override fun onNewIntent(intent: Intent?) {

@@ -7,12 +7,6 @@ abstract class BaseUseCase<T : Any>(private val transformer: AsyncTransformer<T>
     abstract fun prepareExecute(params: Map<String, Any>): Observable<T>
     fun execute(params: Map<String, Any>): Observable<T> {
         return prepareExecute(params)
-            .map {
-                synchronized(this) {
-                    cacheData = it
-                    it
-                }
-            }
             .compose(transformer)
     }
 
