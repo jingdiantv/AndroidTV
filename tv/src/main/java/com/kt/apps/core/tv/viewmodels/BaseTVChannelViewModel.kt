@@ -34,7 +34,7 @@ open class BaseTVChannelViewModel constructor(
     val tvChannelLiveData: LiveData<DataState<List<TVChannel>>>
         get() = _listTvChannelLiveData
 
-    fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.SCTV) {
+    fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.MAIN_SOURCE) {
         if (!forceRefresh && interactors.getListChannel.cacheData != null) {
             Logger.d(this, "ListChannel", "Get from cache")
             _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
@@ -67,7 +67,10 @@ open class BaseTVChannelViewModel constructor(
         if (lastTVStreamLinkTask?.isDisposed != true) {
             lastTVStreamLinkTask?.dispose()
         }
-
+        _lastWatchedChannel = TVChannelLinkStream(
+            tvDetail,
+            listOf()
+        )
         lastTVStreamLinkTask = interactors.getChannelLinkStream(tvDetail, isBackup)
             .subscribe({
                 Logger.d(this, message = Gson().toJson(it))

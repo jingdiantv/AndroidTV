@@ -6,11 +6,13 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.MapChannel
 import com.kt.apps.core.tv.FirebaseLogUtils
+import com.kt.apps.core.tv.datasource.EXTRA_KEY_VERSION_NEED_REFRESH
 import com.kt.apps.core.tv.datasource.ITVDataSource
+import com.kt.apps.core.tv.datasource.needRefreshData
+import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
 import com.kt.apps.core.utils.getBaseUrl
@@ -22,6 +24,7 @@ import org.json.JSONObject
 import org.jsoup.Jsoup
 import javax.inject.Inject
 
+@TVScope
 class VDataSourceImpl @Inject constructor(
     private val compositeDisposable: DisposableContainer,
     private val keyValueStorage: TVStorage,
@@ -44,19 +47,8 @@ class VDataSourceImpl @Inject constructor(
         )
     }
 
-    private fun needRefresh(): Boolean {
-        val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
-        val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
-        val refreshedInVersion = keyValueStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
-        Logger.d(
-            this@VDataSourceImpl, message = "{" +
-                    "useOnlineData: $needRefresh, " +
-                    "version: $version, " +
-                    "refreshedVersion: $refreshedInVersion" +
-                    "}"
-        )
-        return needRefresh && version > refreshedInVersion
-    }
+    private val _needRefresh: Boolean
+        get() = this.needRefreshData(remoteConfig, keyValueStorage)
 
     private var isOnline: Boolean = false
 
@@ -68,7 +60,7 @@ class VDataSourceImpl @Inject constructor(
         return Observable.create<List<TVChannel>> { emitter ->
             val totalChannel = mutableListOf<TVChannel>()
             var count = 0
-            val needRefresh = needRefresh()
+            val needRefresh = _needRefresh
             listGroup.forEach { group ->
                 if (keyValueStorage.getTvByGroup(group).isNotEmpty() && !needRefresh) {
                     isOnline = false
@@ -207,8 +199,4 @@ class VDataSourceImpl @Inject constructor(
             }
     }
 
-    companion object {
-        const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
-        const val EXTRA_KEY_USE_ONLINE = "use_online_data"
-    }
 }

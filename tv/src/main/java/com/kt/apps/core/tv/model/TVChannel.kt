@@ -1,7 +1,8 @@
 package com.kt.apps.core.tv.model
 
 import android.os.Parcelable
-import com.kt.apps.core.extensions.ParserExtensionsSource
+import androidx.room.PrimaryKey
+import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import kotlinx.parcelize.Parcelize
 
@@ -12,8 +13,21 @@ class TVChannel(
     var tvChannelName: String,
     var tvChannelWebDetailPage: String,
     var sourceFrom: String,
-    val channelId: String
+    @PrimaryKey
+    val channelId: String,
+    val urls: List<Url> = listOf(),
+    var isFreeContent: Boolean = true,
 ) : Parcelable {
+
+    @Parcelize
+    data class Url(
+        val dataSource: String? = null,
+        val type: String,
+        val url: String
+    ) : Parcelable {
+        val isHls: Boolean
+            get() = url.contains("m3u8")
+    }
 
     val isRadio: Boolean
         get() = radioGroup.contains(tvGroup)
@@ -25,7 +39,6 @@ class TVChannel(
         get() = tvChannelWebDetailPage.contains("m3u8")
                 || tvGroup != TVChannelGroup.VOV.name
 
-    var isFreeContent: Boolean = true
 
     override fun toString(): String {
         return "{" +
@@ -66,16 +79,18 @@ class TVChannel(
             tvChannelWebDetailPage = entity.tvChannelWebDetailPage,
             sourceFrom = entity.sourceFrom,
             channelId = entity.channelId,
-            logoChannel = entity.logoChannel.toString()
+            logoChannel = entity.logoChannel.toString(),
+            urls = listOf()
         )
 
-        fun fromChannelExtensions(entity: ParserExtensionsSource.ExtensionsChannel) = TVChannel(
+        fun fromChannelExtensions(entity: ExtensionsChannel) = TVChannel(
             tvChannelName = entity.tvChannelName,
             tvGroup = entity.tvGroup,
             tvChannelWebDetailPage = entity.tvStreamLink,
             sourceFrom = entity.sourceFrom,
             channelId = entity.channelId,
-            logoChannel = entity.logoChannel.toString(),
+            logoChannel = entity.logoChannel,
+            urls = listOf()
 
         )
     }

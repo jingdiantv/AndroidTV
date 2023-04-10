@@ -1,0 +1,138 @@
+[
+  {
+    "id": "928a164d-2c27-4b89-af92-d53c420a17c2",
+    "name": "Nổi Bật",
+    "slug": "noi-bat-6f49f5fc",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-noibac_9354a712.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "2b21abb1-64c7-462a-bab8-2892848e4074",
+    "name": "Truyền Hình",
+    "slug": "truyen-hinh-ecb1ec92",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-televison_2c87aa28.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "a5867a80-30c5-4823-8f0b-d8adddae9fdf",
+    "name": "Phim Tổng Hợp",
+    "slug": "phim-bo-truyen-hinh-f31f9dea",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-phimtonghop_34bc5a88.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "dadf6e97-0851-452c-8e6a-c06b128cab25",
+    "name": "Giải Trí",
+    "slug": "giai-tri-9395d033",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-giaitri_3daa7226.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "b97b6fe0-e190-4f9f-afb2-252c29965d46",
+    "name": "Thiếu Nhi",
+    "slug": "thieu-nhi-da581800",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-thieunhi_b64666fd.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "7463c2b7-d6a1-40be-811f-66209bd7a7df",
+    "name": "Âm Nhạc",
+    "slug": "am-nhac-11148b1b",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-amnhac_3acdc45b.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "a3c23ada-0cec-46aa-a0e5-957aafa8c0e1",
+    "name": "Shopping",
+    "slug": "shopping-b132efb0",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/ic-shopping_87781a4e.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  },
+  {
+    "id": "78678857-9498-4da9-8478-48ac4fc4e5f7",
+    "name": "Khám phá",
+    "slug": "kham-pha-04610aa9",
+    "required": false,
+    "icon": "https://s3-hcm.cloud.cmctelecom.vn/sctv-main-2/tenants/none_tenant/photos/twrh6p_e4eb4207.png",
+    "sub_menu": [],
+    "color_one": "#000000",
+    "color_two": "#000000",
+    "banner_style": "HOME_PAGE_STYLE",
+    "display_style": "NORMAL",
+    "sub_items": [],
+    "page_options": {
+      "content_navigation_option": "default",
+      "contain_sub_item": false
+    }
+  }
+]

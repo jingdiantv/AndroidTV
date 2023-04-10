@@ -9,7 +9,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 
 @Dao
-abstract class TVChannelDAO {
+abstract class TVChannelRecommendationDAO {
 
     @Query(
         "SELECT " +

@@ -8,17 +8,22 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.tv.datasource.EXTRA_KEY_USE_ONLINE
+import com.kt.apps.core.tv.datasource.EXTRA_KEY_VERSION_NEED_REFRESH
 import com.kt.apps.core.tv.datasource.ITVDataSource
+import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
 import com.kt.apps.core.utils.removeAllSpecialChars
 import io.reactivex.rxjava3.core.Observable
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
+@TVScope
 class SCTVDataSourceImpl @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val firebaseDataBase: FirebaseDatabase,
@@ -33,8 +38,10 @@ class SCTVDataSourceImpl @Inject constructor(
         private const val REFERER = "https://sctvonline.vn/"
         private const val TENANTS = "tenants/sctv/"
 
-        private const val PATH_QUERY_PAGES_MENU =
-            "tenant_pages/{menu_page_id}/ribbons/?apply_filter_for_side_navigation_section=true&limit=50&select="
+        private const val PATH_QUERY_PAGES_MENU = "tenant_pages/" +
+                "{menu_page_id}/ribbons/" +
+                "?apply_filter_for_side_navigation_section=true" +
+                "&limit=50&select="
         private const val SELECT_QUERY_PAGES_FOR_MENU_ID =
             "{\"Content\":" +
                     "[\"id\",\"slug\",\"has_free_content\"," +
@@ -56,13 +63,16 @@ class SCTVDataSourceImpl @Inject constructor(
 
         private const val PATH_QUERY_CHANNEL_DETAIL = "${TENANTS}contents/{channel_slug}/view?select="
         private const val SELECT_QUERY_CHANEL_DETAIL_VALUE =
-            "{\"Content\":[\"current_season\",\"id\",\"slug\",\"is_watchable\",\"progress\",\"youtube_video_id\",\"link_play\",\"play_info\",\"payment_infors\",\"is_favorite\",\"drm_session_info\"]}"
+            "{\"Content\":[\"current_season\",\"id\",\"slug\"," +
+                    "\"is_watchable\",\"progress\",\"youtube_video_id\"," +
+                    "\"link_play\",\"play_info\",\"payment_infors\"," +
+                    "\"is_favorite\",\"drm_session_info\"]}"
     }
 
     private fun needRefresh(): Boolean {
-        val needRefresh = remoteConfig.getBoolean(VDataSourceImpl.EXTRA_KEY_USE_ONLINE)
-        val version = remoteConfig.getLong(VDataSourceImpl.EXTRA_KEY_VERSION_NEED_REFRESH)
-        val refreshedInVersion = keyValueStorage.getVersionRefreshed(VDataSourceImpl.EXTRA_KEY_VERSION_NEED_REFRESH)
+        val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
+        val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
+        val refreshedInVersion = keyValueStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
         Logger.d(
             this@SCTVDataSourceImpl, message = "{" +
                     "useOnlineData: $needRefresh, " +
@@ -91,7 +101,6 @@ class SCTVDataSourceImpl @Inject constructor(
                             sourceFrom = TVDataSourceFrom.SCTV.name,
                             channelId = channelItem.slug
                         )
-                        tvChannel.isFreeContent = channelItem.has_free_content
                         listItems.add(tvChannel)
                     }
                 }
@@ -125,8 +134,8 @@ class SCTVDataSourceImpl @Inject constructor(
                             emitter.onNext(totalChannel)
                             if (needRefresh) {
                                 keyValueStorage.saveRefreshInVersion(
-                                    VDataSourceImpl.EXTRA_KEY_VERSION_NEED_REFRESH,
-                                    remoteConfig.getLong(VDataSourceImpl.EXTRA_KEY_VERSION_NEED_REFRESH)
+                                    EXTRA_KEY_VERSION_NEED_REFRESH,
+                                    remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
                                 )
                             }
                             emitter.onComplete()
@@ -138,13 +147,29 @@ class SCTVDataSourceImpl @Inject constructor(
                 }
             }
         }
-        return Observable.merge(source1, source2)
+        return Observable.concat(source1, source2)
     }
 
     override fun getTvLinkFromDetail(
         tvChannel: TVChannel,
         isBackup: Boolean
     ): Observable<TVChannelLinkStream> {
+
+        val channelSlug = if (tvChannel.sourceFrom == TVDataSourceFrom.SCTV.name) {
+            tvChannel.channelId
+        } else {
+            try {
+                tvChannel.urls.last {
+                    it.dataSource == "sctv"
+                }.url.toHttpUrl()
+                    .pathSegments.last {
+                        it.isNotBlank()
+                    }
+            }catch (e: NoSuchElementException) {
+                return Observable.error(Throwable("Not url support SCTV source"))
+            }
+        }
+
         return Observable.create {
             val response = try {
                 okHttpClient.newCall(
@@ -153,7 +178,7 @@ class SCTVDataSourceImpl @Inject constructor(
                             "$BACKEND_BASE_URL${
                                 PATH_QUERY_CHANNEL_DETAIL.replace(
                                     "{channel_slug}",
-                                    tvChannel.channelId
+                                    channelSlug
                                 )
                             }$SELECT_QUERY_CHANEL_DETAIL_VALUE"
                         )
@@ -184,7 +209,7 @@ class SCTVDataSourceImpl @Inject constructor(
         }
     }
 
-    fun getTVChannelPageForMenu(menuId: String = "truyen-hinh-ecb1ec92"): Observable<List<SCTVPages.Ribbon>> {
+    private fun getTVChannelPageForMenu(menuId: String = "truyen-hinh-ecb1ec92"): Observable<List<SCTVPages.Ribbon>> {
         return getMainPageMenu(2)
             .map {
                 val id = it.first {
