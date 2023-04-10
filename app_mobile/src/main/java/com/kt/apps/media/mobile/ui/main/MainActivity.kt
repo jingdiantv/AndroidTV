@@ -147,6 +147,23 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         navigationRailView?.setOnItemSelectedListener(onItemSelected)
                     }
                 }
+//                if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+//                    if (navigationRailView?.selectedItemId != R.id.radio && System.currentTimeMillis() - lastDetectedTime > 300) {
+//                        Logger.d(this@MainActivity, message = "Change item Radio")
+//                        navigationRailView?.setOnItemSelectedListener(null)
+//                        lastDetectedTime = System.currentTimeMillis()
+//                        navigationRailView?.selectedItemId = R.id.radio
+//                        navigationRailView?.setOnItemSelectedListener(onItemSelected)
+//                    }
+//                } else {
+//                    if (navigationRailView?.selectedItemId != R.id.tv && System.currentTimeMillis() - lastDetectedTV > 300) {
+//                        lastDetectedTV = System.currentTimeMillis()
+//                        Logger.d(this@MainActivity, message = "Change item TV")
+//                        navigationRailView?.setOnItemSelectedListener(null)
+//                        navigationRailView?.selectedItemId = R.id.tv
+//                        navigationRailView?.setOnItemSelectedListener(onItemSelected)
+//                    }
+//                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.kt.apps.media.mobile.ui.main
 
+import android.util.Log
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import androidx.recyclerview.widget.GridLayoutManager
@@ -9,11 +10,13 @@ import com.kt.apps.core.base.adapter.BaseViewHolder
 import com.kt.apps.core.base.adapter.OnItemRecyclerViewCLickListener
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.utils.TAG
 import com.kt.apps.core.utils.loadImgByDrawableIdResName
 import com.kt.apps.core.utils.loadImgByUrl
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ItemChannelBinding
 import com.kt.apps.media.mobile.databinding.ItemRowChannelBinding
+
 
 class TVDashboardAdapter : BaseAdapter<Pair<String, List<TVChannel>>, ItemRowChannelBinding>() {
     var spanCount = 3
@@ -26,6 +29,14 @@ class TVDashboardAdapter : BaseAdapter<Pair<String, List<TVChannel>>, ItemRowCha
         viewType: Int
     ): BaseViewHolder<Pair<String, List<TVChannel>>, ItemRowChannelBinding> {
         return super.onCreateViewHolder(parent, viewType)
+    }
+
+    override fun onRefresh(
+        items: List<Pair<String, List<TVChannel>>>,
+        notifyDataSetChange: Boolean
+    ) {
+        super.onRefresh(items, notifyDataSetChange)
+        Log.d(TAG, "onRefresh: $items")
     }
 
     override fun bindItem(
@@ -83,9 +94,7 @@ class TVDashboardAdapter : BaseAdapter<Pair<String, List<TVChannel>>, ItemRowCha
         ) {
             binding.item = item
             binding.title.isSelected = true
-            Constants.mapChannel[item.tvChannelName]?.let {
-                binding.logo.loadImgByDrawableIdResName(it, item.logoChannel)
-            } ?: binding.logo.loadImgByUrl(item.logoChannel)
+            binding.logo.loadImgByDrawableIdResName(item.logoChannel, item.logoChannel)
         }
 
         override fun onViewRecycled(holder: BaseViewHolder<TVChannel, ItemChannelBinding>) {
