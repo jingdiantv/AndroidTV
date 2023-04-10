@@ -36,7 +36,19 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
 
     override fun onHandlePlayerError(error: PlaybackException) {
         super.onHandlePlayerError(error)
-        tvChannelViewModel.retryGetLastWatchedChannel()
+        Logger.e(this, exception = error.cause ?: Throwable("Error playback"))
+        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+            || error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
+            || error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+        ) {
+            showErrorDialog(content = "Kênh ${tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "TV"} hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.message} ${error.errorCode}")
+        } else {
+            tvChannelViewModel.retryGetLastWatchedChannel()
+        }
+    }
+
+    override fun onError(errorCode: Int, errorMessage: CharSequence?) {
+        super.onError(errorCode, errorMessage)
     }
 
     private var mCurrentSelectedChannel: TVChannel? = null

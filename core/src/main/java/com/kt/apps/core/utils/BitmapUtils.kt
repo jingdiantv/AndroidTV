@@ -102,7 +102,9 @@ fun ImageView.loadImgByDrawableIdResName(
     val context = context.applicationContext
     val id = context.resources.getIdentifier(
         name.removeSuffix(".png")
-            .removeSuffix(".jpg"),
+            .removeSuffix(".jpg")
+            .removeSuffix(".webp")
+            .removeSuffix(".jpeg"),
         "drawable",
         context.packageName
     )

@@ -28,6 +28,9 @@ abstract class ExtensionsConfigDAO {
     @Delete
     abstract fun delete(configs: List<ExtensionsConfig>): Completable
 
+    @Query("DELETE FROM ExtensionsConfig")
+    abstract fun deleteAll(): Completable
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun insert(config: ExtensionsConfig): Completable
 }

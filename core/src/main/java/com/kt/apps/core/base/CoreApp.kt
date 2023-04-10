@@ -15,7 +15,6 @@ abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        activityCount++
     }
 
     override fun onActivityStopped(activity: Activity) {
@@ -30,6 +29,7 @@ abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
     }
 
     override fun onActivityResumed(activity: Activity) {
+        activityCount++
     }
 
     override fun onActivityPaused(activity: Activity) {

@@ -56,8 +56,7 @@
     <dimen name="common_circle_width">3dp</dimen>
     <dimen name="custom_image_size">53dp</dimen>
     <dimen name="progress_circle_radius">34dp</dimen>
-    <string name="LOADING">Loading...</string>
-    <string name="app_name">SweetAlertDialog</string>
+    <string name="LOADING">Loading…</string>
 
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_default_title">Here\'s a message!</string>

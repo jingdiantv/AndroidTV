@@ -4,7 +4,6 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
-import android.util.Log
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
@@ -13,7 +12,7 @@ class TVContentProvider : ContentProvider() {
 
     private val db by lazy {
         RoomDataBase.getInstance(CoreApp.getInstance())
-            .tvChannelEntityDao()
+            .tvChannelRecommendationDao()
     }
 
     override fun onCreate(): Boolean {

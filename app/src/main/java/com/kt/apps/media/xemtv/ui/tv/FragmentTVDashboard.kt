@@ -14,24 +14,18 @@ import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
-import com.google.gson.Gson
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.leanback.applyLoading
-import com.kt.apps.core.extensions.ExtensionsConfig
-import com.kt.apps.core.extensions.ParserExtensionsSource
-import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
-import com.kt.apps.media.xemtv.presenter.TVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
-import io.reactivex.rxjava3.disposables.CompositeDisposable
 import java.util.*
 import javax.inject.Inject
 
@@ -40,8 +34,6 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
-    @Inject
-    lateinit var extensionParser: ParserExtensionsSource
 
     private val tvChannelViewModel by lazy {
         ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
@@ -120,18 +112,6 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
             .observe(viewLifecycleOwner) {
                 handleGetTVChannelLinkStream(it)
             }
-
-        CompositeDisposable()
-            .add(
-                extensionParser.parseFromRemoteRx(ExtensionsConfig(
-                    "Test",
-                    "https://pastebin.com/raw/LMmREcep",
-                )).subscribe({
-                    Logger.d(this@FragmentTVDashboard, message = Gson().toJson(it))
-                }, {
-                    Logger.e(this@FragmentTVDashboard, exception = it)
-                })
-            )
     }
 
     private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {

@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.res.Resources
 import android.database.Cursor
 import android.net.Uri
-import android.util.Log
 import androidx.tvprovider.media.tv.*
 import androidx.work.ListenableWorker
 import androidx.work.Worker
@@ -16,8 +15,8 @@ import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.media.xemtv.App
-import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.workers.factory.ChildWorkerFactory
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -35,7 +34,7 @@ class TVRecommendationWorkers(
     }
     private val tvChannelDAO by lazy {
         RoomDataBase.getInstance(context)
-            .tvChannelEntityDao()
+            .tvChannelRecommendationDao()
     }
 
     override fun doWork(): Result {
@@ -69,9 +68,9 @@ class TVRecommendationWorkers(
         val watchNextTask = tvChannelDAO.getChannelByID(programId)
             .flatMapCompletable { tvChannelEntity ->
                 val allWatchNext = getWatchNextPrograms(context)
-                allWatchNext.forEach {
-                    Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$it")
-                }
+//                allWatchNext.forEach {
+//                    Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$it")
+//                }
                 allWatchNext.filter {
                     it.contentId != programId
                 }.forEach {
@@ -83,7 +82,7 @@ class TVRecommendationWorkers(
                 val existWatchNextProgram = allWatchNext.find {
                     it.contentId == programId
                 }
-                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$existWatchNextProgram")
+//                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$existWatchNextProgram")
                 val builder = existWatchNextProgram?.let {
                     WatchNextProgram.Builder(it)
                 } ?: WatchNextProgram.Builder()
@@ -102,7 +101,7 @@ class TVRecommendationWorkers(
                     .setWatchNextType(TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE)
                     .setLogoUri(tvChannelEntity.logoChannel)
                     .build()
-                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$continueProgram")
+//                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$continueProgram")
 
                 val id = existWatchNextProgram?.let {
                     PreviewChannelHelper(context)
@@ -112,7 +111,7 @@ class TVRecommendationWorkers(
                     PreviewChannelHelper(context)
                         .publishWatchNextProgram(continueProgram)
                 }
-                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "Insert id: $id")
+//                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "Insert id: $id")
 
 
                 context.contentResolver
@@ -123,9 +122,9 @@ class TVRecommendationWorkers(
                 Completable.complete()
             }
             .subscribe({
-                Logger.d(this@TVRecommendationWorkers, message = "Update success")
+//                Logger.d(this@TVRecommendationWorkers, message = "Update success")
             }, {
-                Logger.e(this@TVRecommendationWorkers, exception = it)
+//                Logger.e(this@TVRecommendationWorkers, exception = it)
             })
 
         disposable.add(watchNextTask)
@@ -181,7 +180,7 @@ class TVRecommendationWorkers(
                     }
 
                     val uri = TvContractCompat.buildPreviewProgramsUriForChannel(channelProviderId)
-                    Logger.d(this, "Uri", uri.toString())
+//                    Logger.d(this, "Uri", uri.toString())
 
                     val channelEntity = channelList.map(mapToEntity(channelProviderId))
 
@@ -194,7 +193,7 @@ class TVRecommendationWorkers(
                     channelEntity.forEach { tvChannel ->
 
                         val existingProgram = existingProgramList.find { it.contentId == tvChannel.channelId }
-                        Logger.d(this, message = "existingProgram: $existingProgram")
+//                        Logger.d(this, message = "existingProgram: $existingProgram")
 
                         val programBuilder = if (existingProgram == null) {
                             PreviewProgram.Builder()
@@ -218,7 +217,7 @@ class TVRecommendationWorkers(
                             .build()
 
                         try {
-                            Logger.d(this, message = "Update program")
+//                            Logger.d(this, message = "Update program")
                             if (existingProgram == null) {
                                 PreviewChannelHelper(context)
                                     .publishPreviewProgram(updatedProgram)
@@ -243,11 +242,18 @@ class TVRecommendationWorkers(
     }
 
     private fun mapToEntity(providerId: Long) = { channel: TVChannel ->
+        val channelLogoName = if (channel.sourceFrom == TVDataSourceFrom.MAIN_SOURCE.name) {
+            channel.logoChannel
+        } else {
+            Constants.mapChannel[channel.tvChannelName]!!
+        }.removeSuffix(".png")
+            .removeSuffix(".jpg")
+            .removeSuffix(".webp")
+            .removeSuffix(".jpeg")
+
         val logoUri = try {
             val id = context.resources.getIdentifier(
-                Constants.mapChannel[channel.tvChannelName]!!
-                    .removeSuffix(".png")
-                    .removeSuffix(".jpg"),
+                channelLogoName,
                 "drawable",
                 context.packageName
             )

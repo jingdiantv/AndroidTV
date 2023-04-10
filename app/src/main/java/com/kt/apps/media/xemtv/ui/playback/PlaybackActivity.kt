@@ -65,14 +65,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
 
             Type.EXTENSION -> {
                 if (savedInstanceState == null) {
-                    supportFragmentManager.beginTransaction()
-                        .replace(
-                            android.R.id.content, FragmentExtensionsPlayback.newInstance(
-                                intent.extras!!.getParcelable(EXTRA_ITEM_TO_PLAY)!!,
-                                intent.extras!!.getParcelableArrayList(EXTRA_CHANNEL_LIST)!!
-                            )
-                        )
-                        .commit()
+                    startPlaybackExtensionsChannel(intent)
                 }
             }
 
@@ -198,14 +191,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
             }
 
             Type.EXTENSION -> {
-                supportFragmentManager.beginTransaction()
-                    .replace(
-                        android.R.id.content, FragmentExtensionsPlayback.newInstance(
-                            intent.extras!!.getParcelable(EXTRA_ITEM_TO_PLAY)!!,
-                            intent.extras!!.getParcelableArrayList(EXTRA_CHANNEL_LIST)!!
-                        )
-                    )
-                    .commit()
+                startPlaybackExtensionsChannel(intent)
 
             }
 
@@ -214,6 +200,17 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
             }
         }
 
+    }
+
+    private fun startPlaybackExtensionsChannel(intent: Intent) {
+        supportFragmentManager.beginTransaction()
+            .replace(
+                android.R.id.content, FragmentExtensionsPlayback.newInstance(
+                    intent.extras!!.getParcelable(EXTRA_ITEM_TO_PLAY)!!,
+                    intent.extras!!.getString(EXTRA_EXTENSIONS_ID)!!
+                )
+            )
+            .commit()
     }
 
     override fun onPause() {
@@ -238,6 +235,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
 
         const val EXTRA_ITEM_TO_PLAY = "extra:item_to_play"
         const val EXTRA_CHANNEL_LIST = "extra:channel_list"
+        const val EXTRA_EXTENSIONS_ID = "extra:extensions_id"
         fun start(activity: FragmentActivity, type: Type) {
             val intent = Intent(activity, PlaybackActivity::class.java)
             intent.putExtra(EXTRA_PLAYBACK_TYPE, type as Parcelable)

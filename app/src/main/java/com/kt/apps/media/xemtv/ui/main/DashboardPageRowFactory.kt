@@ -18,11 +18,12 @@ import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 typealias OnFragmentChange = (pageID: Long) -> Unit
 class DashboardPageRowFactory(
     private val backgroundManager: BackgroundManager,
-    private val listExtensions: List<ExtensionsConfig>
+    var listExtensions: List<ExtensionsConfig>
 ) : BrowseSupportFragment.FragmentFactory<Fragment>() {
     var onFragmentChangeListener: OnFragmentChange? = null
     override fun createFragment(row: Any?): Fragment {
         val rowId = (row as? Row)?.id ?: throw IllegalStateException("Null row id")
+        Logger.d(this, tag = "createFragment", message = "$rowId")
         backgroundManager.drawable = null
         onFragmentChangeListener?.invoke(rowId)
         return when (rowId) {
@@ -35,7 +36,7 @@ class DashboardPageRowFactory(
                 FootballFragment()
             }
             ROW_RADIO -> {
-                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.ic_tv)
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
                 RadioFragment()
             }
             ROW_ADD_EXTENSION -> {
@@ -43,6 +44,7 @@ class DashboardPageRowFactory(
             }
             else -> {
                 try {
+                    backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
                     FragmentExtensions.newInstance(listExtensions[rowId.toInt()].sourceUrl)
                 } catch (e: Exception) {
                     throw IllegalStateException("Not support row")

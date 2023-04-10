@@ -5,14 +5,15 @@ import android.os.Parcelable
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.leanback.widget.*
-import com.google.common.collect.Lists
+import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.adapter.leanback.applyLoading
+import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
-import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
+import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
@@ -38,7 +39,19 @@ class FragmentExtensions : BaseRowSupportFragment() {
             shadowEnabled = false
         })
     }
-    private var tvList: List<TVChannel>? = null
+
+    private val extensionsID by lazy {
+        requireArguments().getString(EXTRA_EXTENSIONS_ID)!!
+    }
+
+    @Inject
+    lateinit var factory: ViewModelProvider.Factory
+
+    private val extensionsViewModel by lazy {
+        ViewModelProvider(requireActivity(), factory)[ExtensionsViewModel::class.java]
+    }
+
+    private var tvList: List<ExtensionsChannel>? = null
 
     override fun initView(rootView: View) {
         onItemViewClickedListener =
@@ -54,11 +67,11 @@ class FragmentExtensions : BaseRowSupportFragment() {
                         )
                         putExtra(
                             PlaybackActivity.EXTRA_ITEM_TO_PLAY,
-                            item as TVChannel
+                            item as ExtensionsChannel
                         )
-                        putParcelableArrayListExtra(
-                            PlaybackActivity.EXTRA_CHANNEL_LIST,
-                            Lists.newArrayList(tvList ?: listOf())
+                        putExtra(
+                            PlaybackActivity.EXTRA_EXTENSIONS_ID,
+                            extensionsID
                         )
                     }
                 )
@@ -67,21 +80,15 @@ class FragmentExtensions : BaseRowSupportFragment() {
 
     override fun initAction(rootView: View) {
         adapter = mRowsAdapter
-        val id = requireArguments().getString(EXTRA_EXTENSIONS_ID)!!
-        Logger.e(this, message = id)
+        Logger.e(this, message = extensionsID)
         mRowsAdapter.applyLoading(R.layout.item_tv_loading_presenter)
 
         disposable.add(
             roomDataBase.extensionsConfig()
-                .getExtensionById(id)
+                .getExtensionById(extensionsID)
                 .subscribeOn(Schedulers.io())
                 .flatMap {
                     parserExtensionsSource.parseFromRemoteRx(it)
-                }
-                .map {
-                    it.map {
-                        TVChannel.fromChannelExtensions(it)
-                    }
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ tvList ->
@@ -89,6 +96,7 @@ class FragmentExtensions : BaseRowSupportFragment() {
                     val channelWithCategory = tvList.groupBy {
                         it.tvGroup
                     }
+                    extensionsViewModel.appendExtensionsCache(extensionsID, tvList)
                     mRowsAdapter.clear()
                     val childPresenter = DashboardTVChannelPresenter()
                     for ((group, channelList) in channelWithCategory) {
@@ -105,6 +113,12 @@ class FragmentExtensions : BaseRowSupportFragment() {
                         mRowsAdapter.add(ListRow(headerItem, adapter))
                     }
                 }, {
+                    if (!this.isHidden && !this.isDetached) {
+                        try {
+                            showErrorDialog(content = it.message)
+                        } catch (_: Exception) {
+                        }
+                    }
                     Logger.e(this, exception = it)
                 })
         )
