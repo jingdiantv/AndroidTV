@@ -2,6 +2,9 @@ package com.kt.apps.media.mobile.di.main
 
 import com.kt.apps.media.mobile.ui.main.MainActivity
 import com.kt.apps.media.mobile.di.viewmodels.ViewModelModule
+import com.kt.apps.media.mobile.ui.complex.ComplexActivity
+import com.kt.apps.media.mobile.ui.fragments.channels.ChannelFragment
+import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackFragment
 import com.kt.apps.media.mobile.ui.playback.PlaybackActivity
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
@@ -15,5 +18,12 @@ abstract class MainTVModule {
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun playback(): PlaybackActivity
 
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun  complexActivity(): ComplexActivity
 
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun channelFragment(): ChannelFragment
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun playbackFragment(): PlaybackFragment
 }

@@ -18,6 +18,15 @@
         android:theme="@style/Theme.XemTv"
         android:usesCleartextTraffic="true"
         tools:ignore="UnusedAttribute">
+        <activity
+            android:name=".ui.complex.ComplexActivity"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <meta-data
             android:name="com.google.android.gms.car.application"
@@ -27,7 +36,6 @@
             android:name=".ui.playback.PlaybackActivity"
             android:exported="true"
             android:launchMode="singleInstance">
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -46,28 +54,22 @@
                 <data
                     android:host="xemtivihd.net/xemtv/"
                     android:scheme="xemtv" />
-
                 <data
                     android:host="xemtivihd.net/"
                     android:scheme="xembongda" />
-
                 <data
                     android:host="bongda"
                     android:pathPrefix="/match"
                     android:scheme="xemtv" />
-
                 <data
                     android:host="tv"
                     android:pathPrefix="/channel"
                     android:scheme="xemtv" />
-
                 <data
                     android:host="radio"
                     android:pathPrefix="/channel"
                     android:scheme="xemtv" />
-
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
             </intent-filter>
@@ -75,12 +77,6 @@
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -99,9 +95,7 @@
                     android:host="radio"
                     android:pathPrefix="/dashboard"
                     android:scheme="xemtv" />
-
                 <data android:host="tv" />
-
             </intent-filter>
         </activity>
 
@@ -109,18 +103,15 @@
             android:name=".services.TVService"
             android:exported="true"
             android:process=":remote" />
-
         <service
             android:name=".services.media.IMediaSessionService"
             android:enabled="true"
+            android:exported="true"
             android:icon="@mipmap/ic_launcher"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:exported="true">
-
+            android:roundIcon="@mipmap/ic_launcher_round">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
-
         </service>
     </application>
 

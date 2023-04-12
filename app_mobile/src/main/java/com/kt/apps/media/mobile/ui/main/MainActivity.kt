@@ -215,7 +215,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainChannelRecyclerView.addOnScrollListener(onScrollListener!!)
         binding.mainChannelRecyclerView.setHasFixedSize(true)
         navigationRailView?.setOnItemSelectedListener(onItemSelected)
-        tvChannelViewModel.tvChannelLiveData.observe(this) {
+        tvChannelViewModel.tvChannelLiveData.observe(this) { it ->
             when (it) {
                 is DataState.Success -> {
                     binding.swipeRefreshLayout.isRefreshing = false
