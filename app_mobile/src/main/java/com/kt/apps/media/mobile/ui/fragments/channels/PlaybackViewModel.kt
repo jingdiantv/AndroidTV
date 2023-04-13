@@ -38,12 +38,12 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
         videoSizeStateLiveData.postValue(VideoDisplayState.FULLSCREEN)
     }
 
-    fun collapseVideo(videoSize: VideoSize?) {
-        videoSize?.let {
-            videoSizeStateLiveData.postValue(VideoDisplayState.SUCCESS(it))
-        } ?: run {
-            videoSizeStateLiveData.postValue(VideoDisplayState.LOADING)
-        }
-
-    }
+//    fun collapseVideo(videoSize: VideoSize?) {
+//        videoSize?.let {
+//            videoSizeStateLiveData.postValue(VideoDisplayState.SUCCESS(it))
+//        } ?: run {
+//            videoSizeStateLiveData.postValue(VideoDisplayState.LOADING)
+//        }
+//
+//    }
 }

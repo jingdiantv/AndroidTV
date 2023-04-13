@@ -1,6 +1,8 @@
 package com.kt.apps.media.mobile.ui.complex
 
+import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Rect
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -26,38 +28,13 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 class ComplexActivity : BaseActivity<ActivityComplex2Binding>() {
-    private val swipeThreshold = 100
-    private val velocitySwipeThreshold = 100
-
     @Inject
     lateinit var factory: ViewModelProvider.Factory
 
     override val layoutRes: Int
         get() = R.layout.activity_complex2
 
-    private val gestureDetector: GestureDetector by lazy {
-        GestureDetector(this, object: GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent): Boolean {
-                return true
-            }
-
-            override fun onFling(
-                e1: MotionEvent,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                val diffY = e2.y - e1.y
-                val diffX = e2.x - e1.x
-                if (abs(diffY) > swipeThreshold && abs(velocityY) > velocitySwipeThreshold) {
-                    if (diffY > 0) {
-                        onSwipeBottom(e1, e2)
-                    }
-                }
-                return false
-            }
-        })
-    }
+    private lateinit var layoutHandler: ComplexLayoutHandler
 
     private val motionLayout: MotionLayout by lazy {
         binding.complexMotionLayout
@@ -74,9 +51,6 @@ class ComplexActivity : BaseActivity<ActivityComplex2Binding>() {
             this.videoSizeStateLiveData.observe(this@ComplexActivity, videoSizeChangeObserver)
         }
     }
-    private var cacheLoadedDisplayState: VideoDisplayState? = null
-    private val currentDisplayState: VideoDisplayState?
-        get() = playbackViewModel.videoSizeStateLiveData.value
 
     private val linkStreamDataObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
         Observer {dataState ->
@@ -94,13 +68,12 @@ class ComplexActivity : BaseActivity<ActivityComplex2Binding>() {
         Observer {
             state ->
             when(state) {
-                VideoDisplayState.FULLSCREEN -> changeToFullScreen()
+                VideoDisplayState.FULLSCREEN -> layoutHandler.onOpenFullScreen()
                 is VideoDisplayState.SUCCESS -> {
-                    cacheLoadedDisplayState = state
-                    calculateCurrentSize(state.videoSize)
+                    layoutHandler.onLoadedVideoSuccess(state.videoSize)
                 }
                 is VideoDisplayState.LOADING -> {
-                    motionLayout.transitionToState(R.id.end)
+                    layoutHandler.onStartLoading()
                 }
                 else -> {}
             }
@@ -111,6 +84,21 @@ class ComplexActivity : BaseActivity<ActivityComplex2Binding>() {
         tvChannelViewModel
         playbackViewModel
 
+        layoutHandler = if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            PortraitLayoutHandler(context = this, binding, motionLayout)
+        } else {
+            LandscapeLayoutHandler(context = this, binding, motionLayout)
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        layoutHandler = if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            PortraitLayoutHandler(context = this, binding, motionLayout)
+        } else {
+            LandscapeLayoutHandler(context = this, binding, motionLayout)
+        }
+        layoutHandler.onReset()
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
@@ -118,50 +106,15 @@ class ComplexActivity : BaseActivity<ActivityComplex2Binding>() {
     }
 
     override fun onBackPressed() {
-        if (currentDisplayState == VideoDisplayState.FULLSCREEN) {
-            cacheLoadedDisplayState
-                ?.run { this as? VideoDisplayState.SUCCESS }
-                ?.let { playbackViewModel.collapseVideo(it.videoSize) }
+        if (layoutHandler.onBackEvent()) {
             return
         }
         super.onBackPressed()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        gestureDetector.onTouchEvent(ev)
+        layoutHandler.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
-    }
-
-    private fun calculateCurrentSize(size: VideoSize) {
-        val wpx = this.resources.displayMetrics.widthPixels
-        val hpx = this.resources.displayMetrics.heightPixels
-        if (size.width == 0 || size.height == 0) {
-            return
-        }
-        val newHeight = wpx  / (size.width * 1.0 / size.height)
-        val percentage: Float = (newHeight * 1.0 / hpx).toFloat()
-
-        motionLayout.getConstraintSet(R.id.end)?.let {
-            it.setGuidelinePercent(R.id.guideline_complex, percentage)
-            motionLayout.transitionToState(R.id.end)
-        }
-    }
-
-    private fun changeToFullScreen() {
-        motionLayout.transitionToState(R.id.fullscreen)
-    }
-
-    fun onSwipeBottom(e1: MotionEvent, e2: MotionEvent) {
-        val hitRect = Rect()
-        val location = intArrayOf(0, 0)
-        binding.fragmentContainerPlayback.getHitRect(hitRect)
-        binding.fragmentContainerPlayback.getLocationOnScreen(location)
-
-        hitRect.offset(location[0], location[1])
-        if (hitRect.contains(e1.x.toInt(), e1.y.toInt())) {
-            Log.d(TAG, "onSwipeBottom: ")
-            motionLayout.transitionToState(R.id.fullscreen)
-        }
     }
 
 }

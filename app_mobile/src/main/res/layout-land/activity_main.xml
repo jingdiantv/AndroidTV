@@ -17,8 +17,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/black"
-            android:orientation="horizontal">
+            android:background="@color/black">
 
             <com.google.android.material.navigationrail.NavigationRailView
                 android:id="@+id/navigation_rail_view"
@@ -49,6 +48,7 @@
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
         </LinearLayout>
+
 
         <FrameLayout
             android:id="@+id/progress_dialog"

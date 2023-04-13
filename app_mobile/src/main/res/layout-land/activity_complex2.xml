@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data></data>
+    <FrameLayout
+        android:id="@+id/surface_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <androidx.constraintlayout.motion.widget.MotionLayout
+            android:id="@+id/complex_motion_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutDescription="@xml/activity_complex2_scene_land">
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragment_container_channels"
+                android:name="com.kt.apps.media.mobile.ui.fragments.channels.ChannelFragment"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintVertical_bias="0.0" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragment_container_playback"
+                android:name="com.kt.apps.media.mobile.ui.fragments.channels.PlaybackFragment"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                />
+        </androidx.constraintlayout.motion.widget.MotionLayout>
+    </FrameLayout>
+</layout>

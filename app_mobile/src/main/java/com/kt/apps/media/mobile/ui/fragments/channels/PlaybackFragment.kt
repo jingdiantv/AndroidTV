@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.TextView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.pedant.SweetAlert.ProgressHelper
@@ -41,6 +42,8 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     @Inject
     lateinit var exoPlayerManager: ExoPlayerManagerMobile
 
+    private var currentShowLoading: Boolean = false
+
     private val progressHelper by lazy {
         ProgressHelper(this.context)
     }
@@ -56,6 +59,10 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     private val progressWheel: ProgressWheel by lazy {
         binding.exoPlayer.findViewById(R.id.progressWheel)
+    }
+
+    private val titleLabel: TextView by lazy {
+        binding.exoPlayer.findViewById(R.id.title)
     }
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
@@ -74,9 +81,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         }
     }
 
-    private val displayState: VideoDisplayState
-        get() = playbackViewModel?.videoSizeStateLiveData?.value ?: VideoDisplayState.IDLE
-
     private val linkStreamObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
         Observer {result ->
             Log.d(TAG, "linkStreamObserver: $result")
@@ -85,6 +89,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                     playVideo(result.data)
                 }
                 is DataState.Loading -> {
+                    toggleProgressing(true)
                     playbackViewModel?.videoSizeStateLiveData?.postValue(VideoDisplayState.LOADING)
                 }
                 else -> {}
@@ -94,16 +99,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     private val loadingObserver: Observer<Boolean> by lazy {
         Observer { isLoading ->
-           if (isLoading) {
-               binding.exoPlayer.showController()
-               progressHelper.spin()
-               progressWheel.visibility = View.VISIBLE
-               controlDock.visibility = View.INVISIBLE
-           } else {
-               progressHelper.stopSpinning()
-               progressWheel.visibility = View.INVISIBLE
-               controlDock.visibility = View.VISIBLE
-           }
+            toggleProgressing(isLoading)
         }
     }
 
@@ -111,16 +107,13 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         with(binding) {
             exoPlayer.player = exoPlayerManager.exoPlayer
             exoPlayer.showController()
-            exoPlayer.setShowBuffering(SHOW_BUFFERING_ALWAYS)
+            exoPlayer.setShowNextButton(false)
+            exoPlayer.setShowPreviousButton(false)
         }
+
         fullScreenButton.visibility = View.VISIBLE
         fullScreenButton.setOnClickListener {
-            if (this@PlaybackFragment.displayState != VideoDisplayState.FULLSCREEN) {
-                playbackViewModel?.changeToFullScreen()
-            } else {
-                playbackViewModel?.collapseVideo(exoPlayerManager.exoPlayer?.videoSize)
-            }
-
+            playbackViewModel?.changeToFullScreen()
         }
     }
 
@@ -133,6 +126,26 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             LinkStream(it, data.channel.tvChannelWebDetailPage, data.channel.tvChannelWebDetailPage)
         }, data.channel.isHls, playbackViewModel?.playerListener)
         binding.exoPlayer.player = exoPlayerManager.exoPlayer
+
+        titleLabel.text = data.channel.tvChannelName
+    }
+
+    private fun toggleProgressing(isShow: Boolean) {
+        if (isShow == currentShowLoading) {
+            return
+        }
+        if (isShow) {
+            binding.exoPlayer.showController()
+            progressWheel.visibility = View.VISIBLE
+            progressHelper.spin()
+            controlDock.fadeOut {  }
+        } else {
+            progressWheel.fadeOut {
+                progressHelper.stopSpinning()
+            }
+            controlDock.fadeIn {  }
+        }
+        currentShowLoading = isShow
     }
 
 }

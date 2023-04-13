@@ -23,11 +23,6 @@
          entirety of the parent in code, after the parent's size has been
          determined. See: https://github.com/google/ExoPlayer/issues/8726.
     -->
-    <View
-        android:id="@id/exo_controls_background"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@color/exo_black_opacity_60" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -42,8 +37,8 @@
             android:id="@+id/controller_dock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="vertical">
+            android:layout_gravity="start"
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -52,11 +47,13 @@
                 android:background="@android:color/transparent"
                 android:clipToPadding="false"
                 android:gravity="center"
-                android:padding="@dimen/exo_styled_controls_padding">
+                android:padding="12dp">
 
                 <ImageButton
                     android:id="@id/exo_prev"
-                    style="@style/ExoStyledControls.Button.Center.Previous" />
+                    style="@style/ExoStyledControls.Button.Center.Previous"
+                    android:visibility="gone"
+                    />
 
 
                 <ImageButton
@@ -66,7 +63,9 @@
 
                 <ImageButton
                     android:id="@id/exo_next"
-                    style="@style/ExoStyledControls.Button.Center.Next" />
+                    style="@style/ExoStyledControls.Button.Center.Next"
+                    android:visibility="gone"
+                    />
 
             </LinearLayout>
 
@@ -178,7 +177,7 @@
                 android:id="@+id/progressWheel"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:layout_gravity="center"
+                android:layout_gravity="start"
                 app:matProg_barColor="@color/white"
                 wheel:matProg_progressIndeterminate="true"
                 android:visibility="gone"

@@ -193,9 +193,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
 
     override fun initAction(savedInstanceState: Bundle?) {
-        tvChannelViewModel?.getListTVChannel(true)
+        tvChannelViewModel?.getListTVChannel(adapter.listItem.isEmpty(), sourceFrom = TVDataSourceFrom.VTV_BACKUP)
         binding.swipeRefreshLayout.setOnRefreshListener {
-            tvChannelViewModel?.getListTVChannel(true,TVDataSourceFrom.MAIN_SOURCE)
+            tvChannelViewModel?.getListTVChannel(true,TVDataSourceFrom.VTV_BACKUP)
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
