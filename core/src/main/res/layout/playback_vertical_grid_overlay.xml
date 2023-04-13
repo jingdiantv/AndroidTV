@@ -62,6 +62,9 @@
                     style="@style/TextAppearance.Leanback.Title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:singleLine="true"
                     android:text="Video info" />
 
                 <TextView

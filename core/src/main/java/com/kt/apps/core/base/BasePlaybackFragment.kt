@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
 import androidx.leanback.app.ProgressBarManager
@@ -26,10 +27,12 @@ import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy
+import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.kt.apps.core.R
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
+import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.utils.*
 import com.kt.skeleton.makeGone
 import dagger.android.AndroidInjector
@@ -48,6 +51,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     @Inject
     lateinit var injector: DispatchingAndroidInjector<Any>
+
+    @Inject
+    lateinit var actionLogger: IActionLogger
 
     @Inject
     lateinit var exoPlayerManager: ExoPlayerManager
@@ -108,7 +114,16 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             override fun onEvents(player: Player, events: Player.Events) {
                 super.onEvents(player, events)
             }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+                onPlayerPlaybackStateChanged(playbackState)
+            }
         }
+    }
+
+    open fun onPlayerPlaybackStateChanged(playbackState: Int) {
+
     }
     open fun onHandlePlayerError(error: PlaybackException) {
         Logger.e(this, tag = "onHandlePlayerError", exception = error)
@@ -287,7 +302,14 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mGridViewHolder?.gridView?.setSelectedPositionSmooth(position)
     }
 
-    fun playVideo(title: String, subTitle: String?, referer: String, linkStream: List<String>, isLive: Boolean, isHls: Boolean) {
+    fun playVideo(
+        title: String,
+        subTitle: String?,
+        referer: String,
+        linkStream: List<String>,
+        isLive: Boolean,
+        isHls: Boolean
+    ) {
         playVideo(title, subTitle, linkStream.map {
             LinkStream(it, referer, title)
         }, mPlayerListener, isLive, isHls)
@@ -361,6 +383,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
         mPlaybackTitleView?.text = title
         mPlaybackInfoView?.text = info
+        if (mPlaybackTitleView?.isSelected != true) {
+            mPlaybackTitleView?.isSelected = true
+        }
         if (info == null) {
             mPlaybackInfoView?.gone()
         } else {
@@ -606,6 +631,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     companion object {
+        const val MAX_RETRY_TIME = 3
+
         private val DEFAULT_OVERLAY_PICK_HEIGHT by lazy {
             200.dpToPx().toFloat()
         }

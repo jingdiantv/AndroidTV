@@ -36,7 +36,7 @@ class TVDashboardAdapter : BaseAdapter<Pair<String, List<TVChannel>>, ItemRowCha
     ) {
         Logger.d(this, message = "${binding.tvChannelChildRecyclerView.width}")
         binding.title.text = item.first
-        binding.tvChannelChildRecyclerView.layoutManager = object : GridLayoutManager(
+        val layoutManager = object : GridLayoutManager(
             binding.root.context,
             spanCount,
             VERTICAL,
@@ -50,23 +50,17 @@ class TVDashboardAdapter : BaseAdapter<Pair<String, List<TVChannel>>, ItemRowCha
                 return false
             }
         }
+        layoutManager.initialPrefetchItemCount = item.second.size
+        layoutManager.isItemPrefetchEnabled = true
+        binding.tvChannelChildRecyclerView.layoutManager = layoutManager
+        binding.tvChannelChildRecyclerView.setHasFixedSize(true)
+        binding.tvChannelChildRecyclerView.clearOnScrollListeners()
         binding.tvChannelChildRecyclerView.adapter = ChildChannelAdapter().apply {
             onRefresh(item.second)
             this.onItemRecyclerViewCLickListener = { item, childPosition ->
                 onChildItemClickListener?.invoke(item, position + childPosition)
             }
         }
-//            if (holder.cacheItem != null) {
-//                Logger.d(this, message = "Use cache adapter")
-//                holder.cacheItem as RecyclerView.Adapter<*>
-//            } else {
-//                ChildChannelAdapter().apply {
-//                    onRefresh(item.second)
-//                    this.onItemRecyclerViewCLickListener = { item, childPosition ->
-//                        onChildItemClickListener?.invoke(item, position + childPosition)
-//                    }
-//                }
-//            }
     }
 
 

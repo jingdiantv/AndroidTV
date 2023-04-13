@@ -44,7 +44,7 @@ class MainTVDataSource @Inject constructor(
             .getListChannelWithUrl()
             .flatMapObservable {
                 if (it.isEmpty()) {
-                    Observable.error(Throwable("EmptyData"))
+                    Observable.just(it)
                 } else {
                     Logger.d(this@MainTVDataSource, message = "Offline source: ${Gson().toJson(it)}")
                     Observable.just(it)
@@ -104,19 +104,21 @@ class MainTVDataSource @Inject constructor(
                         val value = it.getValue<List<TVChannelFromDB?>>() ?: return@addOnSuccessListener
                         val tvList = value.filterNotNull()
                             .map { tvChannelFromDB ->
+                                val totalUrls = tvChannelFromDB.urls.filterNotNull()
                                 TVChannel(
                                     tvGroup = tvChannelFromDB.group,
                                     tvChannelName = tvChannelFromDB.name,
-                                    tvChannelWebDetailPage = tvChannelFromDB.urls.firstOrNull {
+                                    tvChannelWebDetailPage = totalUrls.firstOrNull {
                                         it.type == TVChannelUrlType.WEB_PAGE.value
-                                    }?.url ?: tvChannelFromDB.urls[0].url,
-                                    urls = tvChannelFromDB.urls.map { url ->
-                                        TVChannel.Url(
-                                            dataSource = url.src,
-                                            url = url.url,
-                                            type = url.type
-                                        )
-                                    },
+                                    }?.url ?: totalUrls[0].url,
+                                    urls = totalUrls
+                                        .map { url ->
+                                            TVChannel.Url(
+                                                dataSource = url.src,
+                                                url = url.url,
+                                                type = url.type
+                                            )
+                                        },
                                     sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
                                     logoChannel = tvChannelFromDB.thumb,
                                     channelId = tvChannelFromDB.id
@@ -130,6 +132,10 @@ class MainTVDataSource @Inject constructor(
                         Logger.d(this@MainTVDataSource, message = "Counter: $totalCount, $totalGroup")
                         if (totalCount == totalGroup) {
                             emitter.onComplete()
+                            tvStorage.saveRefreshInVersion(
+                                EXTRA_KEY_VERSION_NEED_REFRESH,
+                                versionNeedRefresh
+                            )
                         }
                     }
                     .addOnFailureListener {
@@ -197,34 +203,74 @@ class MainTVDataSource @Inject constructor(
         isBackup: Boolean
     ): Observable<TVChannelLinkStream> {
         Logger.d(this@MainTVDataSource, message = "getTVFromDetail: ${Gson().toJson(tvChannel)}")
-        tvChannel.urls.firstOrNull {
-            it.type.lowercase() == TVChannelUrlType.WEB_PAGE.value
-        }?.let {
-            return when (it.dataSource) {
 
-                TVChannelURLSrc.SCTV.value -> {
-                    sctvDataSource.getTvLinkFromDetail(tvChannel, isBackup)
-                }
-
-                TVChannelURLSrc.V.value -> {
-                    tvChannel.tvChannelWebDetailPage = it.url
-                    vDataSourceImpl.getTvLinkFromDetail(tvChannel, isBackup)
-                }
-
-                else -> {
-                    vDataSourceImpl.getTvLinkFromDetail(tvChannel, isBackup)
+        val streamingUrl = tvChannel.urls
+            .filter {
+                it.url.isNotBlank()
+            }
+            .filter {
+                it.type.lowercase() == TVChannelUrlType.STREAM.value
+            }
+            .map {
+                if (it.url.contains("|Referer")) {
+                    val refererIndex = it.url.indexOf("|Referer")
+                    val newUrl = it.url.substring(0, refererIndex)
+                    it.url = newUrl
+                    it
+                } else {
+                    it
                 }
             }
-        }
 
-        val streamingUrl = tvChannel.urls.firstOrNull {
-            it.type.lowercase() == TVChannelUrlType.STREAM.value
-        }
+        tvChannel.urls
+            .filter {
+                it.url.isNotBlank()
+            }
+            .firstOrNull {
+                it.type.lowercase() == TVChannelUrlType.WEB_PAGE.value
+            }?.let {
+                return when (it.dataSource) {
+
+                    TVChannelURLSrc.SCTV.value -> {
+                        sctvDataSource.getTvLinkFromDetail(tvChannel, isBackup)
+                    }
+
+                    TVChannelURLSrc.V.value -> {
+                        tvChannel.tvChannelWebDetailPage = it.url
+                        vDataSourceImpl.getTvLinkFromDetail(tvChannel, isBackup)
+                            .onErrorResumeNext {
+                                Logger.e(this@MainTVDataSource, "VDataSource", it)
+                                Observable.just(
+                                    TVChannelLinkStream(
+                                        tvChannel,
+                                        streamingUrl.map {
+                                            it.url
+                                        }
+                                    )
+                                )
+                            }
+                    }
+
+                    else -> {
+                        vDataSourceImpl.getTvLinkFromDetail(tvChannel, isBackup)
+                    }
+                }.map { finalTVWithLinkStream ->
+                    if (streamingUrl.isNotEmpty()) {
+                        val newListStreaming = finalTVWithLinkStream.linkStream.toMutableList()
+                        newListStreaming.addAll(streamingUrl.map { it.url })
+                        return@map TVChannelLinkStream(
+                            finalTVWithLinkStream.channel,
+                            newListStreaming.distinct()
+                        )
+                    }
+                    return@map finalTVWithLinkStream
+                }
+            }
 
         return Observable.just(
             TVChannelLinkStream(
                 tvChannel,
-                listOf(streamingUrl!!.url)
+                streamingUrl.map { it.url }
             )
         )
     }
@@ -235,7 +281,7 @@ class MainTVDataSource @Inject constructor(
         var isRadio: Boolean? = false,
         var name: String = "",
         var thumb: String = "",
-        var urls: List<Url> = listOf()
+        var urls: List<Url?> = listOf()
     ) {
         data class Url @JvmOverloads constructor(
             val src: String? = null,
@@ -260,7 +306,6 @@ class MainTVDataSource @Inject constructor(
                 TVChannelGroup.HTV,
                 TVChannelGroup.SCTV,
                 TVChannelGroup.VTC,
-                TVChannelGroup.VTVCAB,
                 TVChannelGroup.THVL,
                 TVChannelGroup.AnNinh,
                 TVChannelGroup.HTVC,

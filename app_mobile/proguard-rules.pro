@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep class com.kt.apps.core.tv.model.** {*;}
+-keep class com.kt.apps.core.tv.datasource.** {*;}
+-keep class com.kt.apps.core.utils** {*;}
+-keepclassmembers class com.google.firebase.database.GenericTypeIndicator { *; }

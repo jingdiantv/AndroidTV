@@ -18,7 +18,9 @@ data class ExtensionsChannel(
     val channelId: String,
     val channelPreviewProviderId: Long = -1,
     val isHls: Boolean,
-    val catchupSource: String = ""
+    val catchupSource: String = "",
+    val userAgent: String = "",
+    val referer: String = ""
 ) : Parcelable {
     override fun toString(): String {
         return Gson().toJson(this)

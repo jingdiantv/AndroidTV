@@ -71,22 +71,22 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.DEBUG) {
-//            StrictMode.setThreadPolicy(
-//                StrictMode.ThreadPolicy.Builder()
-//                    .detectDiskReads()
-//                    .detectDiskWrites()
-//                    .detectAll()
-//                    .penaltyLog()
-//                    .build()
-//            )
-//            StrictMode.setVmPolicy(
-//                StrictMode.VmPolicy.Builder()
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectAll()
+                    .penaltyLog()
+                    .build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder()
 //                    .detectLeakedSqlLiteObjects()
 //                    .detectLeakedClosableObjects()
-//                    .penaltyLog()
-//                    .penaltyDeath()
-//                    .build()
-//            )
+                    .penaltyLog()
+                    .penaltyDeath()
+                    .build()
+            )
         }
         AndroidInjection.inject(this)
         window.decorView.setBackgroundColor(Color.WHITE)

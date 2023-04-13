@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.IKeyValueStorage
-import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -63,7 +62,7 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     private fun parseFromText(text: String, extension: ExtensionsConfig): List<ExtensionsChannel> {
-        return text.split("#EXTINF:-1")
+        return text.split(REGEX_MEDIA_DURATION)
             .map {
                 it.trim().removePrefix(",")
             }
@@ -76,6 +75,8 @@ class ParserExtensionsSource @Inject constructor(
                 var channelLogo = ""
                 var channelGroup = ""
                 var tvCatchupSource = ""
+                var userAgent = ""
+                var referer = ""
 
                 if (itemStr.contains(ID_PREFIX)) {
                     channelId = getByRegex(CHANNEL_ID_REGEX, itemStr)
@@ -89,16 +90,41 @@ class ParserExtensionsSource @Inject constructor(
 
                 if (itemStr.contains(TITLE_PREFIX)) {
                     channelGroup = getByRegex(CHANNEL_GROUP_TITLE_REGEX, itemStr)
-                    itemStr = itemStr.replace("$TITLE_PREFIX=\"$channelLogo\"", "")
+                    itemStr = itemStr.replace("$TITLE_PREFIX=\"$channelGroup\"", "")
                 }
 
                 if (itemStr.contains(CATCHUP_SOURCE_PREFIX)) {
                     tvCatchupSource = getByRegex(CHANNEL_CATCH_UP_SOURCE_REGEX, itemStr)
                 }
 
+                if (itemStr.contains(TAG_USER_AGENT)) {
+                    userAgent = getByRegex(REGEX_USER_AGENT, itemStr)
+                    if (userAgent.isNotEmpty()) {
+                        itemStr = itemStr.replace("$TAG_USER_AGENT=\"$userAgent\"", "")
+                    }
+                }
+
+                if (itemStr.contains(TAG_REFERER)) {
+                    Logger.d(this@ParserExtensionsSource, "Referer", itemStr)
+                    Logger.d(this@ParserExtensionsSource, "Referer", getByRegex(REFERER_REGEX, itemStr))
+                    referer = getByRegex(REFERER_REGEX, itemStr)
+                    if (referer.isNotBlank()) {
+                        itemStr = itemStr.replace("|Referer=$referer", "")
+                            .trim()
+                            .removeSuffix("#")
+                    }
+                    Logger.d(this@ParserExtensionsSource, "Referer", itemStr)
+                }
+
                 val lastHttpIndex = itemStr.lastIndexOf("http")
                 try {
-                    val channelLink = itemStr.substring(lastHttpIndex, itemStr.length)
+                    Logger.d(this@ParserExtensionsSource, message = "$lastHttpIndex - ${itemStr.lastIndexOf("\r\n")}")
+                    val lastEndLineIndex = itemStr.lastIndexOf("\r\n")
+                    val channelLink = if (lastEndLineIndex > lastHttpIndex) {
+                        itemStr.substring(lastHttpIndex, lastEndLineIndex)
+                    } else {
+                        itemStr.substring(lastHttpIndex, itemStr.length)
+                    }
                     val splitIndex = itemStr.indexOf(",")
                     val lastExtTag = itemStr.lastIndexOf("#EXT")
                     val startLinkIndex = itemStr.indexOf(channelLink)
@@ -128,7 +154,9 @@ class ParserExtensionsSource @Inject constructor(
                         tvStreamLink = channelLink.trim().removeSuffix(" "),
                         isHls = channelLink.contains("m3u8"),
                         catchupSource = tvCatchupSource.replace("\${start}", "${System.currentTimeMillis()}")
-                            .replace("\${offset}", "${System.currentTimeMillis() + OFFSET_TIME}")
+                            .replace("\${offset}", "${System.currentTimeMillis() + OFFSET_TIME}"),
+                        referer = referer,
+                        userAgent = userAgent
                     )
                     channel
                 } catch (e: Exception) {
@@ -158,9 +186,10 @@ class ParserExtensionsSource @Inject constructor(
     companion object {
         private const val OFFSET_TIME = 4 * 60 * 60 * 1000
         private const val EXTRA_EXTENSIONS_KEY = "extra:extensions_key"
-
         private const val TAG_START = "#EXTM3U"
-        private const val TAG_EXT_INFO = "#EXTINF:-1"
+        private const val TAG_EXT_INFO = "#EXTINF:"
+        private const val TAG_REFERER = "|Referer"
+        private val REGEX_MEDIA_DURATION = Pattern.compile("#EXTINF:( )?-?\\d+")
         private const val URL_TVG_PREFIX = "url-tvg"
         private const val CACHE_PREFIX = "cache"
         private const val RATIO_PREFIX = "aspect-ratio"
@@ -168,6 +197,8 @@ class ParserExtensionsSource @Inject constructor(
         private const val TVG_SHIFT_PREFIX = "tvg-shift"
         private const val M3U_AUTO_LOAD_PREFIX = "m3uautoload"
         private const val CATCHUP_SOURCE_PREFIX = "catchup-source"
+        private const val TAG_USER_AGENT = "user-agent"
+        private val REGEX_USER_AGENT = Pattern.compile("(?<=user-agent=\").*?(?=\")")
 
         private const val ID_PREFIX = "tvg-id"
         private const val LOGO_PREFIX = "tvg-logo"
@@ -184,6 +215,7 @@ class ParserExtensionsSource @Inject constructor(
         private val CHANNEL_LOGO_REGEX = Pattern.compile("(?<=tvg-logo=\").*?(?=\")")
         private val CHANNEL_GROUP_TITLE_REGEX = Pattern.compile("(?<=group-title=\").*?(?=\")")
         private val CHANNEL_CATCH_UP_SOURCE_REGEX = Pattern.compile("(?<=catchup-source=\").*?(?=\")")
+        private val REFERER_REGEX = Pattern.compile("(?<=\\|Referer=).*")
         private val CHANNEL_TYPE_REGEX = Pattern.compile("(?<=type=\").*?(?=\")")
         private val CHANNEL_TITLE_REGEX = Pattern.compile("(?<=\").*?(?=\")")
     }

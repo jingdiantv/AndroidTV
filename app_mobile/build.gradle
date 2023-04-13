@@ -69,4 +69,5 @@ dependencies {
     implementation project(":football")
     implementation 'com.pnikosis:materialish-progress:1.7'
     implementation otherLibs.values()
+    implementation media.values()
 }

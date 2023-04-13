@@ -64,7 +64,10 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         }
 
         onItemViewClickedListener = OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
-            if (!(item as TVChannel).isFreeContent) {
+            if (item !is TVChannel) {
+                return@OnItemViewClickedListener
+            }
+            if (!item.isFreeContent) {
                 showErrorDialog(content = "Đây là nội dung tính phí\r\nLiên hệ đội phát triển để có thêm thông tin")
                 return@OnItemViewClickedListener
             }
