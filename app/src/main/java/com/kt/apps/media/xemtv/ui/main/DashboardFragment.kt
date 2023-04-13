@@ -141,7 +141,17 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     }
 
     private fun getDisplayVersionName(): String {
-        return getString(com.kt.apps.core.R.string.app_name) + "." + BuildConfig.VERSION_CODE + "-" + BuildConfig.BUILD_TYPE
+        return getString(com.kt.apps.core.R.string.app_name) +
+                if (BuildConfig.isBeta) {
+                    "_BETA"
+                } else {
+                    ""
+                } + "." + BuildConfig.VERSION_CODE +
+                if (BuildConfig.DEBUG) {
+                    "-" + BuildConfig.BUILD_TYPE
+                } else {
+                    ""
+                }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -502,11 +512,18 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     companion object {
         private const val EXTRA_EXTERNAL_EXTENSIONS = "extra:external"
         val defaultPages by lazy {
-            mapOf(
-                DashboardPageRowFactory.ROW_TV to "Truyền hình",
-                DashboardPageRowFactory.ROW_RADIO to "Phát thanh",
-                DashboardPageRowFactory.ROW_ADD_EXTENSION to "Thêm nguồn",
-            )
+            if (BuildConfig.isBeta) {
+                mapOf(
+                    DashboardPageRowFactory.ROW_TV to "Truyền hình",
+                    DashboardPageRowFactory.ROW_RADIO to "Phát thanh",
+                    DashboardPageRowFactory.ROW_ADD_EXTENSION to "Thêm nguồn",
+                )
+            } else {
+                mapOf(
+                    DashboardPageRowFactory.ROW_TV to "Truyền hình",
+                    DashboardPageRowFactory.ROW_RADIO to "Phát thanh",
+                )
+            }
         }
         private val defaultPagesIcon by lazy {
             mapOf(

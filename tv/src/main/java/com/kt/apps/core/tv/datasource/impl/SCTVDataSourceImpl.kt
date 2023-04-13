@@ -174,6 +174,8 @@ class SCTVDataSourceImpl @Inject constructor(
             val response = try {
                 okHttpClient.newCall(
                     Request.Builder()
+                        .header("origin", "https://sctvonline.vn")
+                        .header("referer", REFERER)
                         .url(
                             "$BACKEND_BASE_URL${
                                 PATH_QUERY_CHANNEL_DETAIL.replace(
@@ -193,10 +195,22 @@ class SCTVDataSourceImpl @Inject constructor(
                 if (it.isDisposed) {
                     return@create
                 }
+                val linkPlay = json.optString("link_play")
+
+                val hlsInplayInfo = json.optJSONObject("play_info")
+                    ?.optJSONObject("data")
+                    ?.optString("hls_link_play")
+                Logger.d(this, "playInfo", message = hlsInplayInfo ?: "Empty")
                 it.onNext(
                     TVChannelLinkStream(
-                        tvChannel,
-                        listOf(json.optString("link_play"))
+                        tvChannel.apply {
+                            this.referer = WEB_PAGE_BASE_URL
+                        },
+                        if (hlsInplayInfo.isNullOrEmpty()) {
+                            listOf(linkPlay)
+                        } else {
+                            listOf(linkPlay, hlsInplayInfo)
+                        }
                     )
                 )
                 it.onComplete()
@@ -204,7 +218,24 @@ class SCTVDataSourceImpl @Inject constructor(
                 if (it.isDisposed) {
                     return@create
                 }
-                it.onError(Throwable(response.message))
+                val streamingLink = tvChannel.urls.filter {
+                    it.type == "streaming"
+                }
+                if (streamingLink.isNotEmpty()) {
+                    it.onError(Throwable(response.message))
+                } else {
+                    it.onNext(
+                        TVChannelLinkStream(
+                            tvChannel.apply {
+                                this.referer = WEB_PAGE_BASE_URL
+                            },
+                            streamingLink.map {
+                                it.url
+                            }
+                        )
+                    )
+                    it.onComplete()
+                }
             }
         }
     }
@@ -225,12 +256,15 @@ class SCTVDataSourceImpl @Inject constructor(
             .flatMap {
                 val response = okHttpClient.newCall(
                     Request.Builder()
+                        .header("origin", "https://sctvonline.vn")
+                        .header("referer", REFERER)
                         .url(it)
                         .build()
                 )
                     .execute()
 
                 val code = response.code
+                val headers = response.headers
                 if (code in 200..299) {
                     Observable.just(
                         Gson().fromJson(response.body.string(), SCTVPages::class.java)
@@ -275,6 +309,8 @@ class SCTVDataSourceImpl @Inject constructor(
             val response = okHttpClient.newCall(
                 Request.Builder()
                     .url(mainPageUrl)
+                    .header("origin", "https://sctvonline.vn")
+                    .header("referer", REFERER)
                     .build()
             ).execute()
 

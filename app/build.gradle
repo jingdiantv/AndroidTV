@@ -15,7 +15,7 @@ android {
         applicationId "com.kt.apps.media.xemtv"
         minSdk 26
         targetSdk 33
-        versionCode 23040506
+        versionCode 23041301
         versionName "$versionCode"
         setProperty("archivesBaseName", "iMedia.$versionName")
 
@@ -29,6 +29,20 @@ android {
     }
     dataBinding {
         enabled = true
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+
+        playStore {
+            dimension "version"
+            buildConfigField "boolean", "isBeta", "false"
+        }
+
+        modBeta {
+            dimension "version"
+            buildConfigField "boolean", "isBeta", "true"
+        }
     }
 
 }

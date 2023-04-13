@@ -6,6 +6,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.MapChannel
 import com.kt.apps.core.tv.FirebaseLogUtils
@@ -135,6 +136,7 @@ class VDataSourceImpl @Inject constructor(
         isBackup: Boolean
     ): Observable<TVChannelLinkStream> {
         return Observable.create { emitter ->
+            Logger.d(this@VDataSourceImpl, message = "getTvLinkFromDetail")
             val body = try {
                 Jsoup.connect(tvChannel.tvChannelWebDetailPage)
                     .header("referer", tvChannel.tvChannelWebDetailPage)
@@ -143,6 +145,7 @@ class VDataSourceImpl @Inject constructor(
                     .parse()
                     .body()
             } catch (e: java.lang.Exception) {
+                emitter.onError(e)
                 return@create
             }
             if (emitter.isDisposed) {
@@ -151,11 +154,16 @@ class VDataSourceImpl @Inject constructor(
             body.getElementById("__NEXT_DATA__")?.let {
                 val text = it.html()
                 val jsonObject = JSONObject(text)
-                val linkM3u8 = jsonObject.getJSONObject("props")
-                    .getJSONObject("initialState")
-                    .getJSONObject("LiveTV")
-                    .getJSONObject("detailChannel")
-                    .optString("linkPlayHls")
+                val linkM3u8 = try {
+                    jsonObject.getJSONObject("props")
+                        .getJSONObject("initialState")
+                        .getJSONObject("LiveTV")
+                        .getJSONObject("detailChannel")
+                        .optString("linkPlayHls")
+                } catch (e: Exception) {
+                    emitter.onError(e)
+                    return@create
+                }
                 if (emitter.isDisposed) {
                     return@create
                 }

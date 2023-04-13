@@ -17,13 +17,14 @@ class TVChannel(
     val channelId: String,
     val urls: List<Url> = listOf(),
     var isFreeContent: Boolean = true,
+    var referer: String = ""
 ) : Parcelable {
 
     @Parcelize
     data class Url(
         val dataSource: String? = null,
         val type: String,
-        val url: String
+        var url: String
     ) : Parcelable {
         val isHls: Boolean
             get() = url.contains("m3u8")

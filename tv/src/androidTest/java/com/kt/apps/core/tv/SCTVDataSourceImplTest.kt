@@ -61,14 +61,14 @@ class SCTVDataSourceImplTest {
             TVChannelGroup.SCTV.name,
             "Test",
             "Test",
-            "https://sctvonline.vn/detail/sctv11-1d565c47",
+            "https://sctvonline.vn/detail/abc-australia-06914b8b",
             TVDataSourceFrom.MAIN_SOURCE.name,
-            "sctv11-1d565c47",
+            "abc-australia-06914b8b",
             urls = listOf(
                 TVChannel.Url(
                     "sctv",
                     "web",
-                    url = "https://sctvonline.vn/detail/sctv11-1d565c47"
+                    url = "https://sctvonline.vn/detail/abc-australia-06914b8b"
                 ),
                 TVChannel.Url(
                     "vieon",
@@ -90,6 +90,7 @@ class SCTVDataSourceImplTest {
             .test()
             .assertComplete()
             .assertValue {
+                println(it)
                 println(it.linkStream)
                 it.linkStream.isNotEmpty()
             }
