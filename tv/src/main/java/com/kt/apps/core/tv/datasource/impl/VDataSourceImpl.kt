@@ -145,7 +145,9 @@ class VDataSourceImpl @Inject constructor(
                     .parse()
                     .body()
             } catch (e: java.lang.Exception) {
-                emitter.onError(e)
+                if (!emitter.isDisposed) {
+                    emitter.onError(e)
+                }
                 return@create
             }
             if (emitter.isDisposed) {
@@ -161,7 +163,9 @@ class VDataSourceImpl @Inject constructor(
                         .getJSONObject("detailChannel")
                         .optString("linkPlayHls")
                 } catch (e: Exception) {
-                    emitter.onError(e)
+                    if (!emitter.isDisposed) {
+                        emitter.onError(e)
+                    }
                     return@create
                 }
                 if (emitter.isDisposed) {

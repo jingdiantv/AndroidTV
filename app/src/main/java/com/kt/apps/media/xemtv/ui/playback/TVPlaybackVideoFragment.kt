@@ -84,17 +84,17 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     }
 
     private fun notifyPlaybackError(error: PlaybackException) {
-        retryTimes[tvChannelViewModel.lastWatchedChannel?.channel!!.channelId] = 0
-
-        actionLogger.logPlaybackShowError(
-            error,
-            tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "Unknown"
-        )
-
         showErrorDialog(
             content = "Kênh ${tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "TV"} " +
                     "hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: " +
                     "${error.message} ${error.errorCode}"
+        )
+        val channel = tvChannelViewModel.lastWatchedChannel?.channel ?: return
+        retryTimes[channel.channelId] = 0
+
+        actionLogger.logPlaybackShowError(
+            error,
+            channel.tvChannelName
         )
     }
 
