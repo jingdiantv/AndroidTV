@@ -22,6 +22,7 @@ fun ITVDataSource.needRefreshData(
     remoteConfig: FirebaseRemoteConfig,
     tvStorage: TVStorage
 ): Boolean {
+    remoteConfig.fetchAndActivate()
     val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
     val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
     val refreshedInVersion = tvStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)

@@ -18,6 +18,7 @@ import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import javax.inject.Inject
+import javax.inject.Provider
 
 @TVScope
 class MainTVDataSource @Inject constructor(
@@ -25,7 +26,7 @@ class MainTVDataSource @Inject constructor(
     private val vDataSourceImpl: VDataSourceImpl,
     private val firebaseDatabase: FirebaseDatabase,
     private val firebaseRemoteConfig: FirebaseRemoteConfig,
-    private val tvStorage: TVStorage,
+    private val tvStorage: Provider<TVStorage>,
     private val roomDataBase: RoomDataBase
 ) : ITVDataSource {
     private val compositeDisposable by lazy {
@@ -33,7 +34,7 @@ class MainTVDataSource @Inject constructor(
     }
 
     private val needRefresh: Boolean
-        get() = this.needRefreshData(firebaseRemoteConfig, tvStorage)
+        get() = this.needRefreshData(firebaseRemoteConfig, tvStorage.get())
 
     private val versionNeedRefresh: Long
         get() = firebaseRemoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
@@ -44,30 +45,29 @@ class MainTVDataSource @Inject constructor(
             .getListChannelWithUrl()
             .flatMapObservable {
                 if (it.isEmpty()) {
-                    Observable.just(it)
+                    getFirebaseSource()
                 } else {
                     Logger.d(this@MainTVDataSource, message = "Offline source: ${Gson().toJson(it)}")
-                    Observable.just(it)
-                }
-            }
-            .map {
-                it.map { tvChannelFromDB ->
-                    TVChannel(
-                        tvGroup = tvChannelFromDB.tvChannel.tvGroup,
-                        tvChannelName = tvChannelFromDB.tvChannel.tvChannelName,
-                        tvChannelWebDetailPage = tvChannelFromDB.urls.firstOrNull {
-                            it.type == TVChannelUrlType.WEB_PAGE.value
-                        }?.url ?: tvChannelFromDB.urls[0].url,
-                        urls = tvChannelFromDB.urls.map { url ->
-                            TVChannel.Url(
-                                dataSource = url.src,
-                                url = url.url,
-                                type = url.type
+                    Observable.just(
+                        it.map { tvChannelFromDB ->
+                            TVChannel(
+                                tvGroup = tvChannelFromDB.tvChannel.tvGroup,
+                                tvChannelName = tvChannelFromDB.tvChannel.tvChannelName,
+                                tvChannelWebDetailPage = tvChannelFromDB.urls.firstOrNull {
+                                    it.type == TVChannelUrlType.WEB_PAGE.value
+                                }?.url ?: tvChannelFromDB.urls[0].url,
+                                urls = tvChannelFromDB.urls.map { url ->
+                                    TVChannel.Url(
+                                        dataSource = url.src,
+                                        url = url.url,
+                                        type = url.type
+                                    )
+                                },
+                                sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
+                                logoChannel = tvChannelFromDB.tvChannel.logoChannel,
+                                channelId = tvChannelFromDB.tvChannel.channelId
                             )
-                        },
-                        sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
-                        logoChannel = tvChannelFromDB.tvChannel.logoChannel,
-                        channelId = tvChannelFromDB.tvChannel.channelId
+                        }
                     )
                 }
             }
@@ -88,11 +88,12 @@ class MainTVDataSource @Inject constructor(
         return onlineSource
     }
 
-    private fun getFirebaseSource() =
+    private fun getFirebaseSource(): Observable<List<TVChannel>> =
         Observable.create<List<TVChannel>> { emitter ->
             val totalGroup = supportGroups.size
             val totalList = mutableListOf<TVChannel>()
             var totalCount = 0
+            Logger.d(this@MainTVDataSource, message = "getFirebaseSource")
 
             supportGroups.forEach { group ->
                 firebaseDatabase.reference
@@ -132,7 +133,7 @@ class MainTVDataSource @Inject constructor(
                         Logger.d(this@MainTVDataSource, message = "Counter: $totalCount, $totalGroup")
                         if (totalCount == totalGroup) {
                             emitter.onComplete()
-                            tvStorage.saveRefreshInVersion(
+                            tvStorage.get().saveRefreshInVersion(
                                 EXTRA_KEY_VERSION_NEED_REFRESH,
                                 versionNeedRefresh
                             )

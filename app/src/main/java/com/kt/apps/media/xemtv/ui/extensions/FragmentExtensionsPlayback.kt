@@ -12,8 +12,15 @@ import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logStreamingTV
+import com.kt.apps.core.utils.expandUrl
+import com.kt.apps.core.utils.isShortLink
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import javax.inject.Inject
 
 class FragmentExtensionsPlayback : BasePlaybackFragment() {
@@ -124,10 +131,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         }
     }
 
+    private var lastExpandUrlTask: Disposable? = null
+    private val disposable by lazy {
+        CompositeDisposable()
+    }
     private fun playVideo(
         tvChannel: ExtensionsChannel,
         useCatchup: Boolean = false
     ) {
+        lastExpandUrlTask?.let { disposable.remove(it) }
         val linkToPlay = if (!useCatchup) {
             tvChannel.tvStreamLink
         } else {
@@ -138,7 +150,9 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             this,
             "PlayVideo",
             "$tvChannel,\t" +
-                    "useCatchup: $useCatchup" +
+                    "useCatchup: $useCatchup," +
+                    "isHls: ${linkToPlay.contains("m3u8") ||
+                            linkToPlay.isShortLink()}" +
                     ""
         )
 
@@ -148,14 +162,41 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             Gson().toJson(linkToPlay)
         )
 
-        playVideo(
-            tvChannel.tvChannelName,
-            null,
-            referer = tvChannel.referer,
-            linkStream = listOf(linkToPlay),
-            true,
-            isHls = linkToPlay.contains("m3u8")
-        )
+        if (linkToPlay.isShortLink()) {
+            lastExpandUrlTask = Observable.just(linkToPlay.expandUrl())
+                .observeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ realUrl ->
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        null,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(realUrl),
+                        true,
+                        isHls = realUrl.contains("m3u8")
+                    )
+                }, {
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        null,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(linkToPlay),
+                        true,
+                        isHls = linkToPlay.contains("m3u8")
+                    )
+                })
+            disposable.add(lastExpandUrlTask!!)
+
+        } else {
+            playVideo(
+                tvChannel.tvChannelName,
+                null,
+                referer = tvChannel.referer,
+                linkStream = listOf(linkToPlay),
+                true,
+                isHls = linkToPlay.contains("m3u8")
+            )
+        }
 
     }
 

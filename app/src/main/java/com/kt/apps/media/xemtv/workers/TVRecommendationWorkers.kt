@@ -17,6 +17,7 @@ import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.media.xemtv.App
+import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.workers.factory.ChildWorkerFactory
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -140,6 +141,15 @@ class TVRecommendationWorkers(
         disposable.add(
             tvChannelUseCase.invoke(false)
                 .observeOn(Schedulers.computation())
+                .flatMap {
+                    io.reactivex.rxjava3.core.Observable.just(
+                        it.filter { !it.isRadio },
+                        it.filter { it.isRadio },
+                    )
+                }
+                .filter {
+                    it.isNotEmpty()
+                }
                 .flatMapCompletable { channelList ->
                     Logger.d(this@TVRecommendationWorkers, message = "Size: ${channelList.size}")
                     val isRadio = channelList.first().isRadio
@@ -181,8 +191,18 @@ class TVRecommendationWorkers(
                         PreviewChannel.Builder(existingChannel)
                     }
 
+                    Logger.e(
+                        this@TVRecommendationWorkers,
+                        message = resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg).toString()
+                    )
+                    val id = com.kt.apps.core.R.drawable.app_icon_fg
+                    val logoUri = if (id == -1) {
+                        Uri.parse("android.resource://com.kt.apps.media.xemtv/drawable/app_icon_fg")
+                    } else {
+                        resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg)
+                    }
                     val channelUpdate = channelBuilder.setDisplayName(displayName)
-                        .setLogo(resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg))
+                        .setLogo(Uri.parse("android.resource://com.kt.apps.media.xemtv/drawable/app_icon_fg"))
                         .setDescription("iMedia")
                         .setInternalProviderId(tvChannelProviderId)
                         .setAppLinkIntentUri(channelUri)
@@ -253,7 +273,7 @@ class TVRecommendationWorkers(
                 .subscribe({
                     Logger.d(this@TVRecommendationWorkers, message = "Insert preview channel success")
                 }, {
-                    Logger.e(this@TVRecommendationWorkers, exception = it)
+                    insertOrUpdatePreviewChannel()
                 })
 
         )

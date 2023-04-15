@@ -1,9 +1,25 @@
 package com.kt.apps.core.utils
 
+import com.kt.apps.core.logging.Logger
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLConnection
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
 
+val listShortLink by lazy {
+    listOf(
+        "gg.gg",
+        "urlis.net",
+        "bitly.com",
+        "ow.ly",
+        "tinyurl.com",
+        "tiny.cc",
+        "bit.do"
+    )
+}
 fun String.formatDateTime(
     pattern: String,
     newPattern: String,
@@ -39,4 +55,38 @@ fun String.findFirstNumber(): String? {
         return matcher.group()
     }
     return null
+}
+
+fun String.isShortLink(): Boolean {
+    return try {
+        val host = this.toHttpUrl()
+            .host
+        host in listShortLink
+    } catch (e: Exception) {
+        false
+    }
+}
+
+fun String.expandUrl(): String {
+    var conn: HttpURLConnection? = null
+    try {
+        val inputURL = URL(this)
+        conn = inputURL.openConnection() as HttpURLConnection?
+        conn?.instanceFollowRedirects = false
+        while (conn!!.responseCode / 100 == 3) {
+            val location: String = conn.getHeaderField("location");
+            conn = URL(location).openConnection() as HttpURLConnection?
+        }
+        Logger.d(this, message = "Original URL: " + conn.url)
+        return conn.url.toString()
+    } catch (e: java.lang.Exception) {
+        Logger.e(this, exception = e)
+    } finally {
+        try {
+            conn?.disconnect()
+        } catch (e: java.lang.Exception) {
+            Logger.e(this, exception = e)
+        }
+    }
+    return this
 }

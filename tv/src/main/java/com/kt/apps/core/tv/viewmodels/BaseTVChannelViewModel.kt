@@ -60,6 +60,7 @@ open class BaseTVChannelViewModel constructor(
                     _listTvChannelLiveData.postValue(DataState.Error(it))
                 }, {
                     _listTvChannelLiveData.postValue(DataState.Success(finalList))
+                    onFetchTVListSuccess(finalList)
                 })
         )
     }
@@ -161,6 +162,10 @@ open class BaseTVChannelViewModel constructor(
     }
 
     open fun enqueueInsertWatchNextTVChannel(tvChannel: TVChannel) {}
+
+    open fun onFetchTVListSuccess(listChannel: List<TVChannel>) {
+
+    }
 
     init {
         instance++

@@ -322,6 +322,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         isLive: Boolean,
         isHls: Boolean
     ) {
+        mGlueHost.setSurfaceHolderCallback(null)
         exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener)
         mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
         mTransportControlGlue.host = mGlueHost
