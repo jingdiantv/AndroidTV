@@ -6,11 +6,11 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
+import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
-import com.kt.apps.core.tv.datasource.EXTRA_KEY_USE_ONLINE
-import com.kt.apps.core.tv.datasource.EXTRA_KEY_VERSION_NEED_REFRESH
 import com.kt.apps.core.tv.datasource.ITVDataSource
+import com.kt.apps.core.tv.datasource.needRefreshData
 import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
@@ -69,20 +69,6 @@ class SCTVDataSourceImpl @Inject constructor(
                     "\"is_favorite\",\"drm_session_info\"]}"
     }
 
-    private fun needRefresh(): Boolean {
-        val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
-        val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
-        val refreshedInVersion = keyValueStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
-        Logger.d(
-            this@SCTVDataSourceImpl, message = "{" +
-                    "useOnlineData: $needRefresh, " +
-                    "version: $version, " +
-                    "refreshedVersion: $refreshedInVersion" +
-                    "}"
-        )
-        return needRefresh && version > refreshedInVersion
-    }
-
     private val listRadioGroupSupport: List<TVChannelGroup> by lazy {
         listOf(TVChannelGroup.VOV, TVChannelGroup.VOH)
     }
@@ -114,7 +100,7 @@ class SCTVDataSourceImpl @Inject constructor(
             val totalChannel = mutableListOf<TVChannel>()
             var count = 0
             var isOnline: Boolean = false
-            val needRefresh = needRefresh()
+            val needRefresh = this.needRefreshData(remoteConfig, keyValueStorage)
             listGroup.forEach { group ->
                 if (keyValueStorage.getTvByGroup(group).isNotEmpty() && !needRefresh) {
                     isOnline = false
@@ -134,8 +120,8 @@ class SCTVDataSourceImpl @Inject constructor(
                             emitter.onNext(totalChannel)
                             if (needRefresh) {
                                 keyValueStorage.saveRefreshInVersion(
-                                    EXTRA_KEY_VERSION_NEED_REFRESH,
-                                    remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
+                                    Constants.EXTRA_KEY_VERSION_NEED_REFRESH,
+                                    remoteConfig.getLong(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
                                 )
                             }
                             emitter.onComplete()

@@ -6,11 +6,11 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.MapChannel
 import com.kt.apps.core.tv.FirebaseLogUtils
-import com.kt.apps.core.tv.datasource.EXTRA_KEY_VERSION_NEED_REFRESH
 import com.kt.apps.core.tv.datasource.ITVDataSource
 import com.kt.apps.core.tv.datasource.needRefreshData
 import com.kt.apps.core.tv.di.TVScope
@@ -83,8 +83,8 @@ class VDataSourceImpl @Inject constructor(
                             emitter.onNext(totalChannel)
                             if (needRefresh) {
                                 keyValueStorage.saveRefreshInVersion(
-                                    EXTRA_KEY_VERSION_NEED_REFRESH,
-                                    remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
+                                    Constants.EXTRA_KEY_VERSION_NEED_REFRESH,
+                                    remoteConfig.getLong(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
                                 )
                             }
                             emitter.onComplete()

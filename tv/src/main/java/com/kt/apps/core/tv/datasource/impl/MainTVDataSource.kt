@@ -4,10 +4,10 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
+import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.TVChannelDTO
-import com.kt.apps.core.tv.datasource.EXTRA_KEY_VERSION_NEED_REFRESH
 import com.kt.apps.core.tv.datasource.ITVDataSource
 import com.kt.apps.core.tv.datasource.needRefreshData
 import com.kt.apps.core.tv.di.TVScope
@@ -37,7 +37,7 @@ class MainTVDataSource @Inject constructor(
         get() = this.needRefreshData(firebaseRemoteConfig, tvStorage.get())
 
     private val versionNeedRefresh: Long
-        get() = firebaseRemoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
+        get() = firebaseRemoteConfig.getLong(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
 
 
     override fun getTvList(): Observable<List<TVChannel>> {
@@ -134,7 +134,7 @@ class MainTVDataSource @Inject constructor(
                         if (totalCount == totalGroup) {
                             emitter.onComplete()
                             tvStorage.get().saveRefreshInVersion(
-                                EXTRA_KEY_VERSION_NEED_REFRESH,
+                                Constants.EXTRA_KEY_VERSION_NEED_REFRESH,
                                 versionNeedRefresh
                             )
                         }
