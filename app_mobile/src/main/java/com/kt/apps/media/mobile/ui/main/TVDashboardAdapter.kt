@@ -83,9 +83,7 @@ class TVDashboardAdapter : BaseAdapter<Pair<String, List<TVChannel>>, ItemRowCha
         ) {
             binding.item = item
             binding.title.isSelected = true
-            Constants.mapChannel[item.tvChannelName]?.let {
-                binding.logo.loadImgByDrawableIdResName(it, item.logoChannel)
-            } ?: binding.logo.loadImgByUrl(item.logoChannel)
+            binding.logo.loadImgByDrawableIdResName(item.logoChannel, item.logoChannel)
         }
 
         override fun onViewRecycled(holder: BaseViewHolder<TVChannel, ItemChannelBinding>) {
