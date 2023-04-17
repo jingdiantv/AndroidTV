@@ -14,7 +14,7 @@ sealed class LandscapeLayoutState {
     object FULLSCREEN: LandscapeLayoutState()
 }
 
-class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler  {
+class LandscapeLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler  {
     private var state: LandscapeLayoutState = LandscapeLayoutState.IDLE
     private var cachedVideoSize: VideoSize? = null
 
@@ -36,6 +36,11 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
 
     override fun onLoadedVideoSuccess(videoSize: VideoSize) {
         cachedVideoSize = videoSize
+        if (state != LandscapeLayoutState.FULLSCREEN) {
+            motionLayout?.setTransitionDuration(250)
+            motionLayout?.transitionToState(R.id.fullscreen)
+            state = LandscapeLayoutState.FULLSCREEN
+        }
     }
 
     override fun onOpenFullScreen() {

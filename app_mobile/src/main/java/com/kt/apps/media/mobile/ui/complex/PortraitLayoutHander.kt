@@ -33,7 +33,7 @@ sealed class PortraitLayoutState {
     object FULLSCREEN: PortraitLayoutState()
 }
 
-class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler {
+class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler {
     private val swipeThreshold = 100
     private val velocitySwipeThreshold = 100
 
@@ -61,7 +61,6 @@ class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActiv
                 velocityY: Float
             ): Boolean {
                 val diffY = e2.y - e1.y
-                val diffX = e2.x - e1.x
                 if (abs(diffY) > swipeThreshold && abs(velocityY) > velocitySwipeThreshold) {
                     if (diffY > 0) {
                         onSwipeBottom(e1, e2)

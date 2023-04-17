@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import cn.pedant.SweetAlert.ProgressHelper
 import com.google.android.material.navigation.NavigationBarView
+import com.google.gson.Gson
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.OnItemRecyclerViewCLickListener
@@ -37,6 +38,9 @@ import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
+import com.kt.apps.media.mobile.ui.complex.ComplexLayoutHandler
+import com.kt.apps.media.mobile.ui.complex.LandscapeLayoutHandler
+import com.kt.apps.media.mobile.ui.complex.PortraitLayoutHandler
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.ui.playback.ITVServiceAidlInterface
@@ -153,15 +157,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         Observer { dataState ->
             when(dataState) {
                 is DataState.Success -> {
-                    Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} $isVisible $isAdded")
+                    Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} ${Gson().toJson(dataState.data)}")
                     swipeRefreshLayout.isRefreshing = false
 
-                    if (skeletonScreen.isRunning) {
-                        skeletonScreen.hide {
-                            adapter.onRefresh(dataState.data.groupAndSort())
-                            mainRecyclerView.addOnScrollListener(_onScrollListener)
-                        }
-                    } else {
+                    skeletonScreen.hide {
                         adapter.onRefresh(dataState.data.groupAndSort())
                         mainRecyclerView.addOnScrollListener(_onScrollListener)
                     }
@@ -169,9 +168,8 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 is DataState.Loading -> {
                     mainRecyclerView.clearOnScrollListeners()
                     Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} $isVisible $isAdded")
-                    if (isVisible) {
                         skeletonScreen.run()
-                    }
+
                 }
                 else -> { }
             }
@@ -191,7 +189,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     override fun initView(savedInstanceState: Bundle?) {
-        tvChannelViewModel?.getListTVChannel(savedInstanceState == null, sourceFrom = TVDataSourceFrom.VTV_BACKUP)
+        tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
             layoutManager = LinearLayoutManager(this@ChannelFragment.context).apply {
@@ -209,10 +207,8 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
 
     override fun initAction(savedInstanceState: Bundle?) {
-//        tvChannelViewModel?.getListTVChannel(savedInstanceState == null, sourceFrom = TVDataSourceFrom.VTV_BACKUP)
-
         binding.swipeRefreshLayout.setOnRefreshListener {
-            tvChannelViewModel?.getListTVChannel(true,TVDataSourceFrom.VTV_BACKUP )
+            tvChannelViewModel?.getListTVChannel(true)
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
@@ -272,14 +268,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
         return false
     }
+
+    private fun List<TVChannel>.groupAndSort(): List<Pair<String, List<TVChannel>>> {
+        return this.groupBy { it.tvGroup }
+            .toList()
+            .sortedWith(Comparator { o1, o2 ->
+                return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
+                    if (o1.first ==TVChannelGroup.VOH.value)  0  else -1
+                else 1
+            })
+    }
 }
 
-fun List<TVChannel>.groupAndSort(): List<Pair<String, List<TVChannel>>> {
-    return this.groupBy { it.tvGroup }
-        .toList()
-        .sortedWith(Comparator { o1, o2 ->
-            return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
-                if (o1.first ==TVChannelGroup.VOH.value)  0  else -1
-            else 1
-        })
-}

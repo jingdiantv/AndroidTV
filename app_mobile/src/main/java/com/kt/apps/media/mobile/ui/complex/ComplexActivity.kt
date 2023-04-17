@@ -87,11 +87,9 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
-        savedInstanceState?.let {
-            isPlaying = it.getBoolean(isPlayingKey)
-            layoutHandler?.onReset(isPlaying)
-        }
+
     }
+
 
     override fun onBackPressed() {
         if (layoutHandler?.onBackEvent() == true) {
@@ -100,17 +98,9 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         super.onBackPressed()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putBoolean(isPlayingKey, isPlaying)
-    }
-
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         layoutHandler?.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
 
-    companion object {
-        const val isPlayingKey = "is_playing"
-    }
 }
