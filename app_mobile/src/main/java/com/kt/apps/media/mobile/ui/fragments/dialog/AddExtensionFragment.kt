@@ -21,9 +21,11 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject
 import io.reactivex.rxjava3.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -56,6 +58,8 @@ class AddExtensionFragment: BaseDialogFragment<AddExtensionDialogBinding>() {
         Log.d(TAG, "initView: ")
     }
 
+
+    @OptIn(FlowPreview::class)
     override fun initAction(savedInstanceState: Bundle?) {
         saveButton.setOnClickListener {
             debounceOnClickListener(Unit)
@@ -64,9 +68,19 @@ class AddExtensionFragment: BaseDialogFragment<AddExtensionDialogBinding>() {
 
         CoroutineScope(Dispatchers.Main).launch {
             combine(flow = sourceNameEditText.textChanges(), flow2 = sourceLinkEditText.textChanges(), transform = {
-                    name, link -> (name.toString() ?: "") + (link.toString() ?: "")
+                    name, link ->
+                val isValidLink = link?.isNotEmpty() == true && link?.startsWith("http") == true
+                return@combine (name?.length ?:0) > 0 && isValidLink
             }).collect {
-                saveButton.isEnabled = it.isNotEmpty()
+                saveButton.isEnabled = it
+            }
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            sourceLinkEditText.textChanges().debounce(250).collect {
+                if(it.toString().isNotEmpty() && it?.startsWith("http") == false) {
+                    sourceLinkEditText.error = "Đường dẫn không hợp lệ! Đường dẫn phải phải bắt đầu bằng: \"http\""
+                }
             }
         }
 
