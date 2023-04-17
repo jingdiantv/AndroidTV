@@ -12,8 +12,11 @@ import com.kt.apps.media.mobile.models.VideoDisplayAction
 import javax.inject.Inject
 
 class PlaybackViewModel @Inject constructor(): BaseViewModel() {
+    enum class State {
+        IDLE, LOADING, PLAYING, FINISHED
+    }
     val videoSizeStateLiveData: MutableLiveData<VideoSize?> = MutableLiveData(null)
-    val videoIsLoading: MutableLiveData<Boolean> = MutableLiveData(true)
+    val videoState: MutableLiveData<State> = MutableLiveData(State.IDLE)
 
     val playerListener: Player.Listener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -23,9 +26,13 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
         override fun onPlaybackStateChanged(playbackState: Int) {
             super.onPlaybackStateChanged(playbackState)
             when(playbackState) {
-                Player.STATE_READY -> videoIsLoading.postValue(false)
-                Player.STATE_BUFFERING -> videoIsLoading.postValue(true)
-                else -> videoIsLoading.postValue(true)
+                Player.STATE_READY -> {
+                    videoState.postValue(State.PLAYING)
+                }
+                Player.STATE_BUFFERING -> videoState.postValue(State.LOADING)
+                Player.STATE_IDLE -> videoState.postValue(State.IDLE)
+                Player.STATE_ENDED -> videoState.postValue(State.FINISHED)
+                else -> {}
             }
         }
 

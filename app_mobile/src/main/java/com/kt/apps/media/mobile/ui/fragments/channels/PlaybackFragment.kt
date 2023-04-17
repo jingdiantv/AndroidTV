@@ -83,7 +83,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     private val playbackViewModel: PlaybackViewModel? by lazy {
         activity?.run {
             ViewModelProvider(this,factory)[PlaybackViewModel::class.java].apply {
-                this.videoIsLoading.observe(this@PlaybackFragment, loadingObserver)
+                this.videoState.observe(this@PlaybackFragment, loadingObserver)
                 this.videoSizeStateLiveData.observe(this@PlaybackFragment) {videoSize ->
                     videoSize?.run {
                         callback?.onLoadedSuccess(this)
@@ -98,9 +98,11 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             Log.d(TAG, "linkStreamObserver: $result")
             when(result) {
                 is DataState.Success -> {
+                    toggleProgressing(true)
                     playVideo(result.data)
                 }
                 is DataState.Loading -> {
+                    stopCurrentVideo()
                     toggleProgressing(true)
                 }
                 else -> {}
@@ -108,9 +110,12 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         }
     }
 
-    private val loadingObserver: Observer<Boolean> by lazy {
-        Observer { isLoading ->
-            toggleProgressing(isLoading)
+    private val loadingObserver: Observer<PlaybackViewModel.State> by lazy {
+        Observer { state ->
+            when(state) {
+                PlaybackViewModel.State.LOADING -> toggleProgressing(true)
+                else -> { toggleProgressing(false) }
+            }
         }
     }
 
@@ -141,6 +146,10 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         titleLabel.text = data.channel.tvChannelName
     }
 
+    private fun stopCurrentVideo() {
+        exoPlayerManager.exoPlayer?.stop()
+    }
+
     private fun toggleProgressing(isShow: Boolean) {
         if (isShow == currentShowLoading) {
             return
@@ -148,7 +157,9 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         if (isShow) {
             binding.exoPlayer.showController()
             progressWheel.visibility = View.VISIBLE
-            progressHelper.spin()
+            progressWheel.fadeIn {
+                progressHelper.spin()
+            }
             controlDock.fadeOut {  }
         } else {
             progressWheel.fadeOut {

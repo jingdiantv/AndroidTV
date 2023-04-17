@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.ContactsContract.Data
+import android.util.DisplayMetrics
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -44,7 +45,12 @@ import com.kt.apps.media.mobile.ui.complex.PortraitLayoutHandler
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.ui.playback.ITVServiceAidlInterface
+import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
@@ -55,18 +61,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     @Inject
     lateinit var factory: ViewModelProvider.Factory
-    private var service: ITVServiceAidlInterface? = null
-    private var iServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Log.e("TAG", "onServiceConnected")
-            this@ChannelFragment.service = ITVServiceAidlInterface.Stub.asInterface(service!!)
-        }
 
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Log.e("TAG", "onServiceDisconnected")
-
-        }
-    }
+    private val isLandscape: Boolean
+        get() = resources.getBoolean(R.bool.is_landscape)
 
     private val progressHelper by lazy {
         ProgressHelper(this.context)
@@ -144,6 +141,14 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
+    private val playbackViewModel: PlaybackViewModel? by lazy {
+        activity?.run {
+            ViewModelProvider(this, factory)[PlaybackViewModel::class.java].apply {
+                this.videoState.observe(this@ChannelFragment, playbackStateObserver)
+            }
+        }
+    }
+
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
         activity?.run {
             ViewModelProvider(this, factory)[TVChannelViewModel::class.java].apply {
@@ -157,19 +162,17 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         Observer { dataState ->
             when(dataState) {
                 is DataState.Success -> {
-                    Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} ${Gson().toJson(dataState.data)}")
                     swipeRefreshLayout.isRefreshing = false
 
                     skeletonScreen.hide {
                         adapter.onRefresh(dataState.data.groupAndSort())
                         mainRecyclerView.addOnScrollListener(_onScrollListener)
+                        scrollToPosition(0)
                     }
                 }
                 is DataState.Loading -> {
                     mainRecyclerView.clearOnScrollListeners()
-                    Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} $isVisible $isAdded")
-                        skeletonScreen.run()
-
+                    skeletonScreen.run()
                 }
                 else -> { }
             }
@@ -188,8 +191,32 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
+    private val playbackStateObserver: Observer<PlaybackViewModel.State> by lazy {
+        Observer { state ->
+            if (!isLandscape) {
+                return@Observer
+            }
+            when(state) {
+                PlaybackViewModel.State.IDLE -> {
+                    with(mainRecyclerView) {
+                        setPadding(0,  0, 0, 0)
+                    }
+                }
+                PlaybackViewModel.State.LOADING, PlaybackViewModel.State.PLAYING -> {
+                    with(mainRecyclerView) {
+                        setPadding(0,0,0,screenHeight / 3)
+                        clipToPadding = false
+                    }
+                }
+                else -> {}
+            }
+        }
+    }
+
     override fun initView(savedInstanceState: Bundle?) {
         tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
+        playbackViewModel
+
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
             layoutManager = LinearLayoutManager(this@ChannelFragment.context).apply {
@@ -228,7 +255,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         } else {
             activity?.applicationContext?.startService(intent)
         }
-        activity?.bindService(intent, iServiceConnection, Context.BIND_IMPORTANT)
     }
 
     override fun onStop() {
@@ -252,7 +278,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private fun onChangeItem(item: MenuItem): Boolean {
         if (item.itemId == R.id.radio) {
-            service?.sendData("Radio")
             if (navigationRailView.selectedItemId == item.itemId) {
                 return false
             }

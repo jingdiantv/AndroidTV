@@ -10,7 +10,6 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.utils.TAG
 import com.kt.apps.media.mobile.R
-import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
 import java.lang.ref.WeakReference
 import kotlin.math.abs
 
@@ -26,14 +25,14 @@ interface ComplexLayoutHandler {
     fun onReset(isPlaying: Boolean) { }
 }
 
-sealed class PortraitLayoutState {
-    object IDLE: PortraitLayoutState()
-    object LOADING: PortraitLayoutState()
-    data class SUCCESS(val videoSize: VideoSize): PortraitLayoutState()
-    object FULLSCREEN: PortraitLayoutState()
-}
+class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler {
+    sealed class State {
+        object IDLE: State()
+        object LOADING: State()
+        data class SUCCESS(val videoSize: VideoSize): State()
+        object FULLSCREEN: State()
+    }
 
-class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler {
     private val swipeThreshold = 100
     private val velocitySwipeThreshold = 100
 
@@ -46,7 +45,7 @@ class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : 
     override val motionLayout: MotionLayout?
         get() = weakActivity.get()?.binding?.complexMotionLayout
 
-    private var state: PortraitLayoutState = PortraitLayoutState.IDLE
+    private var state: State = State.IDLE
     private var cachedVideoSize: VideoSize? = null
     private val gestureDetector: GestureDetector by lazy {
         GestureDetector(context, object: GestureDetector.SimpleOnGestureListener() {
@@ -76,25 +75,25 @@ class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : 
     }
 
     override fun onOpenFullScreen() {
-        if (state != PortraitLayoutState.FULLSCREEN) {
+        if (state != State.FULLSCREEN) {
             motionLayout?.transitionToState(R.id.fullscreen)
-            state = PortraitLayoutState.FULLSCREEN
+            state = State.FULLSCREEN
             return
         }
-        if (state == PortraitLayoutState.FULLSCREEN) {
+        if (state == State.FULLSCREEN) {
             cachedVideoSize?.let {
                 motionLayout?.transitionToState(R.id.end)
-                state = PortraitLayoutState.SUCCESS(it)
+                state = State.SUCCESS(it)
             } ?: run {
                 motionLayout?.transitionToState(R.id.end)
-                state = PortraitLayoutState.IDLE
+                state = State.IDLE
             }
         }
 
     }
 
     override fun onBackEvent() : Boolean {
-        if (state == PortraitLayoutState.FULLSCREEN) {
+        if (state == State.FULLSCREEN) {
             onOpenFullScreen()
             return true
         }
@@ -102,14 +101,14 @@ class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : 
     }
 
     override fun onStartLoading() {
-        if (state == PortraitLayoutState.IDLE) {
+        if (state == State.IDLE) {
             motionLayout?.transitionToState(R.id.end)
-            state = PortraitLayoutState.LOADING
+            state = State.LOADING
         }
     }
 
     override fun onLoadedVideoSuccess(videoSize: VideoSize) {
-        this.state = PortraitLayoutState.SUCCESS(videoSize)
+        this.state = State.SUCCESS(videoSize)
         calculateCurrentSize(videoSize)
     }
 
@@ -120,10 +119,10 @@ class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : 
                 it.setGuidelinePercent(R.id.guideline_complex, 0.3F)
                 motionLayout?.transitionToState(R.id.end)
             }
-            PortraitLayoutState.LOADING
+            State.LOADING
         } else {
             motionLayout?.transitionToState(R.id.start)
-            PortraitLayoutState.IDLE
+            State.IDLE
         }
     }
 
@@ -149,7 +148,7 @@ class PortraitLayoutHandler(val weakActivity: WeakReference<ComplexActivity>) : 
         fragmentContainerPlayback?.getHitRect(hitRect)
         fragmentContainerPlayback?.getLocationOnScreen(location)
 
-        hitRect.offset(location[0], location[1])
+//        hitRect.offset(location[0], location[1])
         if (hitRect.contains(e1.x.toInt(), e1.y.toInt())) {
             Log.d(TAG, "onSwipeBottom: ")
             motionLayout?.transitionToState(R.id.fullscreen)
