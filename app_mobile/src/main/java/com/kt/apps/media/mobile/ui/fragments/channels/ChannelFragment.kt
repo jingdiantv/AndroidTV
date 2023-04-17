@@ -4,21 +4,26 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Point
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.ContactsContract.Data
 import android.util.DisplayMetrics
 import android.util.Log
+import android.view.Gravity
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.View.OnScrollChangeListener
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.AdapterView.OnItemClickListener
+import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
@@ -26,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import cn.pedant.SweetAlert.ProgressHelper
 import com.google.android.material.navigation.NavigationBarView
 import com.google.gson.Gson
+import com.kt.apps.core.base.BaseDialogFragment
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.OnItemRecyclerViewCLickListener
@@ -39,14 +45,18 @@ import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
+import com.kt.apps.media.mobile.databinding.AddExtensionDialogBinding
 import com.kt.apps.media.mobile.ui.complex.ComplexLayoutHandler
 import com.kt.apps.media.mobile.ui.complex.LandscapeLayoutHandler
 import com.kt.apps.media.mobile.ui.complex.PortraitLayoutHandler
+import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.ui.playback.ITVServiceAidlInterface
+import com.kt.apps.media.mobile.utils.debounce
 import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
+import dagger.android.support.DaggerDialogFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -98,37 +108,38 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
+    private val debounceOnScrollListener  by lazy {
+        debounce<Unit>(300, viewLifecycleOwner.lifecycleScope) {
+            if (adapter.listItem.isEmpty()) {
+                return@debounce
+            }
+            val item = (binding.mainChannelRecyclerView.layoutManager as LinearLayoutManager)
+                .findLastCompletelyVisibleItemPosition()
+            if (item == RecyclerView.NO_POSITION) {
+                return@debounce
+            }
+            val itemTitle = adapter.listItem[item].first
+            if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+                if (navigationRailView.selectedItemId != R.id.radio) {
+                    navigationRailView.setOnItemSelectedListener(null)
+                    navigationRailView.selectedItemId = R.id.radio
+                    navigationRailView.setOnItemSelectedListener(onItemSelected)
+                }
+            } else {
+                if (navigationRailView.selectedItemId != R.id.tv) {
+                    navigationRailView.setOnItemSelectedListener(null)
+                    navigationRailView.selectedItemId = R.id.tv
+                    navigationRailView.setOnItemSelectedListener(onItemSelected)
+                }
+            }
+        }
+    }
+
     private val _onScrollListener by lazy {
         object : OnScrollListener() {
-            var lastDetectedTime = System.currentTimeMillis()
-            var lastDetectedTV = System.currentTimeMillis()
-
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                if (adapter.listItem.isEmpty()) {
-                    return
-                }
-                val item = (binding.mainChannelRecyclerView.layoutManager as LinearLayoutManager)
-                    .findLastCompletelyVisibleItemPosition()
-                if (item == RecyclerView.NO_POSITION) {
-                    return
-                }
-                val itemTitle = adapter.listItem[item].first
-                if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                    if (navigationRailView.selectedItemId != R.id.radio && System.currentTimeMillis() - lastDetectedTime > 300) {
-                        navigationRailView.setOnItemSelectedListener(null)
-                        lastDetectedTime = System.currentTimeMillis()
-                        navigationRailView.selectedItemId = R.id.radio
-                        navigationRailView.setOnItemSelectedListener(onItemSelected)
-                    }
-                } else {
-                    if (navigationRailView.selectedItemId != R.id.tv && System.currentTimeMillis() - lastDetectedTV > 300) {
-                        navigationRailView.setOnItemSelectedListener(null)
-                        lastDetectedTV = System.currentTimeMillis()
-                        navigationRailView.selectedItemId = R.id.tv
-                        navigationRailView.setOnItemSelectedListener(onItemSelected)
-                    }
-                }
+                debounceOnScrollListener(Unit)
             }
         }
     }
@@ -245,18 +256,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        val intent = Intent()
-        intent.component = ComponentName("com.kt.apps.media.mobile.xemtv", "com.kt.apps.media.mobile.services.TVService")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            activity?.applicationContext?.startForegroundService(intent)
-        } else {
-            activity?.applicationContext?.startService(intent)
-        }
-    }
-
     override fun onStop() {
         super.onStop()
         mainRecyclerView.clearOnScrollListeners()
@@ -291,6 +290,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             scrollToPosition(0)
             return true
         }
+
+        if  (item.itemId == R.id.add_extension) {
+            val dialog = AddExtensionFragment()
+            dialog.show(this@ChannelFragment.parentFragmentManager, AddExtensionFragment.TAG)
+        }
         return false
     }
 
@@ -304,4 +308,3 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             })
     }
 }
-
