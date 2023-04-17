@@ -7,10 +7,11 @@ import com.kt.apps.core.storage.KeyValueStorageImpl
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import javax.inject.Inject
+import javax.inject.Provider
 
 class TVStorage @Inject constructor(
-    private val sharedPreferences: SharedPreferences
-) : KeyValueStorageImpl(sharedPreferences) {
+    private val sharedPreferences: Provider<SharedPreferences>
+) : KeyValueStorageImpl(sharedPreferences.get()) {
 
     fun getTvByGroup(group: String) = get(group, String::class.java).let {
         Gson().fromJson(
@@ -23,15 +24,15 @@ class TVStorage @Inject constructor(
     } ?: listOf<TVChannel>()
 
     fun saveTVByGroup(group: String, value: List<TVChannel>) {
-        sharedPreferences.edit().putString(group, Gson().toJson(value)).apply()
+        sharedPreferences.get().edit().putString(group, Gson().toJson(value)).apply()
     }
 
     fun getVersionRefreshed(name: String): Long {
-        return sharedPreferences.getLong("${name}_refresh_version", 1)
+        return sharedPreferences.get().getLong("${name}_refresh_version", 1)
     }
 
     fun saveRefreshInVersion(name: String, long: Long) {
-        sharedPreferences.edit()
+        sharedPreferences.get().edit()
             .putLong("${name}_refresh_version", long)
             .apply()
     }
@@ -43,7 +44,7 @@ class TVStorage @Inject constructor(
             String::class.java
         ).type
         val gson = Gson()
-        val oldCookie: String = sharedPreferences.getString(
+        val oldCookie: String = sharedPreferences.get().getString(
             "${sourceFrom.name}_cookies", null
         ) ?: return mapOf()
         return gson.fromJson(oldCookie, type)

@@ -17,6 +17,7 @@ import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.media.xemtv.App
+import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.workers.factory.ChildWorkerFactory
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -140,7 +141,19 @@ class TVRecommendationWorkers(
         disposable.add(
             tvChannelUseCase.invoke(false)
                 .observeOn(Schedulers.computation())
+                .flatMap {
+                    io.reactivex.rxjava3.core.Observable.just(
+                        it.filter { !it.isRadio },
+                        it.filter { it.isRadio },
+                    )
+                }
+                .filter {
+                    it.isNotEmpty()
+                }
                 .flatMapCompletable { channelList ->
+                    Logger.d(this@TVRecommendationWorkers, message = "Size: ${channelList.size}")
+                    val isRadio = channelList.first().isRadio
+                    Logger.d(this@TVRecommendationWorkers, message = "isRadio: $isRadio")
                     val allChannels: List<PreviewChannel> = try {
                         getAllChannels(context)
                     } catch (exc: IllegalArgumentException) {
@@ -150,7 +163,25 @@ class TVRecommendationWorkers(
                         Logger.d(this, message = "$it")
                     }
 
-                    val existingChannel = allChannels.find { it.internalProviderId == "tvChannelIMedia" }
+                    val tvChannelProviderId: String = if (isRadio) {
+                        "radioChannelIMedia"
+                    } else {
+                        "tvChannelIMedia"
+                    }
+
+                    val displayName: String = if (isRadio) {
+                        "Radio"
+                    } else {
+                        "XemTV"
+                    }
+
+                    val channelUri = if (isRadio) {
+                        Uri.parse("xemtv://radio/dashboard")
+                    } else {
+                        Uri.parse("xemtv://tv/dashboard")
+                    }
+
+                    val existingChannel = allChannels.find { it.internalProviderId == tvChannelProviderId }
 
                     Logger.d(this, message = "existingChannel: $existingChannel")
 
@@ -160,11 +191,21 @@ class TVRecommendationWorkers(
                         PreviewChannel.Builder(existingChannel)
                     }
 
-                    val channelUpdate = channelBuilder.setDisplayName("XemTV")
-                        .setLogo(resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg))
+                    Logger.e(
+                        this@TVRecommendationWorkers,
+                        message = resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg).toString()
+                    )
+                    val id = com.kt.apps.core.R.drawable.app_icon_fg
+                    val logoUri = if (id == -1) {
+                        Uri.parse("android.resource://com.kt.apps.media.xemtv/drawable/app_icon_fg")
+                    } else {
+                        resourceUri(App.get().resources, com.kt.apps.core.R.drawable.app_icon_fg)
+                    }
+                    val channelUpdate = channelBuilder.setDisplayName(displayName)
+                        .setLogo(Uri.parse("android.resource://com.kt.apps.media.xemtv/drawable/app_icon_fg"))
                         .setDescription("iMedia")
-                        .setInternalProviderId("tvChannelIMedia")
-                        .setAppLinkIntentUri(Uri.parse("xemtv://tv/dashboard"))
+                        .setInternalProviderId(tvChannelProviderId)
+                        .setAppLinkIntentUri(channelUri)
                         .build()
 
                     val channelProviderId = if (existingChannel == null) {
@@ -178,9 +219,6 @@ class TVRecommendationWorkers(
                             )
                         existingChannel.id
                     }
-
-                    val uri = TvContractCompat.buildPreviewProgramsUriForChannel(channelProviderId)
-//                    Logger.d(this, "Uri", uri.toString())
 
                     val channelEntity = channelList.map(mapToEntity(channelProviderId))
 
@@ -235,7 +273,7 @@ class TVRecommendationWorkers(
                 .subscribe({
                     Logger.d(this@TVRecommendationWorkers, message = "Insert preview channel success")
                 }, {
-                    Logger.e(this@TVRecommendationWorkers, exception = it)
+                    insertOrUpdatePreviewChannel()
                 })
 
         )
@@ -306,15 +344,16 @@ class TVRecommendationWorkers(
                     }
                 } while (cursor.moveToNext())
             }
+            cursor?.close()
             return channels
         }
 
         @SuppressLint("RestrictedApi")
         fun getPreviewPrograms(context: Context, channelId: Long? = null): List<PreviewProgram> {
             val programs: MutableList<PreviewProgram> = mutableListOf()
-
+            var cursor: Cursor? = null
             try {
-                val cursor = context.contentResolver.query(
+                cursor = context.contentResolver.query(
                     TvContractCompat.PreviewPrograms.CONTENT_URI,
                     PreviewProgram.PROJECTION,
                     null,
@@ -329,10 +368,14 @@ class TVRecommendationWorkers(
                         }
                     } while (cursor.moveToNext())
                 }
-                cursor?.close()
 
             } catch (exc: IllegalArgumentException) {
-                Logger.e(this, "Error retrieving preview programs", exc)
+                Logger.e(this, "Error", exc)
+            } finally {
+                try {
+                    cursor?.close()
+                } catch (_: Exception) {
+                }
             }
 
             return programs
@@ -358,7 +401,7 @@ class TVRecommendationWorkers(
                 cursor?.close()
 
             } catch (exc: IllegalArgumentException) {
-                Logger.e(this, "Error retrieving Watch Next programs", exc)
+                Logger.e(this, "Error", exc)
             }
 
             return programs

@@ -28,6 +28,18 @@ class TVChannelViewModel @Inject constructor(
         )
     }
 
+    override fun onFetchTVListSuccess(listChannel: List<TVChannel>) {
+        super.onFetchTVListSuccess(listChannel)
+        workManager.enqueue(
+            OneTimeWorkRequestBuilder<TVRecommendationWorkers>()
+                .setInputData(
+                    Data.Builder()
+                        .putInt(TVRecommendationWorkers.EXTRA_TYPE, TVRecommendationWorkers.Type.ALL.value)
+                        .build())
+                .build()
+        )
+    }
+
     init {
         instance++
         Logger.d(this, message = "TVChannelViewModel instance count: $instance")

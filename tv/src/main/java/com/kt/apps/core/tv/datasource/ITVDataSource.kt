@@ -1,6 +1,7 @@
 package com.kt.apps.core.tv.datasource
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
@@ -15,16 +16,14 @@ interface ITVDataSource {
     ): Observable<TVChannelLinkStream>
 }
 
-const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
-const val EXTRA_KEY_USE_ONLINE = "use_online_data"
-
 fun ITVDataSource.needRefreshData(
     remoteConfig: FirebaseRemoteConfig,
     tvStorage: TVStorage
 ): Boolean {
-    val needRefresh = remoteConfig.getBoolean(EXTRA_KEY_USE_ONLINE)
-    val version = remoteConfig.getLong(EXTRA_KEY_VERSION_NEED_REFRESH)
-    val refreshedInVersion = tvStorage.getVersionRefreshed(EXTRA_KEY_VERSION_NEED_REFRESH)
+    remoteConfig.fetchAndActivate()
+    val needRefresh = remoteConfig.getBoolean(Constants.EXTRA_KEY_USE_ONLINE)
+    val version = remoteConfig.getLong(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
+    val refreshedInVersion = tvStorage.getVersionRefreshed(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
     Logger.d(
         this, message = "{" +
                 "useOnlineData: $needRefresh, " +

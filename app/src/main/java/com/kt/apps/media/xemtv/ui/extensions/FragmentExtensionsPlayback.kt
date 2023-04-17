@@ -1,23 +1,26 @@
 package com.kt.apps.media.xemtv.ui.extensions
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.PlaybackException
+import com.google.android.exoplayer2.Player
 import com.google.gson.Gson
 import com.kt.apps.core.base.BasePlaybackFragment
-import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.logging.Logger
-import com.kt.apps.core.tv.model.TVChannel
-import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.logging.logStreamingTV
+import com.kt.apps.core.utils.expandUrl
+import com.kt.apps.core.utils.isShortLink
 import com.kt.apps.core.utils.showErrorDialog
-import com.kt.apps.football.model.FootballMatch
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import javax.inject.Inject
 
 class FragmentExtensionsPlayback : BasePlaybackFragment() {
@@ -27,6 +30,9 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
     private var itemToPlay: ExtensionsChannel? = null
     private val listCurrentItem by lazy {
         mutableListOf<ExtensionsChannel>()
+    }
+    private val retryTimes by lazy {
+        mutableMapOf<String, Int>()
     }
 
     @Inject
@@ -49,6 +55,20 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         super.onHandlePlayerError(error)
     }
 
+    override fun onPlayerPlaybackStateChanged(playbackState: Int) {
+        super.onPlayerPlaybackStateChanged(playbackState)
+        when (playbackState) {
+            Player.STATE_READY -> {
+                itemToPlay?.let {
+                    actionLogger.logStreamingTV(
+                        it.tvChannelName,
+                        "channelLink" to it.tvStreamLink
+                    )
+                }
+            }
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         itemToPlay?.let {
@@ -60,6 +80,9 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             listCurrentItem.addAll(it)
             setupRowAdapter(listCurrentItem, TVChannelPresenterSelector(requireActivity()))
             onItemClickedListener = OnItemViewClickedListener { _, item, rowViewHolder, row ->
+                itemToPlay?.let {
+                    retryTimes[it.channelId] = 0
+                }
                 itemToPlay = item as? ExtensionsChannel
                 itemToPlay?.let { it1 -> playVideo(it1) }
             }
@@ -71,51 +94,109 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
     override fun onError(errorCode: Int, errorMessage: CharSequence?) {
         super.onError(errorCode, errorMessage)
         Logger.e(this, message = "errorCode: $errorCode, errorMessage: $errorMessage")
-        if (errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
-            || errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
-        ) {
-            showErrorDialog(content = "Kênh ${itemToPlay?.tvChannelName ?: "TV"} hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: $errorCode $errorMessage")
-        } else {
-            if (!itemToPlay?.catchupSource.isNullOrBlank()) {
-                itemToPlay?.let { playVideo(it, true) }
+        val retriedTimes = retryTimes[itemToPlay!!.channelId] ?: 0
+        val useMainSource = if (itemToPlay != null) {
+            if (itemToPlay?.catchupSource.isNullOrBlank()) {
+                true
             } else {
-                showErrorDialog(content = "Kênh ${itemToPlay?.tvChannelName ?: "TV"} hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: $errorCode $errorMessage")
+                retriedTimes < 2
+            }
+        } else {
+            return
+        }
+
+        when {
+            retriedTimes > MAX_RETRY_TIME -> {
+                showErrorDialog(
+                    content = "Kênh ${itemToPlay?.tvChannelName ?: "TV"} " +
+                            "hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: " +
+                            "$errorCode $errorMessage"
+                )
+                retryTimes[itemToPlay!!.channelId] = 0
+            }
+
+            useMainSource -> {
+                itemToPlay?.let {
+                    playVideo(it, false)
+                }
+                retryTimes[itemToPlay!!.channelId] = retriedTimes + 1
+            }
+
+            !itemToPlay?.catchupSource.isNullOrBlank() -> {
+                itemToPlay?.let {
+                    playVideo(it, true)
+                }
+                retryTimes[itemToPlay!!.channelId] = retriedTimes + 1
             }
         }
     }
 
+    private var lastExpandUrlTask: Disposable? = null
+    private val disposable by lazy {
+        CompositeDisposable()
+    }
     private fun playVideo(
         tvChannel: ExtensionsChannel,
         useCatchup: Boolean = false
     ) {
+        lastExpandUrlTask?.let { disposable.remove(it) }
         val linkToPlay = if (!useCatchup) {
-            listOf(tvChannel.tvStreamLink)
+            tvChannel.tvStreamLink
         } else {
-            listOf(tvChannel.catchupSource)
+            tvChannel.catchupSource
         }
 
         Logger.d(
             this,
             "PlayVideo",
             "$tvChannel,\t" +
-                    "useCatchup: $useCatchup" +
+                    "useCatchup: $useCatchup," +
+                    "isHls: ${linkToPlay.contains("m3u8") ||
+                            linkToPlay.isShortLink()}" +
                     ""
         )
 
         Logger.d(
             this,
             "LinkPlayVideo",
-            "${Gson().toJson(linkToPlay)}"
+            Gson().toJson(linkToPlay)
         )
 
-        playVideo(
-            tvChannel.tvChannelName,
-            null,
-            referer = "",
-            linkStream = linkToPlay,
-            true,
-            isHls = tvChannel.isHls
-        )
+        if (linkToPlay.isShortLink()) {
+            lastExpandUrlTask = Observable.just(linkToPlay.expandUrl())
+                .observeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ realUrl ->
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        null,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(realUrl),
+                        true,
+                        isHls = realUrl.contains("m3u8")
+                    )
+                }, {
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        null,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(linkToPlay),
+                        true,
+                        isHls = linkToPlay.contains("m3u8")
+                    )
+                })
+            disposable.add(lastExpandUrlTask!!)
+
+        } else {
+            playVideo(
+                tvChannel.tvChannelName,
+                null,
+                referer = tvChannel.referer,
+                linkStream = listOf(linkToPlay),
+                true,
+                isHls = linkToPlay.contains("m3u8")
+            )
+        }
 
     }
 

@@ -13,7 +13,7 @@ import org.junit.Test
 
 class ParserExtensionsSourceTest {
 
-    private val url = "https://iptv-org.github.io/iptv/index.m3u"
+    private val url = "http://m3u.at/SamsungTV"
     private lateinit var parserExtensionsSource: ParserExtensionsSource
     private lateinit var okHttpClient: OkHttpClient
     private lateinit var storage: IKeyValueStorage
@@ -45,9 +45,13 @@ class ParserExtensionsSourceTest {
             .assertNoErrors()
             .assertComplete()
             .assertValue { result ->
-                result.map {
-                    it.logoChannel
-                }.contains("https://i.imgur.com/4HNGHEf.png")
+                result.forEach {
+                    println("")
+                    println(it)
+                    println("")
+                }
+                println(result.size)
+                result.size == 209
             }
     }
 
@@ -55,7 +59,7 @@ class ParserExtensionsSourceTest {
     fun parseFromRemote() {
         val result = parserExtensionsSource.parseFromRemote(config)
         assert(result.map {
-            it.logoChannel
-        }.contains("https://i.imgur.com/4HNGHEf.png"))
+            it.tvChannelName
+        }.contains("CNN"))
     }
 }

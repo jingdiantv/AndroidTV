@@ -3,7 +3,11 @@ package com.kt.apps.core.base
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
-import dagger.android.AndroidInjector
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.initialize
+import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.kt.apps.core.Constants
+import com.kt.apps.core.logging.Logger
 import dagger.android.DaggerApplication
 
 abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
@@ -11,6 +15,21 @@ abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         app = this
+        Firebase.initialize(this)
+        Firebase.remoteConfig
+            .setDefaultsAsync(mapOf(
+                Constants.EXTRA_KEY_USE_ONLINE to true,
+                Constants.EXTRA_KEY_VERSION_NEED_REFRESH to 1L
+            ))
+        Firebase.remoteConfig
+            .fetchAndActivate()
+            .addOnSuccessListener {
+                Logger.d(this, tag = "RemoteConfig", message = "Success")
+            }
+            .addOnFailureListener {
+                Logger.d(this, tag = "RemoteConfig", message = "Failure")
+            }
+        Firebase.remoteConfig.fetch(20)
         registerActivityLifecycleCallbacks(this)
     }
 

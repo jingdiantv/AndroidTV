@@ -10,6 +10,8 @@ import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.logging.logPlayByDeeplinkTV
+import com.kt.apps.core.logging.logStreamingTV
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.tv.model.TVDataSourceFrom
@@ -34,6 +36,11 @@ open class BaseTVChannelViewModel constructor(
     val tvChannelLiveData: LiveData<DataState<List<TVChannel>>>
         get() = _listTvChannelLiveData
 
+
+    private val tvChannelStreamingRetryCount: MutableMap<String, Int> by lazy {
+        mutableMapOf()
+    }
+
     fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.MAIN_SOURCE) {
         if (!forceRefresh && interactors.getListChannel.cacheData != null) {
             Logger.d(this, "ListChannel", "Get from cache")
@@ -53,6 +60,7 @@ open class BaseTVChannelViewModel constructor(
                     _listTvChannelLiveData.postValue(DataState.Error(it))
                 }, {
                     _listTvChannelLiveData.postValue(DataState.Success(finalList))
+                    onFetchTVListSuccess(finalList)
                 })
         )
     }
@@ -77,11 +85,7 @@ open class BaseTVChannelViewModel constructor(
                 markLastWatchedChannel(it)
                 enqueueInsertWatchNextTVChannel(it.channel)
                 _tvWithLinkStreamLiveData.postValue(DataState.Success(it))
-                actionLogger.log(
-                    "Streaming", bundleOf(
-                        "channel" to it.channel.tvChannelName
-                    )
-                )
+                actionLogger.logStreamingTV(it.channel.tvChannelName)
             }, {
                 Logger.e(this, exception = it)
                 _tvWithLinkStreamLiveData.postValue(DataState.Error(it))
@@ -114,17 +118,12 @@ open class BaseTVChannelViewModel constructor(
                             "channel: $it" +
                             "}"
                 )
-                actionLogger.log(
-                    "PlayByDeepLink", bundleOf(
-                        "uri" to "$uri",
-                        "channel" to it.channel.tvChannelName
-                    )
+
+                actionLogger.logPlayByDeeplinkTV(
+                    uri,
+                    it.channel.tvChannelName
                 )
-                actionLogger.log(
-                    "Streaming", bundleOf(
-                        "channel" to it.channel.tvChannelName
-                    )
-                )
+                actionLogger.logStreamingTV(it.channel.tvChannelName)
             }, {
                 _tvWithLinkStreamLiveData.postValue(DataState.Error(it))
                 Logger.e(this, exception = it)
@@ -138,7 +137,22 @@ open class BaseTVChannelViewModel constructor(
 
     fun retryGetLastWatchedChannel() {
         _lastWatchedChannel?.let {
-            getLinkStreamForChannel(it.channel)
+            val currentRetryCount = tvChannelStreamingRetryCount[it.channel.channelId] ?: 0
+            if (currentRetryCount > 2) {
+                tvChannelStreamingRetryCount[it.channel.channelId] = 0
+                _tvWithLinkStreamLiveData.postValue(
+                    DataState.Error(
+                        Throwable(
+                            "Kênh ${it.channel.tvChannelName} " +
+                                    "hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí"
+                        )
+                    )
+                )
+            } else {
+                tvChannelStreamingRetryCount[it.channel.channelId] = currentRetryCount + 1
+                it.channel.urls.size > 2
+                getLinkStreamForChannel(it.channel)
+            }
         }
     }
 
@@ -148,6 +162,10 @@ open class BaseTVChannelViewModel constructor(
     }
 
     open fun enqueueInsertWatchNextTVChannel(tvChannel: TVChannel) {}
+
+    open fun onFetchTVListSuccess(listChannel: List<TVChannel>) {
+
+    }
 
     init {
         instance++

@@ -14,6 +14,7 @@ import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.getBaseUrl
+import com.kt.apps.core.utils.trustEveryone
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 abstract class AbstractExoPlayerManager(
@@ -158,6 +159,7 @@ abstract class AbstractExoPlayerManager(
         playerListener: Player.Listener? = null
     ) {
         prepare()
+        trustEveryone()
         val mediaSources = getMediaSource(data, isHls)
         mExoPlayer?.setMediaSources(mediaSources)
         mExoPlayer?.removeListener(this.playerListener)

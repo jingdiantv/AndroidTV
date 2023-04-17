@@ -14,8 +14,10 @@ import com.kt.apps.core.R
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.logging.logPlaybackRetryGetStreamLink
+import com.kt.apps.core.logging.logPlaybackRetryPlayVideo
+import com.kt.apps.core.logging.logPlaybackShowError
 import com.kt.apps.core.tv.model.TVChannel
-import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
@@ -33,18 +35,67 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     private val tvChannelViewModel: TVChannelViewModel by lazy {
         ViewModelProvider(requireActivity(), factory)[TVChannelViewModel::class.java]
     }
+    private val retryTimes by lazy {
+        mutableMapOf<String, Int>()
+    }
 
     override fun onHandlePlayerError(error: PlaybackException) {
         super.onHandlePlayerError(error)
         Logger.e(this, exception = error.cause ?: Throwable("Error playback"))
-        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
-            || error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
-            || error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
-        ) {
-            showErrorDialog(content = "Kênh ${tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "TV"} hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.message} ${error.errorCode}")
-        } else {
-            tvChannelViewModel.retryGetLastWatchedChannel()
+        val retriedTimes = try {
+            retryTimes[tvChannelViewModel.lastWatchedChannel?.channel?.channelId] ?: 0
+        } catch (e: Exception) {
+            0
         }
+
+        when {
+            retriedTimes > MAX_RETRY_TIME || (tvChannelViewModel.lastWatchedChannel?.linkStream?.size ?: 0) == 0 -> {
+                notifyPlaybackError(error)
+            }
+
+            (tvChannelViewModel.lastWatchedChannel?.linkStream?.size ?: 0) > 1 -> {
+                val newStreamList = tvChannelViewModel.lastWatchedChannel!!.linkStream.subList(
+                    1,
+                    tvChannelViewModel.lastWatchedChannel!!.linkStream.size
+                )
+                val newChannelWithLink = TVChannelLinkStream(
+                    tvChannelViewModel.lastWatchedChannel!!.channel,
+                    newStreamList
+                )
+                tvChannelViewModel.markLastWatchedChannel(newChannelWithLink)
+                playVideo(newChannelWithLink)
+                actionLogger.logPlaybackRetryPlayVideo(
+                    error,
+                    tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "Unknown",
+                    "link" to newStreamList.first()
+                )
+                retryTimes[tvChannelViewModel.lastWatchedChannel?.channel!!.channelId] = retriedTimes + 1
+            }
+
+            else -> {
+                tvChannelViewModel.retryGetLastWatchedChannel()
+                actionLogger.logPlaybackRetryGetStreamLink(
+                    error,
+                    tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "Unknown"
+                )
+                retryTimes[tvChannelViewModel.lastWatchedChannel?.channel!!.channelId] = retriedTimes + 1
+            }
+        }
+    }
+
+    private fun notifyPlaybackError(error: PlaybackException) {
+        showErrorDialog(
+            content = "Kênh ${tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "TV"} " +
+                    "hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: " +
+                    "${error.message} ${error.errorCode}"
+        )
+        val channel = tvChannelViewModel.lastWatchedChannel?.channel ?: return
+        retryTimes[channel.channelId] = 0
+
+        actionLogger.logPlaybackShowError(
+            error,
+            channel.tvChannelName
+        )
     }
 
     override fun onError(errorCode: Int, errorMessage: CharSequence?) {
@@ -91,7 +142,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
             mCurrentSelectedChannel = it.channel
             setBackgroundByStreamingType(it)
             playVideo(tvChannel)
-        } ?: let {
+            tvChannelViewModel.markLastWatchedChannel(it)
         }
         onItemClickedListener = OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
             tvChannelViewModel.getLinkStreamForChannel(item as TVChannel)
@@ -180,13 +231,18 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
 
     private fun playVideo(tvChannel: TVChannelLinkStream) {
         playVideo(
-            tvChannel.channel.tvChannelName,
+            title = tvChannel.channel.tvChannelName,
             null,
-            tvChannel.channel.tvChannelWebDetailPage,
-            tvChannel.linkStream,
+            referer = if (tvChannel.channel.referer.isEmpty()) {
+                tvChannel.linkStream.first()
+            } else {
+                tvChannel.channel.referer
+            },
+            linkStream = tvChannel.linkStream,
             true,
             isHls = tvChannel.channel.isHls
         )
+        Logger.d(this, message = "PlayVideo: $tvChannel")
         if (tvChannelViewModel.tvChannelLiveData.value is DataState.Success) {
             val listChannel = (tvChannelViewModel.tvChannelLiveData.value as DataState.Success<List<TVChannel>>).data
             mPlayingPosition = listChannel.indexOfLast {

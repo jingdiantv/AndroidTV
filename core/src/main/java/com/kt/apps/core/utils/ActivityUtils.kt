@@ -51,6 +51,9 @@ fun Fragment.showErrorDialog(
     content: String? = null,
     delayMillis: Int? = 1900,
 ) {
+    if (this.isDetached || this.isHidden) {
+        return
+    }
     val successAlert = SweetAlertDialog(requireContext(), SweetAlertDialog.ERROR_TYPE)
         .showCancelButton(false)
         .hideConfirmButton()
@@ -86,7 +89,10 @@ fun Activity.showSuccessDialog(
     delayMillis: Int? = 1900,
     autoDismiss: Boolean = true
 ) {
-    showSweetDialog(SweetAlertDialog.SUCCESS_TYPE, onSuccessListener, content, delayMillis, autoDismiss)
+    try {
+        showSweetDialog(SweetAlertDialog.SUCCESS_TYPE, onSuccessListener, content, delayMillis, autoDismiss)
+    } catch (_: Exception) {
+    }
 }
 
 fun Activity.showErrorDialog(
@@ -95,7 +101,10 @@ fun Activity.showErrorDialog(
     delayMillis: Int? = 1900,
     autoDismiss: Boolean = false
 ) {
-    showSweetDialog(SweetAlertDialog.ERROR_TYPE, onSuccessListener, content, delayMillis, autoDismiss)
+    try {
+        showSweetDialog(SweetAlertDialog.ERROR_TYPE, onSuccessListener, content, delayMillis, autoDismiss)
+    } catch (_: Exception) {
+    }
 }
 @JvmOverloads
 fun Activity.showSweetDialog(
@@ -115,6 +124,7 @@ fun Activity.showSweetDialog(
     successAlert.titleText = null
     successAlert.confirmText = null
     successAlert.setBackground(ColorDrawable(Color.TRANSPARENT))
+
     successAlert.show()
     if (autoDismiss) {
         Handler(Looper.getMainLooper()).postDelayed({ successAlert.dismissWithAnimation() }, 1500)
@@ -124,9 +134,12 @@ fun Activity.showSweetDialog(
                 override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                     when(event) {
                         Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
-                            Logger.d(this, message = "OnPauseCalled")
-                            successAlert.dismissWithAnimation()
-                            lifecycle.removeObserver(this)
+                            try {
+                                Logger.d(this, message = "OnPauseCalled")
+                                successAlert.dismissWithAnimation()
+                                lifecycle.removeObserver(this)
+                            } catch (_: Exception) {
+                            }
                         }
 
                         else -> {

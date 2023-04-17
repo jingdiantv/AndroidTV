@@ -47,6 +47,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             Log.e("TAG", "onServiceDisconnected")
+            service = null
 
         }
 
@@ -306,6 +307,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override fun onDestroy() {
         super.onDestroy()
         navigationRailView = null
+        unbindService(iServiceConnection)
     }
 
     override fun onNewIntent(intent: Intent?) {
