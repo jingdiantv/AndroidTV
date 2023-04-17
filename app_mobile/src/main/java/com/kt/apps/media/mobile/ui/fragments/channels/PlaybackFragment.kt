@@ -25,10 +25,15 @@ import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.FragmentPlaybackBinding
-import com.kt.apps.media.mobile.models.VideoDisplayState
+import com.kt.apps.media.mobile.models.VideoDisplayAction
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.pnikosis.materialishprogress.ProgressWheel
 import javax.inject.Inject
+
+interface IPlaybackAction {
+    fun onLoadedSuccess(videoSize: VideoSize)
+    fun onOpenFullScreen()
+}
 
 class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     override val layoutResId: Int
@@ -41,6 +46,8 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     @Inject
     lateinit var exoPlayerManager: ExoPlayerManagerMobile
+
+    var callback: IPlaybackAction? = null
 
     private var currentShowLoading: Boolean = false
 
@@ -77,6 +84,11 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         activity?.run {
             ViewModelProvider(this,factory)[PlaybackViewModel::class.java].apply {
                 this.videoIsLoading.observe(this@PlaybackFragment, loadingObserver)
+                this.videoSizeStateLiveData.observe(this@PlaybackFragment) {videoSize ->
+                    videoSize?.run {
+                        callback?.onLoadedSuccess(this)
+                    }
+                }
             }
         }
     }
@@ -90,7 +102,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                 }
                 is DataState.Loading -> {
                     toggleProgressing(true)
-                    playbackViewModel?.videoSizeStateLiveData?.postValue(VideoDisplayState.LOADING)
                 }
                 else -> {}
             }
@@ -113,7 +124,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
         fullScreenButton.visibility = View.VISIBLE
         fullScreenButton.setOnClickListener {
-            playbackViewModel?.changeToFullScreen()
+            callback?.onOpenFullScreen()
         }
     }
 

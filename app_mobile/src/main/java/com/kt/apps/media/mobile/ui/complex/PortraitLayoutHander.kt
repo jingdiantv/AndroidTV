@@ -5,12 +5,13 @@ import android.graphics.Rect
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.View
 import androidx.constraintlayout.motion.widget.MotionLayout
 import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.utils.TAG
 import com.kt.apps.media.mobile.R
-import com.kt.apps.media.mobile.databinding.ActivityComplex2Binding
-import com.kt.apps.media.mobile.models.VideoDisplayState
+import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
+import java.lang.ref.WeakReference
 import kotlin.math.abs
 
 
@@ -22,7 +23,7 @@ interface ComplexLayoutHandler {
     fun onOpenFullScreen()
     fun onTouchEvent(ev: MotionEvent) { }
     fun onBackEvent() : Boolean { return false }
-    fun onReset() { }
+    fun onReset(isPlaying: Boolean) { }
 }
 
 sealed class PortraitLayoutState {
@@ -32,9 +33,18 @@ sealed class PortraitLayoutState {
     object FULLSCREEN: PortraitLayoutState()
 }
 
-class PortraitLayoutHandler(context: Context, val binding: ActivityComplex2Binding, override val motionLayout: MotionLayout?) : ComplexLayoutHandler {
+class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler {
     private val swipeThreshold = 100
     private val velocitySwipeThreshold = 100
+
+    private val context: Context?
+        get() = weakActivity.get()
+
+    private val fragmentContainerPlayback: View?
+        get() = weakActivity.get()?.binding?.fragmentContainerPlayback
+
+    override val motionLayout: MotionLayout?
+        get() = weakActivity.get()?.binding?.complexMotionLayout
 
     private var state: PortraitLayoutState = PortraitLayoutState.IDLE
     private var cachedVideoSize: VideoSize? = null
@@ -105,9 +115,17 @@ class PortraitLayoutHandler(context: Context, val binding: ActivityComplex2Bindi
     }
 
 
-    override fun onReset() {
-        motionLayout?.transitionToState(R.id.end)
-        state = PortraitLayoutState.LOADING
+    override fun onReset(isPlaying: Boolean) {
+        state = if (isPlaying) {
+            motionLayout?.getConstraintSet(R.id.end)?.let {
+                it.setGuidelinePercent(R.id.guideline_complex, 0.3F)
+                motionLayout?.transitionToState(R.id.end)
+            }
+            PortraitLayoutState.LOADING
+        } else {
+            motionLayout?.transitionToState(R.id.start)
+            PortraitLayoutState.IDLE
+        }
     }
 
     private fun calculateCurrentSize(size: VideoSize) {
@@ -129,8 +147,8 @@ class PortraitLayoutHandler(context: Context, val binding: ActivityComplex2Bindi
     fun onSwipeBottom(e1: MotionEvent, e2: MotionEvent) {
         val hitRect = Rect()
         val location = intArrayOf(0, 0)
-        binding.fragmentContainerPlayback.getHitRect(hitRect)
-        binding.fragmentContainerPlayback.getLocationOnScreen(location)
+        fragmentContainerPlayback?.getHitRect(hitRect)
+        fragmentContainerPlayback?.getLocationOnScreen(location)
 
         hitRect.offset(location[0], location[1])
         if (hitRect.contains(e1.x.toInt(), e1.y.toInt())) {

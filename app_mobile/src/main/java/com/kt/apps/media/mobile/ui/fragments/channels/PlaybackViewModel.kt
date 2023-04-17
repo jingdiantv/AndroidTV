@@ -8,19 +8,16 @@ import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
 import com.kt.apps.core.utils.TAG
-import com.kt.apps.media.mobile.models.VideoDisplayState
+import com.kt.apps.media.mobile.models.VideoDisplayAction
 import javax.inject.Inject
 
 class PlaybackViewModel @Inject constructor(): BaseViewModel() {
-    val videoSizeStateLiveData: MutableLiveData<VideoDisplayState> = MutableLiveData(VideoDisplayState.IDLE)
+    val videoSizeStateLiveData: MutableLiveData<VideoSize?> = MutableLiveData(null)
     val videoIsLoading: MutableLiveData<Boolean> = MutableLiveData(true)
 
     val playerListener: Player.Listener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
-            if (videoSizeStateLiveData.value == VideoDisplayState.FULLSCREEN) {
-                return
-            }
-            videoSizeStateLiveData.postValue(VideoDisplayState.SUCCESS(videoSize))
+            videoSizeStateLiveData.postValue(videoSize)
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -33,17 +30,4 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
         }
 
     }
-
-    fun changeToFullScreen() {
-        videoSizeStateLiveData.postValue(VideoDisplayState.FULLSCREEN)
-    }
-
-//    fun collapseVideo(videoSize: VideoSize?) {
-//        videoSize?.let {
-//            videoSizeStateLiveData.postValue(VideoDisplayState.SUCCESS(it))
-//        } ?: run {
-//            videoSizeStateLiveData.postValue(VideoDisplayState.LOADING)
-//        }
-//
-//    }
 }

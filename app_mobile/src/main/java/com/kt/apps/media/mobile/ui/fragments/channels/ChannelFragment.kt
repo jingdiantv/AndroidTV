@@ -32,6 +32,7 @@ import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.tv.model.TVDataSourceFrom
+import com.kt.apps.core.utils.TAG
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
@@ -152,12 +153,26 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         Observer { dataState ->
             when(dataState) {
                 is DataState.Success -> {
+                    Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} $isVisible $isAdded")
                     swipeRefreshLayout.isRefreshing = false
-                    skeletonScreen.hide {
+
+                    if (skeletonScreen.isRunning) {
+                        skeletonScreen.hide {
+                            adapter.onRefresh(dataState.data.groupAndSort())
+                            mainRecyclerView.addOnScrollListener(_onScrollListener)
+                        }
+                    } else {
                         adapter.onRefresh(dataState.data.groupAndSort())
+                        mainRecyclerView.addOnScrollListener(_onScrollListener)
                     }
                 }
-                is DataState.Loading -> skeletonScreen.run()
+                is DataState.Loading -> {
+                    mainRecyclerView.clearOnScrollListeners()
+                    Log.d(TAG, "listTVChannelObserver: DataState.Success ${System.currentTimeMillis()} $isVisible $isAdded")
+                    if (isVisible) {
+                        skeletonScreen.run()
+                    }
+                }
                 else -> { }
             }
         }
@@ -176,6 +191,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     override fun initView(savedInstanceState: Bundle?) {
+        tvChannelViewModel?.getListTVChannel(savedInstanceState == null, sourceFrom = TVDataSourceFrom.VTV_BACKUP)
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
             layoutManager = LinearLayoutManager(this@ChannelFragment.context).apply {
@@ -193,9 +209,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
 
     override fun initAction(savedInstanceState: Bundle?) {
-        tvChannelViewModel?.getListTVChannel(adapter.listItem.isEmpty(), sourceFrom = TVDataSourceFrom.VTV_BACKUP)
+//        tvChannelViewModel?.getListTVChannel(savedInstanceState == null, sourceFrom = TVDataSourceFrom.VTV_BACKUP)
+
         binding.swipeRefreshLayout.setOnRefreshListener {
-            tvChannelViewModel?.getListTVChannel(true,TVDataSourceFrom.VTV_BACKUP)
+            tvChannelViewModel?.getListTVChannel(true,TVDataSourceFrom.VTV_BACKUP )
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
@@ -216,6 +233,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             activity?.applicationContext?.startService(intent)
         }
         activity?.bindService(intent, iServiceConnection, Context.BIND_IMPORTANT)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mainRecyclerView.clearOnScrollListeners()
     }
 
     private fun scrollToPosition(index: Int) {
