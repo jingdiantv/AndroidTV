@@ -82,6 +82,10 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                 override fun onOpenFullScreen() {
                     layoutHandler?.onOpenFullScreen()
                 }
+
+                override fun onPauseAction() {
+                    layoutHandler?.onPause()
+                }
             }
         }
     }

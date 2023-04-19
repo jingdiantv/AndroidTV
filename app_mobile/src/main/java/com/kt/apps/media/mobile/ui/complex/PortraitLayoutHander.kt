@@ -23,6 +23,8 @@ interface ComplexLayoutHandler {
     fun onTouchEvent(ev: MotionEvent) { }
     fun onBackEvent() : Boolean { return false }
     fun onReset(isPlaying: Boolean) { }
+
+    fun onPause() { }
 }
 
 class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActivity>) : ComplexLayoutHandler {

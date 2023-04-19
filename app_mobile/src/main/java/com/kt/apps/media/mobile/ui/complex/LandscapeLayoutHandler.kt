@@ -100,6 +100,13 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
         }
     }
 
+    override fun onPause() {
+        if (state == State.FULLSCREEN) {
+            motionLayout?.transitionToState(R.id.end)
+            state = State.MINIMAL
+        }
+    }
+
     override fun onTouchEvent(ev: MotionEvent) {
         gestureDetector.onTouchEvent(ev)
     }
@@ -111,4 +118,5 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
             motionLayout?.transitionToState(R.id.fullscreen)
         }
     }
+
 }

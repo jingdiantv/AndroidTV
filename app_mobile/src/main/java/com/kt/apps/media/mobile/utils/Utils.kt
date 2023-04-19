@@ -8,6 +8,7 @@ import android.view.View.OnFocusChangeListener
 import android.view.ViewPropertyAnimator
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import androidx.annotation.CheckResult
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
@@ -69,6 +70,15 @@ fun EditText.onFocus(): Flow<Unit> {
 }
 
 fun Button.clicks(): Flow<Unit> {
+    return callbackFlow {
+        setOnClickListener {
+            trySend(Unit)
+        }
+        awaitClose { setOnClickListener(null) }
+    }
+}
+
+fun ImageButton.clicks(): Flow<Unit> {
     return callbackFlow {
         setOnClickListener {
             trySend(Unit)

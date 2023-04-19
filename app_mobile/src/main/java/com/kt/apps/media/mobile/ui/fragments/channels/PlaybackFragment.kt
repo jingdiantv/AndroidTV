@@ -1,5 +1,6 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
+import android.media.Image
 import android.os.Bundle
 import android.provider.MediaStore.Video
 import android.util.Log
@@ -11,6 +12,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import cn.pedant.SweetAlert.ProgressHelper
 import com.google.android.exoplayer2.ui.StyledPlayerView.SHOW_BUFFERING_ALWAYS
 import com.google.android.exoplayer2.video.VideoSize
@@ -26,13 +28,23 @@ import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.FragmentPlaybackBinding
 import com.kt.apps.media.mobile.models.VideoDisplayAction
+import com.kt.apps.media.mobile.ui.fragments.dialog.JobQueue
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
+import com.kt.apps.media.mobile.utils.clicks
+import com.kt.apps.media.mobile.utils.ktFadeIn
+import com.kt.apps.media.mobile.utils.ktFadeOut
 import com.pnikosis.materialishprogress.ProgressWheel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 interface IPlaybackAction {
     fun onLoadedSuccess(videoSize: VideoSize)
     fun onOpenFullScreen()
+
+    fun onPauseAction()
 }
 
 class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
@@ -49,7 +61,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     var callback: IPlaybackAction? = null
 
-    private var currentShowLoading: Boolean = false
 
     private val progressHelper by lazy {
         ProgressHelper(this.context)
@@ -58,6 +69,10 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     //Views
     private val fullScreenButton: ImageButton by lazy {
         binding.exoPlayer.findViewById(com.google.android.exoplayer2.ui.R.id.exo_fullscreen)
+    }
+
+    private val playPauseButton: ImageButton by lazy {
+        binding.exoPlayer.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play_pause)
     }
 
     private val controlDock: View by lazy {
@@ -70,6 +85,14 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     private val titleLabel: TextView by lazy {
         binding.exoPlayer.findViewById(R.id.title)
+    }
+
+    private val isProcessing by lazy {
+        MutableStateFlow<Boolean>(false)
+    }
+
+    private val isPlaying by lazy {
+        MutableStateFlow(false)
     }
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
@@ -88,6 +111,9 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                     videoSize?.run {
                         callback?.onLoadedSuccess(this)
                     }
+                }
+                this.isPlayingState.observe(this@PlaybackFragment) { isPlayingState ->
+                    isPlaying.tryEmit(isPlayingState)
                 }
             }
         }
@@ -131,10 +157,45 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         fullScreenButton.setOnClickListener {
             callback?.onOpenFullScreen()
         }
+
+
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
+
+        isPlaying.distinctUntilChanged { old, new ->  old == new }
+            .debounce(250)
+            .onEach {
+                if (!it) callback?.onPauseAction()
+            }.launchIn(lifecycleScope)
+        isProcessing.distinctUntilChanged { old, new ->  old == new }
+            .onEach {
+                Log.d(TAG, "isProcessing: $it")
+                if (it) {
+                    animationQueue.submit(coroutineContext) {
+                        binding.exoPlayer.showController()
+                        progressWheel.visibility = View.VISIBLE
+                        val fadeIn = async {
+                            progressWheel.ktFadeIn()
+                            progressHelper.spin()
+                        }
+                        val fadeOut = async {
+                            controlDock.ktFadeOut()
+                        }
+                        awaitAll(fadeIn, fadeOut)
+                    }
+                } else {
+                    animationQueue.submit(coroutineContext) {
+                        awaitAll(async {
+                            progressWheel.ktFadeOut()
+                            progressHelper.stopSpinning()
+                        }, async {
+                            controlDock.ktFadeIn()
+                        })
+                    }
+                }
+            }.launchIn(lifecycleScope)
     }
 
     private fun playVideo(data: TVChannelLinkStream) {
@@ -150,24 +211,11 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         exoPlayerManager.exoPlayer?.stop()
     }
 
+    val animationQueue: JobQueue by lazy {
+        JobQueue()
+    }
     private fun toggleProgressing(isShow: Boolean) {
-        if (isShow == currentShowLoading) {
-            return
-        }
-        if (isShow) {
-            binding.exoPlayer.showController()
-            progressWheel.visibility = View.VISIBLE
-            progressWheel.fadeIn {
-                progressHelper.spin()
-            }
-            controlDock.fadeOut {  }
-        } else {
-            progressWheel.fadeOut {
-                progressHelper.stopSpinning()
-            }
-            controlDock.fadeIn {  }
-        }
-        currentShowLoading = isShow
+        isProcessing.tryEmit(isShow)
     }
 
 }

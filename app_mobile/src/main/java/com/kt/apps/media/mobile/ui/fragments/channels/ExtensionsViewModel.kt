@@ -42,7 +42,7 @@ class ExtensionsViewModel @Inject constructor(
                     extensionsConfigs.postValue(it)
                 }
         )
-        
+
         compositeDisposable.add(
             observableData.flatMap {
                 if (it.isEmpty()) {

@@ -17,6 +17,7 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
     }
     val videoSizeStateLiveData: MutableLiveData<VideoSize?> = MutableLiveData(null)
     val videoState: MutableLiveData<State> = MutableLiveData(State.IDLE)
+    val isPlayingState: MutableLiveData<Boolean> = MutableLiveData(false)
 
     val playerListener: Player.Listener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -34,6 +35,11 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
                 Player.STATE_ENDED -> videoState.postValue(State.FINISHED)
                 else -> {}
             }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying)
+            isPlayingState.postValue(isPlaying)
         }
 
     }
