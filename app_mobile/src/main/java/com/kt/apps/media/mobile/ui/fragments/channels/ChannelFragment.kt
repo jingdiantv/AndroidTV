@@ -355,8 +355,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                     .setIcon(R.drawable.round_add_circle_outline_24)
             }
 
-            it.add(addSourceItem.groupId, addSourceItem.itemId, Menu.NONE, addSourceItem.title)
-                .icon = addSourceItem.icon
+            it.add(addSourceItem.groupId, addSourceItem.itemId, Menu.NONE, addSourceItem.title).apply {
+                icon = addSourceItem.icon
+                isVisible = addSourceItem.isVisible
+            }
+
             return@let it
         }
         navigationRailView.labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED

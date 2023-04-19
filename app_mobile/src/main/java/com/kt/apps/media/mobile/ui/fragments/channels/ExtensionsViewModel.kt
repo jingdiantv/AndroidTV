@@ -1,6 +1,7 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
 import android.provider.ContactsContract.Data
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.DataState
@@ -8,9 +9,11 @@ import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.utils.TAG
 import com.kt.apps.media.mobile.di.AppScope
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
 import javax.inject.Inject
 
@@ -29,6 +32,9 @@ class ExtensionsViewModel @Inject constructor(
         get() = roomDataBase.extensionsConfig()
             .getAll()
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnSubscribe {
+                extensionsChannelData.postValue(DataState.Loading())
+            }
     init {
         compositeDisposable.add(
             observableData
@@ -36,18 +42,23 @@ class ExtensionsViewModel @Inject constructor(
                     extensionsConfigs.postValue(it)
                 }
         )
+        
         compositeDisposable.add(
-            observableData
-                .doOnSubscribe {
-                    extensionsChannelData.postValue(DataState.Loading())
+            observableData.flatMap {
+                if (it.isEmpty()) {
+                    Observable.just(emptyList())
+                } else {
+                    Observable.just(it)
+                        .flatMapIterable { x -> x }
+                        .flatMap { x -> parserExtensionsSource.parseFromRemoteRx(x) }
                 }
-                .flatMapIterable { x -> x }
-                .flatMap { parserExtensionsSource.parseFromRemoteRx(it) }
+            }
                 .subscribe ({
                     extensionsChannelData.postValue(DataState.Success(it))
                 }, {
                     extensionsChannelData.postValue(DataState.Error(it))
                 })
+
         )
     }
 
