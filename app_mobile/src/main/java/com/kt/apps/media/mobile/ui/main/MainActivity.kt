@@ -56,7 +56,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private val adapter by lazy {
         TVDashboardAdapter().apply {
             this.onChildItemClickListener = { item, position ->
-                tvChannelViewModel.getLinkStreamForChannel(item)
+                when(item) {
+                    is ChannelElement.TVChannelElement -> tvChannelViewModel.getLinkStreamForChannel(item.model)
+                }
             }
         }
     }
@@ -221,20 +223,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 is DataState.Success -> {
                     binding.swipeRefreshLayout.isRefreshing = false
                     skeletonScreen.hide {
-                        adapter.onRefresh(
-                            it.data.groupBy {
-                                it.tvGroup
-                            }.toList()
-                                .sortedWith(Comparator { o1, o2 ->
-                                    if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value) {
-                                        if (o1.first == TVChannelGroup.VOH.value) {
-                                            return@Comparator 0
-                                        }
-                                        return@Comparator -1
-                                    }
-                                    return@Comparator 1
-                                })
-                        )
+
                     }
                 }
 

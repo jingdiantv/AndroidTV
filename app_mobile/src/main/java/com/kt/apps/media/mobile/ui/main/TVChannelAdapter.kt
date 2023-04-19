@@ -19,7 +19,7 @@ class TVChannelAdapter : BaseAdapter<TVChannel, ItemChannelBinding>() {
         position: Int,
         holder: BaseViewHolder<TVChannel, ItemChannelBinding>
     ) {
-        binding.item = item
+//        binding.item = item
         binding.title.isSelected = true
         binding.logo.loadImgByDrawableIdResName(item.logoChannel, item.logoChannel)
     }

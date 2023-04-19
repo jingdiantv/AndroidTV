@@ -65,7 +65,7 @@ fun View.translateY(
         })
 }
 
-fun View.fadeOut(onAnimationEnd: () -> Unit = {}) {
+fun View.fadeOut(executeElse: Boolean = false,  onAnimationEnd: () -> Unit = {}) {
     if (isVisible) {
         this.animate()
             .alpha(0f)
@@ -82,10 +82,12 @@ fun View.fadeOut(onAnimationEnd: () -> Unit = {}) {
                     gone()
                 }
             })
+    } else if (executeElse) {
+        onAnimationEnd()
     }
 }
 
-fun View.fadeIn(onAnimationEnd: () -> Unit = {}) {
+fun View.fadeIn(executeElse: Boolean = false, onAnimationEnd: () -> Unit = {}) {
     if (!isVisible || alpha <= 0f) {
         this.animate()
             .alpha(1f)
@@ -101,6 +103,8 @@ fun View.fadeIn(onAnimationEnd: () -> Unit = {}) {
                     visible()
                 }
             })
+    } else if (executeElse) {
+        onAnimationEnd()
     }
 }
 

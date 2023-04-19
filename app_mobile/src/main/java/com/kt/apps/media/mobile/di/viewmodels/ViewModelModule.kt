@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseViewModelFactory
 import com.kt.apps.media.mobile.di.viewmodels.ViewModelKey
+import com.kt.apps.media.mobile.ui.fragments.channels.ExtensionsViewModel
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackViewModel
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import dagger.Binds
@@ -23,6 +24,10 @@ abstract class ViewModelModule {
     @ViewModelKey(PlaybackViewModel::class)
     abstract fun bindPlaybackViewModel(playbackViewModel: PlaybackViewModel): ViewModel
 
+    @Binds
+    @IntoMap
+    @ViewModelKey(ExtensionsViewModel::class)
+    abstract fun bindExtensionsViewModel(playbackViewModel: ExtensionsViewModel): ViewModel
     @Binds
     abstract fun bindViewModelFactory(
         factory: BaseViewModelFactory

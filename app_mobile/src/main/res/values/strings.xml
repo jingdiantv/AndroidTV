@@ -4,4 +4,6 @@
     <string name="source_name">Tên nguồn</string>
     <string name="source_link">Đường dẫn</string>
     <string name="save">Lưu</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

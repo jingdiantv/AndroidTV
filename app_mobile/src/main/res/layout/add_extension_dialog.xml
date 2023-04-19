@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:wheel="http://schemas.android.com/apk/res-auto"
     >
     <data></data>
     <LinearLayout
@@ -84,5 +85,66 @@
             android:layout_marginTop="@dimen/common_padding"
             android:textColor="@color/black"
             />
+
+        <FrameLayout
+            android:id="@+id/progress_dialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:alpha="0"
+            android:background="#30ffffff"
+            android:visibility="gone"
+            android:layout_marginTop="@dimen/common_padding"
+
+            >
+
+            <com.pnikosis.materialishprogress.ProgressWheel
+                android:id="@+id/progressWheel"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                wheel:matProg_progressIndeterminate="true" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/error_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/common_padding"
+            android:visibility="gone"
+            >
+            <FrameLayout
+                android:id="@+id/error_frame"
+                android:layout_width="53dp"
+                android:layout_height="53dp"
+                android:layout_marginTop="5dp"
+                android:visibility="visible">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/error_circle" />
+
+                <ImageView
+                    android:id="@+id/error_x"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/app_name"
+                    android:scaleType="center"
+                    android:src="@drawable/error_center_x" />
+
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/error_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/error_stroke_color"
+                android:layout_marginTop="@dimen/common_padding"
+                android:text="Error"
+                />
+        </LinearLayout>
     </LinearLayout>
 </layout>
