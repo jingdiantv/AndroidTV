@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ConstraintSet android:id="@+id/start">
+        <Constraint android:id="@+id/fragment_container_playback"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:visibility="invisible"
+            />
+        <Constraint android:id="@+id/fragment_container_channels"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            />
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/end">
+        <Constraint android:id="@+id/fragment_container_playback"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHeight_percent="0.3"
+            app:layout_constraintWidth_percent="0.3"
+            app:layout_constraintVertical_bias="1.0"
+            app:layout_constraintHorizontal_bias="1.0"
+            android:visibility="visible"
+            />
+        <Constraint android:id="@+id/fragment_container_channels"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            />
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/fullscreen">
+        <Constraint android:id="@+id/fragment_container_playback"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:visibility="visible"
+            />
+        <Constraint android:id="@+id/fragment_container_channels"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            />
+    </ConstraintSet>
+
+    <Transition
+        android:id="@+id/transition_show_video"
+        app:constraintSetEnd="@id/end"
+        app:constraintSetStart="@+id/start" />
+
+    <Transition
+        android:id="@+id/collapse_show_video"
+        app:constraintSetStart="@id/start"
+        app:constraintSetEnd="@id/fullscreen"
+        app:duration="1000"
+        app:motionInterpolator="linear"
+        >
+        <OnSwipe
+            app:dragDirection="dragDown"
+            app:touchAnchorId="@id/fragment_container_playback"
+            app:touchAnchorSide="bottom"
+            />
+    </Transition>
+</MotionScene>

@@ -47,6 +47,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             Log.e("TAG", "onServiceDisconnected")
+            service = null
 
         }
 
@@ -55,7 +56,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private val adapter by lazy {
         TVDashboardAdapter().apply {
             this.onChildItemClickListener = { item, position ->
-                tvChannelViewModel.getLinkStreamForChannel(item)
+                when(item) {
+                    is ChannelElement.TVChannelElement -> tvChannelViewModel.getLinkStreamForChannel(item.model)
+                }
             }
         }
     }
@@ -147,6 +150,23 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         navigationRailView?.setOnItemSelectedListener(onItemSelected)
                     }
                 }
+//                if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+//                    if (navigationRailView?.selectedItemId != R.id.radio && System.currentTimeMillis() - lastDetectedTime > 300) {
+//                        Logger.d(this@MainActivity, message = "Change item Radio")
+//                        navigationRailView?.setOnItemSelectedListener(null)
+//                        lastDetectedTime = System.currentTimeMillis()
+//                        navigationRailView?.selectedItemId = R.id.radio
+//                        navigationRailView?.setOnItemSelectedListener(onItemSelected)
+//                    }
+//                } else {
+//                    if (navigationRailView?.selectedItemId != R.id.tv && System.currentTimeMillis() - lastDetectedTV > 300) {
+//                        lastDetectedTV = System.currentTimeMillis()
+//                        Logger.d(this@MainActivity, message = "Change item TV")
+//                        navigationRailView?.setOnItemSelectedListener(null)
+//                        navigationRailView?.selectedItemId = R.id.tv
+//                        navigationRailView?.setOnItemSelectedListener(onItemSelected)
+//                    }
+//                }
             }
         }
     }
@@ -198,25 +218,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainChannelRecyclerView.addOnScrollListener(onScrollListener!!)
         binding.mainChannelRecyclerView.setHasFixedSize(true)
         navigationRailView?.setOnItemSelectedListener(onItemSelected)
-        tvChannelViewModel.tvChannelLiveData.observe(this) {
+        tvChannelViewModel.tvChannelLiveData.observe(this) { it ->
             when (it) {
                 is DataState.Success -> {
                     binding.swipeRefreshLayout.isRefreshing = false
                     skeletonScreen.hide {
-                        adapter.onRefresh(
-                            it.data.groupBy {
-                                it.tvGroup
-                            }.toList()
-                                .sortedWith(Comparator { o1, o2 ->
-                                    if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value) {
-                                        if (o1.first == TVChannelGroup.VOH.value) {
-                                            return@Comparator 0
-                                        }
-                                        return@Comparator -1
-                                    }
-                                    return@Comparator 1
-                                })
-                        )
+
                     }
                 }
 
@@ -289,6 +296,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override fun onDestroy() {
         super.onDestroy()
         navigationRailView = null
+        unbindService(iServiceConnection)
     }
 
     override fun onNewIntent(intent: Intent?) {

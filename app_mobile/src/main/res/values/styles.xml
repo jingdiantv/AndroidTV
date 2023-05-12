@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="TextInputLayout" parent="">
+        <item name="colorControlActivated">#CF9500</item>
+        <item name="colorPrimary">#CF9500</item>
+    </style>
+</resources>

@@ -7,6 +7,8 @@ import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.lang.NullPointerException
@@ -38,6 +40,9 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     fun parseFromRemote(extension: ExtensionsConfig): List<ExtensionsChannel> {
+        if (!(extension.sourceUrl.startsWith("http://") || extension.sourceUrl.startsWith("https://"))) {
+            return emptyList()
+        }
         trustEveryone()
         val response = client
             .newBuilder()
@@ -47,6 +52,7 @@ class ParserExtensionsSource @Inject constructor(
                 Request.Builder()
                     .url(extension.sourceUrl)
                     .build()
+
             ).execute()
 
         if (response.code in 200..299) {

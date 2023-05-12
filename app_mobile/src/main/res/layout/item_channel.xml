@@ -6,7 +6,7 @@
 
         <variable
             name="item"
-            type="com.kt.apps.core.tv.model.TVChannel" />
+            type="com.kt.apps.media.mobile.ui.main.IChannelElement" />
     </data>
 
     <LinearLayout
@@ -36,7 +36,7 @@
             android:paddingVertical="10dp"
             android:gravity="center"
             android:singleLine="true"
-            android:text="@{item.tvChannelName}"
+            android:text="@{item.name}"
             android:textColor="@color/white"
             tools:text="Channel name" />
     </LinearLayout>

@@ -66,7 +66,7 @@ open class BaseTVChannelViewModel constructor(
     }
 
     private var lastTVStreamLinkTask: Disposable? = null
-    private val _tvWithLinkStreamLiveData by lazy { MutableLiveData<DataState<TVChannelLinkStream>>() }
+    val _tvWithLinkStreamLiveData by lazy { MutableLiveData<DataState<TVChannelLinkStream>>() }
     val tvWithLinkStreamLiveData: LiveData<DataState<TVChannelLinkStream>>
         get() = _tvWithLinkStreamLiveData
 

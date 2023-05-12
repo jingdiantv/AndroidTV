@@ -65,6 +65,14 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>() {
         binding.exoPlayer.findViewById(com.google.android.exoplayer2.ui.R.id.exo_controls_background)
     }
 
+    private val exoControllerExtraControlView: View by lazy {
+        binding.exoPlayer.findViewById(com.google.android.exoplayer2.ui.R.id.exo_extra_controls_scroll_view)
+    }
+
+    private val  exoSettingView: View by lazy {
+        binding.exoPlayer.findViewById(com.google.android.exoplayer2.ui.R.id.exo_settings)
+    }
+
 
     private var currentPlayingItem: TVChannelLinkStream? = null
 
@@ -105,6 +113,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>() {
         }
 
         binding.exoPlayer.showController()
+        exoSettingView.visibility = View.GONE
         exoControllerRecyclerView.addOnScrollListener(object : OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
