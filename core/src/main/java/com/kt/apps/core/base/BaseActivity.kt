@@ -223,10 +223,12 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
 
             KeyEvent.KEYCODE_CHANNEL_UP -> {
                 iKeyCodeHandler.onKeyCodeChannelUp()
+                return true
             }
 
             KeyEvent.KEYCODE_CHANNEL_DOWN -> {
                 iKeyCodeHandler.onKeyCodeChannelDown()
+                return true
             }
 
             KeyEvent.KEYCODE_MEDIA_NEXT -> {
