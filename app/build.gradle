@@ -15,7 +15,7 @@ android {
         applicationId "com.kt.apps.media.xemtv"
         minSdk 26
         targetSdk 33
-        versionCode 23041501
+        versionCode 23052201
         versionName "$versionCode"
         setProperty("archivesBaseName", "iMedia.$versionName")
 
