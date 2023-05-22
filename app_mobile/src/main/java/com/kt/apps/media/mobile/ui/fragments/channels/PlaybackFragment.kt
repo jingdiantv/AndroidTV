@@ -44,7 +44,8 @@ interface IPlaybackAction {
     fun onLoadedSuccess(videoSize: VideoSize)
     fun onOpenFullScreen()
 
-    fun onPauseAction()
+    fun onPauseAction(userAction: Boolean)
+    fun onPlayAction(userAction: Boolean)
 }
 
 class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
@@ -158,7 +159,20 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             callback?.onOpenFullScreen()
         }
 
-
+        playPauseButton.setOnClickListener {
+            exoPlayerManager.exoPlayer?.run {
+                if (isPlaying) {
+                    pause()
+                } else {
+                    play()
+                }
+            }
+            if (isPlaying.value) {
+                callback?.onPauseAction(userAction = true)
+            } else {
+                callback?.onPlayAction(userAction =  true)
+            }
+        }
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
@@ -167,8 +181,9 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         isPlaying.distinctUntilChanged { old, new ->  old == new }
             .debounce(250)
             .onEach {
-                if (!it) callback?.onPauseAction()
+                if (!it) callback?.onPauseAction(userAction = false)
             }.launchIn(lifecycleScope)
+
         isProcessing.distinctUntilChanged { old, new ->  old == new }
             .onEach {
                 Log.d(TAG, "isProcessing: $it")

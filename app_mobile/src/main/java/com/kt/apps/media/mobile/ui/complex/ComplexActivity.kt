@@ -30,8 +30,6 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     override val layoutRes: Int
         get() = R.layout.activity_complex
 
-    private var isPlaying: Boolean = false
-
     private val _portraitLayoutHandler: PortraitLayoutHandler by lazy {
         PortraitLayoutHandler(WeakReference(this))
     }
@@ -53,9 +51,7 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                 is DataState.Loading -> {
                     layoutHandler?.onStartLoading()
                 }
-                is DataState.Success -> {
-                    isPlaying  = true
-                }
+                is DataState.Success -> { }
                 else -> {
 
                 }
@@ -72,7 +68,9 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         } else {
            _landscapeLayoutHandler
         }
+    }
 
+    override fun initAction(savedInstanceState: Bundle?) {
         binding.fragmentContainerPlayback.getFragment<PlaybackFragment>().apply {
             this.callback = object: IPlaybackAction {
                 override fun onLoadedSuccess(videoSize: VideoSize) {
@@ -83,15 +81,15 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                     layoutHandler?.onOpenFullScreen()
                 }
 
-                override fun onPauseAction() {
-                    layoutHandler?.onPause()
+                override fun onPauseAction(userAction: Boolean) {
+                    if (userAction) layoutHandler?.onPlayPause(isPause = true)
+                }
+
+                override fun onPlayAction(userAction: Boolean) {
+                    if (userAction) layoutHandler?.onPlayPause(isPause = false)
                 }
             }
         }
-    }
-
-    override fun initAction(savedInstanceState: Bundle?) {
-
     }
 
 
