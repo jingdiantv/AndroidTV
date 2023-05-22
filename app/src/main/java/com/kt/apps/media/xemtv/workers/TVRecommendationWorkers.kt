@@ -17,7 +17,6 @@ import com.kt.apps.core.storage.local.dto.TVChannelEntity
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.media.xemtv.App
-import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.workers.factory.ChildWorkerFactory
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -69,9 +68,9 @@ class TVRecommendationWorkers(
         val watchNextTask = tvChannelDAO.getChannelByID(programId)
             .flatMapCompletable { tvChannelEntity ->
                 val allWatchNext = getWatchNextPrograms(context)
-//                allWatchNext.forEach {
-//                    Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$it")
-//                }
+                allWatchNext.forEach {
+                    Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$it")
+                }
                 allWatchNext.filter {
                     it.contentId != programId
                 }.forEach {
@@ -83,7 +82,7 @@ class TVRecommendationWorkers(
                 val existWatchNextProgram = allWatchNext.find {
                     it.contentId == programId
                 }
-//                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$existWatchNextProgram")
+                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$existWatchNextProgram")
                 val builder = existWatchNextProgram?.let {
                     WatchNextProgram.Builder(it)
                 } ?: WatchNextProgram.Builder()
@@ -101,8 +100,9 @@ class TVRecommendationWorkers(
                     .setType(TvContractCompat.WatchNextPrograms.TYPE_MOVIE)
                     .setWatchNextType(TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE)
                     .setLogoUri(tvChannelEntity.logoChannel)
+                    .setPreviewVideoUri(tvChannelEntity.logoChannel)
                     .build()
-//                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$continueProgram")
+                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$continueProgram")
 
                 val id = existWatchNextProgram?.let {
                     PreviewChannelHelper(context)
@@ -112,20 +112,13 @@ class TVRecommendationWorkers(
                     PreviewChannelHelper(context)
                         .publishWatchNextProgram(continueProgram)
                 }
-//                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "Insert id: $id")
-
-
-                context.contentResolver
-                    .insert(
-                        TvContractCompat.WatchNextPrograms.CONTENT_URI,
-                        continueProgram.toContentValues()
-                    )
+                Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "Insert id: $id")
                 Completable.complete()
             }
             .subscribe({
-//                Logger.d(this@TVRecommendationWorkers, message = "Update success")
+                Logger.d(this@TVRecommendationWorkers, message = "Update success")
             }, {
-//                Logger.e(this@TVRecommendationWorkers, exception = it)
+                Logger.e(this@TVRecommendationWorkers, exception = it)
             })
 
         disposable.add(watchNextTask)
@@ -231,7 +224,7 @@ class TVRecommendationWorkers(
                     channelEntity.forEach { tvChannel ->
 
                         val existingProgram = existingProgramList.find { it.contentId == tvChannel.channelId }
-//                        Logger.d(this, message = "existingProgram: $existingProgram")
+                        Logger.d(this, message = "existingProgram: $existingProgram")
 
                         val programBuilder = if (existingProgram == null) {
                             PreviewProgram.Builder()
@@ -255,7 +248,7 @@ class TVRecommendationWorkers(
                             .build()
 
                         try {
-//                            Logger.d(this, message = "Update program")
+                            Logger.d(this, message = "Update program")
                             if (existingProgram == null) {
                                 PreviewChannelHelper(context)
                                     .publishPreviewProgram(updatedProgram)
