@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <application
         android:name=".App"
@@ -21,28 +20,27 @@
         <activity
             android:name=".ui.complex.ComplexActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <meta-data
-            android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc" />
-
-        <activity
-            android:name=".ui.playback.PlaybackActivity"
-            android:exported="true"
-            android:launchMode="singleInstance">
-            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-
+                <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
+                <data
+                    android:host="tv"
+                    android:pathPrefix="/dashboard"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="bongda"
+                    android:pathPrefix="/dashboard"
+                    android:scheme="xemtv" />
+                <data
+                    android:host="radio"
+                    android:pathPrefix="/dashboard"
+                    android:scheme="xemtv" />
+                <data android:host="tv" />
                 <data
                     android:host="xemtivihd.net"
                     android:scheme="https" />
@@ -75,31 +73,10 @@
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.main.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="tv"
-                    android:pathPrefix="/dashboard"
-                    android:scheme="xemtv" />
-                <data
-                    android:host="bongda"
-                    android:pathPrefix="/dashboard"
-                    android:scheme="xemtv" />
-                <data
-                    android:host="radio"
-                    android:pathPrefix="/dashboard"
-                    android:scheme="xemtv" />
-                <data android:host="tv" />
-            </intent-filter>
-        </activity>
-
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
         <service
             android:name=".services.TVService"
             android:exported="true"

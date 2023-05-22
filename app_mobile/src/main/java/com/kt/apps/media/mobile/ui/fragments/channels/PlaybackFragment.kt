@@ -1,6 +1,8 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
+import android.content.Intent
 import android.media.Image
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore.Video
 import android.util.Log
@@ -16,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import cn.pedant.SweetAlert.ProgressHelper
 import com.google.android.exoplayer2.ui.StyledPlayerView.SHOW_BUFFERING_ALWAYS
 import com.google.android.exoplayer2.video.VideoSize
+import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.player.ExoPlayerManagerMobile
@@ -29,6 +32,7 @@ import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.FragmentPlaybackBinding
 import com.kt.apps.media.mobile.models.VideoDisplayAction
 import com.kt.apps.media.mobile.ui.fragments.dialog.JobQueue
+import com.kt.apps.media.mobile.ui.main.MainActivity
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.utils.clicks
 import com.kt.apps.media.mobile.utils.ktFadeIn
@@ -178,6 +182,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
 
+
         isPlaying.distinctUntilChanged { old, new ->  old == new }
             .debounce(250)
             .onEach {
@@ -232,5 +237,4 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     private fun toggleProgressing(isShow: Boolean) {
         isProcessing.tryEmit(isShow)
     }
-
 }

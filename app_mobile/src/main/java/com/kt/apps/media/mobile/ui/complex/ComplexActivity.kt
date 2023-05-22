@@ -1,5 +1,6 @@
 package com.kt.apps.media.mobile.ui.complex
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.MotionEvent
@@ -8,6 +9,7 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.video.VideoSize
+import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannelLinkStream
@@ -48,13 +50,9 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     private val linkStreamDataObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
         Observer {dataState ->
             when(dataState) {
-                is DataState.Loading -> {
+                is DataState.Loading ->
                     layoutHandler?.onStartLoading()
-                }
-                is DataState.Success -> { }
-                else -> {
-
-                }
+                else -> return@Observer
             }
         }
     }
@@ -89,9 +87,13 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                     if (userAction) layoutHandler?.onPlayPause(isPause = false)
                 }
             }
-        }
-    }
 
+
+        }
+
+        //Deeplink handle
+        handleIntent(intent)
+    }
 
     override fun onBackPressed() {
         if (layoutHandler?.onBackEvent() == true) {
@@ -103,6 +105,26 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         layoutHandler?.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val deeplink = intent?.data ?: return
+
+        if (deeplink.host?.equals(Constants.HOST_TV) == true || deeplink.host?.equals(Constants.HOST_RADIO) == true) {
+            if(deeplink.path?.contains("channel") == true) {
+                runOnUiThread {
+                    tvChannelViewModel?.playMobileTvByDeepLinks(uri = deeplink)
+                    intent.data = null
+                }
+            } else {
+                intent.data = null
+            }
+        }
     }
 
 }
