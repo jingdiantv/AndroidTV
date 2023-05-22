@@ -24,6 +24,7 @@ object Constants {
 
     const val EXTRA_KEY_VERSION_NEED_REFRESH = "version_need_refresh"
     const val EXTRA_KEY_USE_ONLINE = "use_online_data"
+    const val EXTRA_KEY_ALLOW_INTERNATIONAL = "allow_international"
 
     val mapChannel: Map<String, String> by lazy {
         mapOf(

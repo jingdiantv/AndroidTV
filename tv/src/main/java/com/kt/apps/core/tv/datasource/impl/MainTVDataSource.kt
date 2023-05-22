@@ -9,7 +9,6 @@ import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.TVChannelDTO
 import com.kt.apps.core.tv.datasource.ITVDataSource
-import com.kt.apps.core.tv.datasource.needRefreshData
 import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
@@ -34,10 +33,13 @@ class MainTVDataSource @Inject constructor(
     }
 
     private val needRefresh: Boolean
-        get() = this.needRefreshData(firebaseRemoteConfig, tvStorage.get())
+        get() = true
 
     private val versionNeedRefresh: Long
         get() = firebaseRemoteConfig.getLong(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
+
+    private val allowInternational: Boolean
+        get() = firebaseRemoteConfig.getBoolean(Constants.EXTRA_KEY_ALLOW_INTERNATIONAL)
 
 
     override fun getTvList(): Observable<List<TVChannel>> {
@@ -90,18 +92,24 @@ class MainTVDataSource @Inject constructor(
 
     private fun getFirebaseSource(): Observable<List<TVChannel>> =
         Observable.create<List<TVChannel>> { emitter ->
-            val totalGroup = supportGroups.size
+            val totalGroupChannels = supportGroups.toMutableList()
+            if (!allowInternational) {
+                totalGroupChannels.remove(TVChannelGroup.Intenational)
+                totalGroupChannels.remove(TVChannelGroup.Kid)
+            }
+            val totalGroup = totalGroupChannels.size
             val totalList = mutableListOf<TVChannel>()
             var totalCount = 0
             Logger.d(this@MainTVDataSource, message = "getFirebaseSource")
 
-            supportGroups.forEach { group ->
+            totalGroupChannels.forEach { group ->
                 firebaseDatabase.reference
                     .child(ALL_CHANNEL_NAME)
                     .ref
                     .child(group.name)
                     .get()
                     .addOnSuccessListener {
+                        totalCount++
                         val value = it.getValue<List<TVChannelFromDB?>>() ?: return@addOnSuccessListener
                         val tvList = value.filterNotNull()
                             .map { tvChannelFromDB ->
@@ -129,7 +137,6 @@ class MainTVDataSource @Inject constructor(
                         totalList.addAll(tvList)
                         emitter.onNext(tvList)
                         saveToRoomDB(tvList)
-                        totalCount++
                         Logger.d(this@MainTVDataSource, message = "Counter: $totalCount, $totalGroup")
                         if (totalCount == totalGroup) {
                             emitter.onComplete()
@@ -140,6 +147,7 @@ class MainTVDataSource @Inject constructor(
                         }
                     }
                     .addOnFailureListener {
+                        Logger.e(this@MainTVDataSource, exception = it)
                         totalCount++
                         if (totalCount == totalGroup && totalList.isEmpty()) {
                             emitter.onNext(totalList)
