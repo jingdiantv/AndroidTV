@@ -38,6 +38,20 @@ android {
     dataBinding {
         enabled = true
     }
+
+    flavorDimensions "version"
+    productFlavors {
+
+        playStore {
+            dimension "version"
+            buildConfigField "boolean", "isBeta", "false"
+        }
+
+        modBeta {
+            dimension "version"
+            buildConfigField "boolean", "isBeta", "true"
+        }
+    }
 }
 
 dependencies {

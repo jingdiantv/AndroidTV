@@ -3,12 +3,16 @@ package com.kt.apps.media.mobile.ui.fragments.channels
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.DialogInterface
+import android.content.res.Resources
 import android.os.Bundle
 import android.provider.ContactsContract.Data
 import android.util.Log
 import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.core.view.get
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +29,8 @@ import com.google.android.material.navigation.NavigationBarView
 import com.google.gson.Gson
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.adapter.BaseAdapter
+import com.kt.apps.core.base.adapter.BaseViewHolder
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.tv.model.TVChannel
@@ -36,6 +42,7 @@ import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
+import com.kt.apps.media.mobile.databinding.ItemSectionBinding
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
 import com.kt.apps.media.mobile.ui.main.ChannelElement
 import com.kt.apps.media.mobile.ui.main.IChannelElement
@@ -70,6 +77,29 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         ProgressHelper(this.context)
     }
 
+    private val defaultSection by lazy {
+        arrayListOf<SectionItem>(
+            SectionItemElement.MenuItem(
+                displayTitle = "TV",
+                id = R.id.tv,
+                icon = resources.getDrawable(com.kt.apps.core.R.drawable.ic_tv)
+            ),
+            SectionItemElement.MenuItem(
+                displayTitle = "Radio",
+                id = R.id.radio,
+                icon = resources.getDrawable(com.kt.apps.core.R.drawable.ic_radio)
+            )
+        )
+    }
+
+    private val addExtensionSection by lazy {
+        SectionItemElement.MenuItem(
+            displayTitle = "Thêm nguồn",
+            id = R.id.add_extension,
+            icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+        )
+    }
+
     //Views
     private val progressDialog by lazy {
         binding.progressDialog
@@ -80,6 +110,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val mainRecyclerView by lazy {
         binding.mainChannelRecyclerView
+    }
+
+    private val sectionRecyclerView by lazy {
+        binding.sectionRecyclerView
     }
 
     private val skeletonScreen by lazy {
@@ -119,6 +153,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
             val itemTitle = adapter.listItem[item].first
             fun performSelected(id: Int) {
+                sectionAdapter.selectForId(id)
                 if (navigationRailView.selectedItemId != id) {
                     navigationRailView.setOnItemSelectedListener(null)
                     navigationRailView.selectedItemId = id
@@ -148,6 +183,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 debounceOnScrollListener(Unit)
             }
         }
+    }
+
+    private val sectionAdapter by lazy {
+        SectionAdapter()
     }
 
     private val adapter by lazy {
@@ -257,6 +296,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                     3.coerceAtLeast((width / 170 / resources.displayMetrics.scaledDensity).toInt())
             }
         }
+
+        sectionRecyclerView?.apply {
+            adapter = sectionAdapter
+        }
+        sectionAdapter.onRefresh(defaultSection + arrayListOf(addExtensionSection), notifyDataSetChange = true)
     }
 
 
@@ -283,6 +327,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 }
             }
         }
+//        sectionAdapter.onRefresh()
     }
 
     override fun onStop() {
@@ -424,15 +469,19 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
         navigationRailView.labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED
 
-        navigationRailView.post {
-            _cacheMenuItem.forEach { entry ->
-                navigationRailView.findViewById<View>(entry.value).setOnLongClickListener {
-                    Log.d(TAG, "reloadNavigationBar: ${entry.key}")
-                    showAlertRemoveExtension(entry.key)
-                    true
-                }
-            }
+        val extraSection = extra.map {
+            val id = View.generateViewId()
+            _cacheMenuItem[it.sourceName] = id
+            SectionItemElement.MenuItem(
+                displayTitle = it.sourceName,
+                id = id,
+                icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+            )
         }
+        sectionAdapter.onRefresh(
+            defaultSection + extraSection + arrayListOf(addExtensionSection),
+            notifyDataSetChange = true
+        )
     }
 
     private inline fun <reified T> groupAndSort(list: List<T>) : List<Pair<String, List<T>>> {

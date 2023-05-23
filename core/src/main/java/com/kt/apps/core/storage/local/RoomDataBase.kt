@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.kt.apps.core.BuildConfig
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.storage.local.converters.RoomDBTypeConverters
 import com.kt.apps.core.storage.local.dao.*

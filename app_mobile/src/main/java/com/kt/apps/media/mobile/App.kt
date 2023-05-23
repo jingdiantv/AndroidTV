@@ -1,6 +1,7 @@
 package com.kt.apps.media.mobile
 
 import androidx.work.Configuration
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
@@ -11,6 +12,7 @@ import com.kt.apps.football.di.DaggerFootballComponents
 import com.kt.apps.football.di.FootballComponents
 import com.kt.apps.media.mobile.di.AppComponents
 import com.kt.apps.media.mobile.di.DaggerAppComponents
+import com.kt.apps.media.mobile.di.workers.PreloadDataWorker
 import dagger.android.AndroidInjector
 import dagger.android.DaggerApplication
 import javax.inject.Inject
@@ -55,6 +57,7 @@ class App : CoreApp(), Configuration.Provider {
         super.onCreate()
         app = this
         (applicationInjector() as AppComponents).inject(this)
+        enqueuePreloadData()
     }
 
     override fun applicationInjector(): AndroidInjector<out DaggerApplication> {
@@ -77,5 +80,9 @@ class App : CoreApp(), Configuration.Provider {
             .build()
     }
 
+    private fun enqueuePreloadData() {
+        workManager.enqueue(OneTimeWorkRequestBuilder<PreloadDataWorker>()
+            .build())
+    }
 
 }
