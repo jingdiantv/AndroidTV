@@ -28,6 +28,8 @@ import com.pnikosis.materialishprogress.ProgressWheel;
 
 import java.util.List;
 
+import cn.pedant.Sweetalert.R;
+
 public class SweetAlertDialog extends Dialog implements View.OnClickListener {
     private View mDialogView;
     private AnimationSet mModalInAnim;

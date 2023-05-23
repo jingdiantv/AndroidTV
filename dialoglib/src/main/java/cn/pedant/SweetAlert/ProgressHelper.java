@@ -4,6 +4,8 @@ import android.content.Context;
 
 import com.pnikosis.materialishprogress.ProgressWheel;
 
+import cn.pedant.Sweetalert.R;
+
 public class ProgressHelper {
     private ProgressWheel mProgressWheel;
     private boolean mToSpin;

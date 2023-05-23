@@ -3,15 +3,17 @@ version = 1.3
 group ='cn.pedant.sweetalert'
 
 android {
+    namespace 'cn.pedant.Sweetalert'
+
     compileSdkVersion 32
     defaultConfig {
         minSdk 21
         targetSdk 32
     }
-
-    lintOptions {
+    lint {
         abortOnError false
     }
+
 }
 
 dependencies {
