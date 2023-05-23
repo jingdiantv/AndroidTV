@@ -57,12 +57,6 @@ class ParserExtensionsSource @Inject constructor(
 
         if (response.code in 200..299) {
             val bodyStr = response.body.string()
-            if (!bodyStr.trim().startsWith(TAG_START)) {
-                throw IllegalStateException(
-                    "Not support for extension ${extension.sourceUrl} cause: " +
-                            "Source must start with $TAG_START"
-                )
-            }
             val index = bodyStr.indexOf(TAG_EXT_INFO)
 
             return parseFromText(bodyStr.substring(index, bodyStr.length), extension)
