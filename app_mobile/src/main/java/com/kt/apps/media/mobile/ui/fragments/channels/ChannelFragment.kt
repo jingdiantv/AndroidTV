@@ -5,10 +5,12 @@ import android.provider.ContactsContract.Data
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
@@ -34,11 +36,13 @@ import com.kt.apps.media.mobile.ui.main.IChannelElement
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.utils.debounce
+import com.kt.apps.media.mobile.utils.fastSmoothScrollToPosition
 import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.util.Dictionary
 import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
 
@@ -103,23 +107,30 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 return@debounce
             }
             val item = (binding.mainChannelRecyclerView.layoutManager as LinearLayoutManager)
-                .findLastCompletelyVisibleItemPosition()
+                .findFirstVisibleItemPosition()
             if (item == RecyclerView.NO_POSITION) {
                 return@debounce
             }
             val itemTitle = adapter.listItem[item].first
-            if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                if (navigationRailView.selectedItemId != R.id.radio) {
+            fun performSelected(id: Int) {
+                if (navigationRailView.selectedItemId != id) {
                     navigationRailView.setOnItemSelectedListener(null)
-                    navigationRailView.selectedItemId = R.id.radio
+                    navigationRailView.selectedItemId = id
                     navigationRailView.setOnItemSelectedListener(onItemSelected)
                 }
-            } else {
-                if (navigationRailView.selectedItemId != R.id.tv) {
-                    navigationRailView.setOnItemSelectedListener(null)
-                    navigationRailView.selectedItemId = R.id.tv
-                    navigationRailView.setOnItemSelectedListener(onItemSelected)
-                }
+            }
+            adapter.listItem[item].second.firstOrNull()?.let {
+                (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
+            }?.let {
+                _cacheMenuItem[it]
+            }?.run {
+                performSelected(this)
+            } ?: kotlin.run {
+                performSelected(if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+                    R.id.radio
+                } else {
+                    R.id.tv
+                })
             }
         }
     }
@@ -215,7 +226,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
         }
     }
-
+    private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
     private val extensionListObserver: Observer<List<ExtensionsConfig>> by lazy {
         Observer {
             reloadNavigationBar(it)
@@ -292,8 +303,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private fun scrollToPosition(index: Int) {
+        Log.d(TAG, "scrollToPosition: $index")
         mainRecyclerView.removeOnScrollListener(_onScrollListener)
-        mainRecyclerView.smoothScrollToPosition(index)
+        mainRecyclerView.fastSmoothScrollToPosition(index)
         mainRecyclerView.addOnScrollListener(object : OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
@@ -330,6 +342,23 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 onAddedExtension()
             }
             dialog.show(this@ChannelFragment.parentFragmentManager, AddExtensionFragment.TAG)
+            return false
+        }
+
+        val title = item.title
+        (extensionsViewModel?.extensionsConfigs?.value ?: emptyList()).findLast {
+            it.sourceName == title
+        }?.run {
+            val index = adapter.listItem.indexOfFirst {
+                val channel = it.second.firstOrNull()
+                (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(title) == true
+            }.takeIf {
+                it != -1
+            }?.run {
+                scrollToPosition(this)
+            }
+
+            return true
         }
         return false
     }
@@ -342,6 +371,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private fun reloadNavigationBar(extra: List<ExtensionsConfig>) {
+        _cacheMenuItem = mutableMapOf()
         val menu = navigationRailView.menu.let {
             val defaults = arrayListOf(it.findItem(R.id.tv), it.findItem(R.id.radio))
             val addSourceItem = it.findItem(R.id.add_extension)
@@ -350,9 +380,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 it.add(item.groupId, item.itemId, item.order, item.title).icon = item.icon
             }
 
-            extra.forEach {item ->
-                it.add(item.sourceName)
-                    .setIcon(R.drawable.round_add_circle_outline_24)
+            extra.forEachIndexed { index, item ->
+                val temp = View.generateViewId()
+                it.add(0, temp, Menu.NONE, item.sourceName).icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+                _cacheMenuItem[item.sourceName] = temp
             }
 
             it.add(addSourceItem.groupId, addSourceItem.itemId, Menu.NONE, addSourceItem.title).apply {

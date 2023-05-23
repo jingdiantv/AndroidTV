@@ -11,6 +11,7 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.lang.NullPointerException
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
@@ -44,7 +45,7 @@ class ParserExtensionsSource @Inject constructor(
             return emptyList()
         }
         trustEveryone()
-        val response = client
+        val responseCall = client
             .newBuilder()
             .callTimeout(20, TimeUnit.SECONDS)
             .build()
@@ -53,20 +54,27 @@ class ParserExtensionsSource @Inject constructor(
                     .url(extension.sourceUrl)
                     .build()
 
-            ).execute()
+            )
 
-        if (response.code in 200..299) {
-            val bodyStr = response.body.string()
-            if (!bodyStr.trim().startsWith(TAG_START)) {
-                throw IllegalStateException(
-                    "Not support for extension ${extension.sourceUrl} cause: " +
-                            "Source must start with $TAG_START"
-                )
+        try {
+            val response = responseCall.execute()
+            if (response.code in 200..299) {
+                val bodyStr = response.body.string()
+                if (!bodyStr.trim().startsWith(TAG_START)) {
+                    throw IllegalStateException(
+                        "Not support for extension ${extension.sourceUrl} cause: " +
+                                "Source must start with $TAG_START"
+                    )
+                }
+                val index = bodyStr.indexOf(TAG_EXT_INFO)
+
+                return parseFromText(bodyStr.substring(index, bodyStr.length), extension)
             }
-            val index = bodyStr.indexOf(TAG_EXT_INFO)
-
-            return parseFromText(bodyStr.substring(index, bodyStr.length), extension)
+        } catch (error: Error) {
+            throw error
         }
+
+
         return emptyList()
     }
 

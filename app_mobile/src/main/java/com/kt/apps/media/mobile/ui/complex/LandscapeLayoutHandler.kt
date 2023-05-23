@@ -142,16 +142,18 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
     override fun onPlayPause(isPause: Boolean) {
         super.onPlayPause(isPause)
         if (videoIsLoading) return
-        if (isPause)
+        if (isPause) {
             if (state == State.FULLSCREEN) {
                 motionLayout?.transitionToState(R.id.end)
                 state = State.MINIMAL
             }
-        else
+        } else {
             if (state != State.FULLSCREEN) {
                 motionLayout?.transitionToState(R.id.fullscreen)
                 state = State.FULLSCREEN
             }
+        }
+
     }
 
     override fun onTouchEvent(ev: MotionEvent) {

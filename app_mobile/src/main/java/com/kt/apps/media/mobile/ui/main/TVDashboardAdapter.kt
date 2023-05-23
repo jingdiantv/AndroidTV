@@ -66,7 +66,8 @@ class TVDashboardAdapter : BaseAdapter<Pair<String, List<IChannelElement>>, Item
         position: Int,
         holder: BaseViewHolder<Pair<String, List<IChannelElement>>, ItemRowChannelBinding>
     ) {
-        Logger.d(this, message = "${binding.tvChannelChildRecyclerView.width}")
+//        Logger.d(this, message = "${binding.tvChannelChildRecyclerView.width}")
+        Log.d(TAG, "bindItem: ${item.first} $position")
         binding.title.text = item.first
         val layoutManager = object : GridLayoutManager(
             binding.root.context,
