@@ -1,11 +1,15 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
+import android.app.AlertDialog
+import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.provider.ContactsContract.Data
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.core.view.get
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
 import cn.pedant.SweetAlert.ProgressHelper
+import com.google.android.material.navigation.NavigationBarItemView
+import com.google.android.material.navigation.NavigationBarMenu
 import com.google.android.material.navigation.NavigationBarView
 import com.google.gson.Gson
 import com.kt.apps.core.base.BaseFragment
@@ -46,7 +52,7 @@ import java.util.Dictionary
 import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
 
-typealias ResultData = Pair<List<TVChannel>, List<ExtensionsChannel>>
+typealias ResultData = Pair<List<TVChannel>, ExtensionResult>
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     override val layoutResId: Int
@@ -92,7 +98,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private val _extensionsChannelData by lazy {
-        MutableStateFlow<DataState<List<ExtensionsChannel>>>(DataState.None())
+        MutableStateFlow<DataState<ExtensionResult>>(DataState.None())
     }
 
     private val onItemSelected by lazy {
@@ -187,7 +193,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
-    private val listExtensionsObserver: Observer<DataState<List<ExtensionsChannel>>> by lazy {
+    private val listExtensionsObserver: Observer<DataState<ExtensionResult>> by lazy {
         Observer { dataState ->
             _extensionsChannelData.tryEmit(dataState)
         }
@@ -264,12 +270,13 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         navigationRailView.setOnItemSelectedListener { item ->
             return@setOnItemSelectedListener onChangeItem(item)
         }
+
         lifecycleScope.launch {
             combine(flow = _tvChannelData, flow2 = _extensionsChannelData) { tvChannel, extensionChannel ->
                 return@combine Pair(tvChannel, extensionChannel)
             }.collect {
                 if (it.first is DataState.Success && it.second is DataState.Success) {
-                    combineDataAndRefresh(Pair((it.first as DataState.Success<List<TVChannel>>).data, (it.second as DataState.Success<List<ExtensionsChannel>>).data))
+                    combineDataAndRefresh(Pair((it.first as DataState.Success<List<TVChannel>>).data, (it.second as DataState.Success<ExtensionResult>).data))
                 } else {
                     mainRecyclerView.clearOnScrollListeners()
                     skeletonScreen.run()
@@ -289,11 +296,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 ChannelElement.TVChannelElement(tvChannel)
             })
         }
-        val groupedEx = groupAndSort(data.second).map {
-            return@map Pair<String, List<IChannelElement>>(it.first, it.second.map {exChannel ->
-                ChannelElement.ExtensionChannelElement(exChannel)
-            })
-        }
+
+        val groupedEx = data.second.map { entry ->
+            groupAndSort(entry.value).map {pair ->
+                Pair<String, List<IChannelElement>>(
+                    "${pair.first} (${entry.key.sourceName})",
+                    pair.second.map { exChannel -> ChannelElement.ExtensionChannelElement(exChannel) }
+                )
+            }
+        }.flatten()
         swipeRefreshLayout.isRefreshing = false
         adapter.onRefresh(groupedTV + groupedEx)
         skeletonScreen.hide {
@@ -367,6 +378,22 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         showSuccessDialog(
             content = "Thêm nguồn kênh thành công!\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh"
         )
+    }
+
+    private fun showAlertRemoveExtension(sourceName: String) {
+        AlertDialog.Builder(context, R.style.AlertDialogTheme).apply {
+            setMessage("Bạn có muốn xóa nguồn $sourceName?")
+            setCancelable(true)
+            setPositiveButton("Có") { dialog, which ->
+                extensionsViewModel?.deleteExtension(sourceName = sourceName)
+                dialog.dismiss()
+            }
+            setNegativeButton("Không") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }
+            .create()
+            .show()
 
     }
 
@@ -382,7 +409,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
             extra.forEachIndexed { index, item ->
                 val temp = View.generateViewId()
-                it.add(0, temp, Menu.NONE, item.sourceName).icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+                it.add(0, temp, Menu.NONE, item.sourceName).apply {
+                    icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+                }
                 _cacheMenuItem[item.sourceName] = temp
             }
 
@@ -394,6 +423,16 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             return@let it
         }
         navigationRailView.labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED
+
+        navigationRailView.post {
+            _cacheMenuItem.forEach { entry ->
+                navigationRailView.findViewById<View>(entry.value).setOnLongClickListener {
+                    Log.d(TAG, "reloadNavigationBar: ${entry.key}")
+                    showAlertRemoveExtension(entry.key)
+                    true
+                }
+            }
+        }
     }
 
     private inline fun <reified T> groupAndSort(list: List<T>) : List<Pair<String, List<T>>> {

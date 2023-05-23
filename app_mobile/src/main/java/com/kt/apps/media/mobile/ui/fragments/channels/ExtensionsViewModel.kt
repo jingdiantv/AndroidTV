@@ -15,17 +15,19 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
+import java.security.cert.Extension
 import javax.inject.Inject
 
+typealias ExtensionResult = Map<ExtensionsConfig, List<ExtensionsChannel>>
 @AppScope
 class ExtensionsViewModel @Inject constructor(
     private val parserExtensionsSource: ParserExtensionsSource,
     private val roomDataBase: RoomDataBase
 ) : BaseViewModel() {
-    val extensionsConfigs:  MutableLiveData<List<ExtensionsConfig>> by lazy {
+    val extensionsConfigs: MutableLiveData<List<ExtensionsConfig>> by lazy {
         MutableLiveData()
     }
-    val extensionsChannelData: MutableLiveData<DataState<List<ExtensionsChannel>>> by lazy {
+    val extensionsChannelData: MutableLiveData<DataState<ExtensionResult>> by lazy {
         MutableLiveData()
     }
     private val observableData: Observable<List<ExtensionsConfig>>
@@ -35,6 +37,7 @@ class ExtensionsViewModel @Inject constructor(
             .doOnSubscribe {
                 extensionsChannelData.postValue(DataState.Loading())
             }
+
     init {
         compositeDisposable.add(
             observableData
@@ -42,18 +45,37 @@ class ExtensionsViewModel @Inject constructor(
                     extensionsConfigs.postValue(it)
                 }
         )
-
         compositeDisposable.add(
-            observableData.flatMap {
+            observableData.flatMap { x ->
+                Observable.merge(x.map { parserExtensionsSource.parseFromRemoteRx(it) })
+            }.subscribe { }
+        )
+        compositeDisposable.add(
+            observableData.flatMap { it ->
                 if (it.isEmpty()) {
-                    Observable.just(emptyList())
+                    Observable.just(emptyMap())
                 } else {
-                    Observable.just(it)
-                        .flatMapIterable { x -> x }
-                        .flatMap { x -> parserExtensionsSource.parseFromRemoteRx(x) }
+                    val listObs: Iterable<Observable<Pair<ExtensionsConfig, List<ExtensionsChannel>>>> =
+                        it.map { exConfig ->
+                            parserExtensionsSource.parseFromRemoteRx(exConfig)
+                                .map { list ->
+                                    Pair(exConfig, list)
+                                }
+                        }
+                    Observable.combineLatest(listObs) { listResult ->
+                        val result: MutableMap<ExtensionsConfig, List<ExtensionsChannel>> = mutableMapOf()
+                        listResult.forEach {
+                            (it as? Pair<*, *>)?.run {
+                                val key = this.first as? ExtensionsConfig ?: return@run
+                                val item = this.second as? List<*> ?: return@run
+                                result[key] = item.filterIsInstance<ExtensionsChannel>()
+                            }
+                        }
+                        result
+                    }
                 }
             }
-                .subscribe ({
+                .subscribe({
                     extensionsChannelData.postValue(DataState.Success(it))
                 }, {
                     extensionsChannelData.postValue(DataState.Error(it))
@@ -62,4 +84,27 @@ class ExtensionsViewModel @Inject constructor(
         )
     }
 
+    fun deleteExtension(sourceName: String) {
+        extensionsConfigs.value?.find {
+            it.sourceName == sourceName
+        }?.run {
+            compositeDisposable.add(
+                roomDataBase.extensionsConfig().delete(this)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe {
+                        Log.d(TAG, "deleteExtension: Delete succeed")
+                    }
+            )
+        }
+    }
+
+}
+
+inline fun <reified T> merge(vararg arrays: Array<T>): Array<T> {
+    val list: MutableList<T> = ArrayList()
+    for (array in arrays) {
+        list.addAll(array.map { i -> i })
+    }
+    return list.toTypedArray()
 }

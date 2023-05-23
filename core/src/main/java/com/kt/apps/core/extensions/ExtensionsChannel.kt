@@ -9,7 +9,7 @@ import kotlinx.parcelize.Parcelize
 @Keep
 @Parcelize
 data class ExtensionsChannel(
-    val tvGroup: String,
+    var tvGroup: String,
     val logoChannel: String,
     val tvChannelName: String,
     val tvStreamLink: String,
