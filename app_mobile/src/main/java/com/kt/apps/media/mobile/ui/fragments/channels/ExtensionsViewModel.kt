@@ -46,11 +46,6 @@ class ExtensionsViewModel @Inject constructor(
                 }
         )
         compositeDisposable.add(
-            observableData.flatMap { x ->
-                Observable.merge(x.map { parserExtensionsSource.parseFromRemoteRx(it) })
-            }.subscribe { }
-        )
-        compositeDisposable.add(
             observableData.flatMap { it ->
                 if (it.isEmpty()) {
                     Observable.just(emptyMap())

@@ -1,10 +1,13 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.text.TextUtils
 import com.kt.apps.core.base.adapter.BaseAdapter
 import com.kt.apps.core.base.adapter.BaseViewHolder
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ItemSectionBinding
+import com.kt.skeleton.convertDpToPixel
 
 interface SectionItem {
     val displayTitle: String
@@ -20,9 +23,15 @@ sealed class SectionItemElement {
     ): SectionItem
 }
 
-class SectionAdapter: BaseAdapter<SectionItem, ItemSectionBinding>() {
+class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSectionBinding>() {
     override val itemLayoutRes: Int
         get() = R.layout.item_section
+
+    private val maxItemDisplay: Int = 4
+
+    private val isLandscape by lazy { context.resources.getBoolean(R.bool.is_landscape) }
+
+    private val calculatePreferWidth: Int = 0
     override fun bindItem(
         item: SectionItem,
         binding: ItemSectionBinding,
@@ -41,13 +50,39 @@ class SectionAdapter: BaseAdapter<SectionItem, ItemSectionBinding>() {
             binding.logo.setColorFilter(binding.logo.context.resources.getColor(R.color.disabled_color))
             binding.title.setTextColor(binding.title.context.resources.getColor(R.color.disabled_color))
         }
+        if (!isLandscape) {
+            val width = if (calculatePreferWidth > 0)
+                calculatePreferWidth
+            else
+                calculatePreferWidth()
+            binding.itemContainer.layoutParams.width = width
+        }
     }
 
     fun selectForId(id: Int) {
+        if (currentSelectedItem?.id == id) return
         listItem.firstOrNull {
             it.id == id
         }?.run {
             currentSelectedItem = this
+        }
+    }
+
+    private fun calculatePreferWidth(): Int {
+        val currentItemCount = itemCount
+        val currentWidth = context.resources.displayMetrics.widthPixels
+        val minItemWidth = convertDpToPixel(96f, context)
+        if (minItemWidth * currentItemCount > currentWidth) {
+            return minItemWidth.toInt()
+        }
+        val newItemWidth = currentWidth / currentItemCount
+        return newItemWidth
+    }
+
+    override fun onRefresh(items: List<SectionItem>, notifyDataSetChange: Boolean) {
+        super.onRefresh(items, notifyDataSetChange)
+        if (notifyDataSetChange) {
+
         }
     }
 }

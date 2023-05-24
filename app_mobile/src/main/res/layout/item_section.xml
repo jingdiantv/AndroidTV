@@ -11,6 +11,7 @@
     </data>
 
     <LinearLayout
+        android:id="@+id/item_container"
         android:layout_width="96dp"
         android:layout_height="96dp"
         android:foreground="@drawable/ripple_selected_item"
@@ -28,18 +29,17 @@
             android:contentDescription="TODO"
             android:src="@drawable/round_add_circle_outline_24"
             android:scaleType="fitCenter"
-            android:padding="12dp"
+            android:padding="8dp"
             app:tint="@color/main_disabled_color" />
 
         <TextView
             android:id="@+id/title"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
+            android:layout_height="wrap_content"
             android:paddingVertical="10dp"
             android:gravity="center"
-            android:singleLine="true"
+            android:lines="2"
+            android:ellipsize="middle"
             android:textColor="@color/disabled_color"
             tools:text="Channel name" />
     </LinearLayout>

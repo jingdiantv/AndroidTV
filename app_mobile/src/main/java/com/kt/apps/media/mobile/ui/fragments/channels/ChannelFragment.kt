@@ -2,6 +2,7 @@ package com.kt.apps.media.mobile.ui.fragments.channels
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Context
 import android.content.DialogInterface
 import android.content.res.Resources
 import android.os.Bundle
@@ -20,8 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.OnScrollListener
-import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
+import androidx.recyclerview.widget.RecyclerView.*
 import cn.pedant.SweetAlert.ProgressHelper
 import com.google.android.material.navigation.NavigationBarItemView
 import com.google.android.material.navigation.NavigationBarMenu
@@ -123,22 +123,12 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             .build()
     }
 
-    private val navigationRailView: NavigationBarView by lazy {
-        binding.navigationRailView as NavigationBarView
-    }
-
     private val _tvChannelData by lazy {
         MutableStateFlow<DataState<List<TVChannel>>>(DataState.None())
     }
 
     private val _extensionsChannelData by lazy {
         MutableStateFlow<DataState<ExtensionResult>>(DataState.None())
-    }
-
-    private val onItemSelected by lazy {
-        NavigationBarView.OnItemSelectedListener {
-            return@OnItemSelectedListener onChangeItem(it)
-        }
     }
 
     private val debounceOnScrollListener  by lazy {
@@ -154,11 +144,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             val itemTitle = adapter.listItem[item].first
             fun performSelected(id: Int) {
                 sectionAdapter.selectForId(id)
-                if (navigationRailView.selectedItemId != id) {
-                    navigationRailView.setOnItemSelectedListener(null)
-                    navigationRailView.selectedItemId = id
-                    navigationRailView.setOnItemSelectedListener(onItemSelected)
-                }
             }
             adapter.listItem[item].second.firstOrNull()?.let {
                 (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
@@ -186,7 +171,13 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private val sectionAdapter by lazy {
-        SectionAdapter()
+        SectionAdapter(requireContext()).apply {
+            onItemRecyclerViewCLickListener = { item, _ ->
+                if (onChangeItem(item)) {
+                    this.currentSelectedItem = item
+                }
+            }
+        }
     }
 
     private val adapter by lazy {
@@ -283,6 +274,12 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         playbackViewModel
         extensionsViewModel
 
+        with(binding.sectionRecyclerView) {
+            layoutManager = LinearLayoutManager(context).apply {
+                orientation = if (isLandscape) VERTICAL else HORIZONTAL
+            }
+        }
+
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
             layoutManager = LinearLayoutManager(this@ChannelFragment.context).apply {
@@ -310,9 +307,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
-        }
-        navigationRailView.setOnItemSelectedListener { item ->
-            return@setOnItemSelectedListener onChangeItem(item)
         }
 
         lifecycleScope.launch {
@@ -360,63 +354,45 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private fun scrollToPosition(index: Int) {
         Log.d(TAG, "scrollToPosition: $index")
-        mainRecyclerView.removeOnScrollListener(_onScrollListener)
         mainRecyclerView.fastSmoothScrollToPosition(index)
-        mainRecyclerView.addOnScrollListener(object : OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (newState == SCROLL_STATE_IDLE) {
-                    mainRecyclerView.addOnScrollListener(_onScrollListener)
-                    mainRecyclerView.removeOnScrollListener(this)
-                }
-            }
-        })
     }
 
 
+    private fun onChangeItem(item: SectionItem): Boolean {
+        val currentSelected = sectionAdapter.currentSelectedItem
+        if (item.id == currentSelected?.id) return false
 
-    private fun onChangeItem(item: MenuItem): Boolean {
-        if (item.itemId == R.id.radio) {
-            if (navigationRailView.selectedItemId == item.itemId) {
+        when(item.id) {
+            R.id.radio -> scrollToPosition(8)
+            R.id.tv -> scrollToPosition(0)
+            R.id.add_extension -> {
+                val dialog = AddExtensionFragment()
+                dialog.onSuccess = {
+                    it.dismiss()
+                    onAddedExtension()
+                }
+                dialog.show(this@ChannelFragment.parentFragmentManager, AddExtensionFragment.TAG)
                 return false
             }
-            scrollToPosition(8)
-            return true
-        }
-        if (item.itemId == R.id.tv) {
-            if (navigationRailView.selectedItemId == item.itemId) {
-                return false
-            }
-            scrollToPosition(0)
-            return true
-        }
+            else -> {
+                val title = item.displayTitle
+                return (extensionsViewModel?.extensionsConfigs?.value ?: emptyList()).findLast {
+                    it.sourceName == title
+                }?.run {
+                    val index = adapter.listItem.indexOfFirst {
+                        val channel = it.second.firstOrNull()
+                        (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(title) == true
+                    }.takeIf {
+                        it != -1
+                    }?.run {
+                        scrollToPosition(this)
+                    }
 
-        if  (item.itemId == R.id.add_extension) {
-            val dialog = AddExtensionFragment()
-            dialog.onSuccess = {
-                it.dismiss()
-                onAddedExtension()
+                    true
+                } ?: false
             }
-            dialog.show(this@ChannelFragment.parentFragmentManager, AddExtensionFragment.TAG)
-            return false
         }
-
-        val title = item.title
-        (extensionsViewModel?.extensionsConfigs?.value ?: emptyList()).findLast {
-            it.sourceName == title
-        }?.run {
-            val index = adapter.listItem.indexOfFirst {
-                val channel = it.second.firstOrNull()
-                (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(title) == true
-            }.takeIf {
-                it != -1
-            }?.run {
-                scrollToPosition(this)
-            }
-
-            return true
-        }
-        return false
+        return true
     }
 
     private fun onAddedExtension() {
@@ -444,30 +420,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private fun reloadNavigationBar(extra: List<ExtensionsConfig>) {
         _cacheMenuItem = mutableMapOf()
-        val menu = navigationRailView.menu.let {
-            val defaults = arrayListOf(it.findItem(R.id.tv), it.findItem(R.id.radio))
-            val addSourceItem = it.findItem(R.id.add_extension)
-            it.clear()
-            defaults.forEach {item ->
-                it.add(item.groupId, item.itemId, item.order, item.title).icon = item.icon
-            }
-
-            extra.forEachIndexed { index, item ->
-                val temp = View.generateViewId()
-                it.add(0, temp, Menu.NONE, item.sourceName).apply {
-                    icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
-                }
-                _cacheMenuItem[item.sourceName] = temp
-            }
-
-            it.add(addSourceItem.groupId, addSourceItem.itemId, Menu.NONE, addSourceItem.title).apply {
-                icon = addSourceItem.icon
-                isVisible = addSourceItem.isVisible
-            }
-
-            return@let it
-        }
-        navigationRailView.labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED
 
         val extraSection = extra.map {
             val id = View.generateViewId()
@@ -502,4 +454,3 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 }
-
