@@ -1,36 +1,18 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
 import android.app.AlertDialog
-import android.app.Dialog
-import android.content.Context
-import android.content.DialogInterface
-import android.content.res.Resources
 import android.os.Bundle
-import android.provider.ContactsContract.Data
 import android.util.Log
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import androidx.core.view.get
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.*
 import cn.pedant.SweetAlert.ProgressHelper
-import com.google.android.material.navigation.NavigationBarItemView
-import com.google.android.material.navigation.NavigationBarMenu
-import com.google.android.material.navigation.NavigationBarView
-import com.google.gson.Gson
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.adapter.BaseAdapter
-import com.kt.apps.core.base.adapter.BaseViewHolder
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.tv.model.TVChannel
@@ -42,7 +24,6 @@ import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
-import com.kt.apps.media.mobile.databinding.ItemSectionBinding
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
 import com.kt.apps.media.mobile.ui.main.ChannelElement
 import com.kt.apps.media.mobile.ui.main.IChannelElement
@@ -54,10 +35,7 @@ import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import java.util.Dictionary
 import javax.inject.Inject
-import kotlin.coroutines.suspendCoroutine
 
 typealias ResultData = Pair<List<TVChannel>, ExtensionResult>
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
@@ -124,7 +102,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private val _tvChannelData by lazy {
-        MutableStateFlow<DataState<List<TVChannel>>>(DataState.None())
+        MutableStateFlow<List<TVChannel>>(emptyList())
     }
 
     private val _extensionsChannelData by lazy {
@@ -177,6 +155,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                     this.currentSelectedItem = item
                 }
             }
+            onItemLongCLickListener = { item ->
+                showAlertRemoveExtension(item.displayTitle)
+                true
+            }
         }
     }
 
@@ -210,22 +192,16 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val extensionsViewModel: ExtensionsViewModel? by lazy {
         activity?.run {
-            ViewModelProvider(this, factory)[ExtensionsViewModel::class.java].apply {
-                this.extensionsConfigs.observe(this@ChannelFragment, extensionListObserver)
-                this.extensionsChannelData.observe(this@ChannelFragment, listExtensionsObserver)
-            }
+            ViewModelProvider(this, factory)[ExtensionsViewModel::class.java]
         }
     }
 
     private val listTVChannelObserver: Observer<DataState<List<TVChannel>>> by lazy {
         Observer { dataState ->
-            _tvChannelData.tryEmit(dataState)
-        }
-    }
-
-    private val listExtensionsObserver: Observer<DataState<ExtensionResult>> by lazy {
-        Observer { dataState ->
-            _extensionsChannelData.tryEmit(dataState)
+            when(dataState) {
+                is DataState.Success -> _tvChannelData.tryEmit(dataState.data)
+                else -> { }
+            }
         }
     }
 
@@ -263,16 +239,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
     private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
-    private val extensionListObserver: Observer<List<ExtensionsConfig>> by lazy {
-        Observer {
-            reloadNavigationBar(it)
-        }
-    }
 
     override fun initView(savedInstanceState: Bundle?) {
         tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
         playbackViewModel
-        extensionsViewModel
+        extensionsViewModel?.loadExtensionData()
 
         with(binding.sectionRecyclerView) {
             layoutManager = LinearLayoutManager(context).apply {
@@ -294,7 +265,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
         }
 
-        sectionRecyclerView?.apply {
+        sectionRecyclerView.apply {
             adapter = sectionAdapter
         }
         sectionAdapter.onRefresh(defaultSection + arrayListOf(addExtensionSection), notifyDataSetChange = true)
@@ -310,18 +281,23 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
 
         lifecycleScope.launch {
-            combine(flow = _tvChannelData, flow2 = _extensionsChannelData) { tvChannel, extensionChannel ->
-                return@combine Pair(tvChannel, extensionChannel)
-            }.collect {
-                if (it.first is DataState.Success && it.second is DataState.Success) {
-                    combineDataAndRefresh(Pair((it.first as DataState.Success<List<TVChannel>>).data, (it.second as DataState.Success<ExtensionResult>).data))
-                } else {
-                    mainRecyclerView.clearOnScrollListeners()
-                    skeletonScreen.run()
-                }
+            _tvChannelData.collectLatest {
+                tvChannel ->
+                reloadOriginalSource(tvChannel)
             }
         }
-//        sectionAdapter.onRefresh()
+
+        lifecycleScope.launchWhenStarted {
+            extensionsViewModel?.perExtensionChannelData?.collect {
+                appendExtensionSource(it)
+            }
+        }
+
+        lifecycleScope.launchWhenStarted {
+            extensionsViewModel?.extensionsConfigs?.collectLatest {
+                reloadNavigationBar(it)
+            }
+        }
     }
 
     override fun onStop() {
@@ -329,26 +305,26 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         mainRecyclerView.clearOnScrollListeners()
     }
 
-    private fun combineDataAndRefresh(data: ResultData) {
-        val groupedTV = groupAndSort(data.first).map {
-            return@map Pair<String, List<IChannelElement>>(it.first, it.second.map {tvChannel ->
-                ChannelElement.TVChannelElement(tvChannel)
-            })
+    private fun reloadOriginalSource(data: List<TVChannel>) {
+        val grouped = groupAndSort(data).map {
+            Pair(it.first, it.second.map { tvChannel -> ChannelElement.TVChannelElement(tvChannel) })
         }
+        swipeRefreshLayout.isRefreshing = false
+        adapter.onRefresh(grouped)
+        skeletonScreen.hide {
+            scrollToPosition(0)
+        }
+    }
 
-        val groupedEx = data.second.map { entry ->
-            groupAndSort(entry.value).map {pair ->
-                Pair<String, List<IChannelElement>>(
-                    "${pair.first} (${entry.key.sourceName})",
-                    pair.second.map { exChannel -> ChannelElement.ExtensionChannelElement(exChannel) }
+    private fun appendExtensionSource(data: Map<ExtensionsConfig, List<ExtensionsChannel>>) {
+        data.forEach {entry ->
+            val grouped = groupAndSort(entry.value).map {
+                Pair(
+                    "${it.first} (${entry.key.sourceName})",
+                    it.second.map { exChannel -> ChannelElement.ExtensionChannelElement(exChannel) }
                 )
             }
-        }.flatten()
-        swipeRefreshLayout.isRefreshing = false
-        adapter.onRefresh(groupedTV + groupedEx)
-        skeletonScreen.hide {
-            mainRecyclerView.addOnScrollListener(_onScrollListener)
-            scrollToPosition(0)
+            adapter.onAdd(grouped)
         }
     }
 
@@ -406,7 +382,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             setMessage("Bạn có muốn xóa nguồn $sourceName?")
             setCancelable(true)
             setPositiveButton("Có") { dialog, which ->
-                extensionsViewModel?.deleteExtension(sourceName = sourceName)
+                deleteExtension(sourceName = sourceName)
                 dialog.dismiss()
             }
             setNegativeButton("Không") { dialog, _ ->
@@ -416,6 +392,17 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             .create()
             .show()
 
+    }
+
+    private fun deleteExtension(sourceName: String) {
+        extensionsViewModel?.deleteExtension(sourceName = sourceName)
+        adapter.listItem.filter {
+            return@filter (it.second.firstOrNull() as? ChannelElement.ExtensionChannelElement)
+                ?.model
+                ?.sourceFrom == sourceName
+        }.forEach {
+            adapter.onDelete(it)
+        }
     }
 
     private fun reloadNavigationBar(extra: List<ExtensionsConfig>) {

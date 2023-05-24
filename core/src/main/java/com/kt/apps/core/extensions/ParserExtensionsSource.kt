@@ -32,8 +32,6 @@ class ParserExtensionsSource @Inject constructor(
                 it.onError(e)
             }
         }
-            .observeOn(Schedulers.io())
-            .subscribeOn(Schedulers.io())
             .doOnNext {
                 Logger.d(this@ParserExtensionsSource, message = Gson().toJson(it))
             }

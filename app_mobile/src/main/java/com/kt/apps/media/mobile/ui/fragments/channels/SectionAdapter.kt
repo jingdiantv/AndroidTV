@@ -3,6 +3,7 @@ package com.kt.apps.media.mobile.ui.fragments.channels
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.text.TextUtils
+import android.widget.AdapterView.OnItemLongClickListener
 import com.kt.apps.core.base.adapter.BaseAdapter
 import com.kt.apps.core.base.adapter.BaseViewHolder
 import com.kt.apps.media.mobile.R
@@ -31,7 +32,11 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
 
     private val isLandscape by lazy { context.resources.getBoolean(R.bool.is_landscape) }
 
-    private val calculatePreferWidth: Int = 0
+    private var calculatePreferWidth: Int = 0
+
+    var onItemLongCLickListener: (item: SectionItem) -> Boolean = {
+        false
+    }
     override fun bindItem(
         item: SectionItem,
         binding: ItemSectionBinding,
@@ -55,7 +60,18 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
                 calculatePreferWidth
             else
                 calculatePreferWidth()
+            calculatePreferWidth = width
             binding.itemContainer.layoutParams.width = width
+        }
+    }
+
+    override fun onBindViewHolder(
+        holder: BaseViewHolder<SectionItem, ItemSectionBinding>,
+        position: Int
+    ) {
+        super.onBindViewHolder(holder, position)
+        holder.itemView.setOnLongClickListener {
+            onItemLongCLickListener(listItem[position])
         }
     }
 
@@ -82,7 +98,7 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
     override fun onRefresh(items: List<SectionItem>, notifyDataSetChange: Boolean) {
         super.onRefresh(items, notifyDataSetChange)
         if (notifyDataSetChange) {
-
+            calculatePreferWidth = 0
         }
     }
 }
