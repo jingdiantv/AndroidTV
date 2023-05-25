@@ -10,6 +10,7 @@ import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ItemChannelBinding
 
 class TVChannelAdapter : BaseAdapter<TVChannel, ItemChannelBinding>() {
+
     override val itemLayoutRes: Int
         get() = R.layout.item_channel
 
@@ -28,4 +29,6 @@ class TVChannelAdapter : BaseAdapter<TVChannel, ItemChannelBinding>() {
         super.onViewRecycled(holder)
         holder.viewBinding.logo.setImageBitmap(null)
     }
+
+
 }

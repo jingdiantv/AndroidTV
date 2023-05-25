@@ -16,6 +16,6 @@
         android:id="@+id/add_extension"
         android:enabled="true"
         android:icon="@drawable/round_add_circle_outline_24"
-        android:visible="false"
+        android:visible="true"
         android:title="@string/add_extension" />
 </menu>

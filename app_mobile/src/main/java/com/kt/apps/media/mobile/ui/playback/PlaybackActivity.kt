@@ -23,7 +23,6 @@ import com.kt.apps.core.utils.gone
 import com.kt.apps.core.utils.visible
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityPlaybackBinding
-import com.kt.apps.media.mobile.ui.main.MainActivity
 import com.kt.apps.media.mobile.ui.main.TVChannelAdapter
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import kotlinx.parcelize.Parcelize
@@ -238,11 +237,11 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>() {
             }
 
             else -> {
-                startActivity(Intent(this, MainActivity::class.java)
-                    .apply {
-                        flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                )
+//                startActivity(Intent(this, MainActivity::class.java)
+//                    .apply {
+//                        flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
+//                    }
+//                )
             }
         }
     }

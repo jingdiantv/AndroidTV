@@ -8,4 +8,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="edittext_border">#8BFFFFFF</color>
+    <color name="disabled_color">#757575</color>
 </resources>

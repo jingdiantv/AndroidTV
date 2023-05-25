@@ -8,22 +8,22 @@
 
     </data>
 
-    <FrameLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/black"
         android:fitsSystemWindows="true">
 
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/black">
-
-            <View
-                android:id="@+id/separator"
-                android:layout_width="1dp"
-                android:layout_height="match_parent"
-                android:background="@color/lines_colors" />
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@color/black"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/section_recycler_view"
+            >
 
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 android:layout_width="match_parent"
@@ -39,15 +39,27 @@
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
         </LinearLayout>
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/navigation_rail_view"
-            style="@style/Widget.MaterialComponents.BottomNavigationView.PrimarySurface"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/section_recycler_view"
+            android:layout_width="wrap_content"
+            android:layout_height="88dp"
+            android:fadingEdge="horizontal"
+            android:scrollbars="none"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+
+            />
+        <View
+            android:id="@+id/separator"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            app:backgroundTint="@color/black"
-            app:itemPaddingBottom="0dp"
-            app:menu="@menu/main_navigation" />
+            android:layout_height="1dp"
+            android:background="@color/lines_colors"
+            app:layout_constraintTop_toTopOf="@id/section_recycler_view"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            />
 
         <FrameLayout
             android:id="@+id/progress_dialog"
@@ -66,6 +78,6 @@
                 wheel:matProg_progressIndeterminate="true" />
         </FrameLayout>
 
-    </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>

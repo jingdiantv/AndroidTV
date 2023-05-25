@@ -1,6 +1,8 @@
 package com.kt.apps.media.mobile.ui.main
 
+import android.net.Uri
 import androidx.work.WorkManager
+import com.kt.apps.core.Constants
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
@@ -22,6 +24,14 @@ class TVChannelViewModel @Inject constructor(
 
     override fun onFetchTVListSuccess(listChannel: List<TVChannel>) {
         super.onFetchTVListSuccess(listChannel)
+    }
+
+    fun playMobileTvByDeepLinks(uri: Uri) : Boolean {
+        !(uri.host?.contentEquals(Constants.DEEPLINK_HOST) ?: return false)
+        val lastPath = uri.pathSegments.last() ?: return false
+        _tvWithLinkStreamLiveData.postValue(DataState.Loading())
+        super.playTvByDeepLinks(uri)
+        return true
     }
 
     fun  getExtensionChannel(tvChannel: ExtensionsChannel) {

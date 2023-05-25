@@ -1,36 +1,25 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
-import android.media.Image
 import android.os.Bundle
-import android.provider.MediaStore.Video
 import android.util.Log
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import cn.pedant.SweetAlert.ProgressHelper
-import com.google.android.exoplayer2.ui.StyledPlayerView.SHOW_BUFFERING_ALWAYS
 import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.player.ExoPlayerManagerMobile
 import com.kt.apps.core.base.player.LinkStream
-import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.TAG
-import com.kt.apps.core.utils.fadeIn
-import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.FragmentPlaybackBinding
-import com.kt.apps.media.mobile.models.VideoDisplayAction
 import com.kt.apps.media.mobile.ui.fragments.dialog.JobQueue
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
-import com.kt.apps.media.mobile.utils.clicks
 import com.kt.apps.media.mobile.utils.ktFadeIn
 import com.kt.apps.media.mobile.utils.ktFadeOut
 import com.pnikosis.materialishprogress.ProgressWheel
@@ -44,7 +33,8 @@ interface IPlaybackAction {
     fun onLoadedSuccess(videoSize: VideoSize)
     fun onOpenFullScreen()
 
-    fun onPauseAction()
+    fun onPauseAction(userAction: Boolean)
+    fun onPlayAction(userAction: Boolean)
 }
 
 class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
@@ -158,17 +148,32 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             callback?.onOpenFullScreen()
         }
 
-
+        playPauseButton.setOnClickListener {
+            exoPlayerManager.exoPlayer?.run {
+                if (isPlaying) {
+                    pause()
+                } else {
+                    play()
+                }
+            }
+            if (isPlaying.value) {
+                callback?.onPauseAction(userAction = true)
+            } else {
+                callback?.onPlayAction(userAction =  true)
+            }
+        }
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
 
+
         isPlaying.distinctUntilChanged { old, new ->  old == new }
             .debounce(250)
             .onEach {
-                if (!it) callback?.onPauseAction()
+                if (!it) callback?.onPauseAction(userAction = false)
             }.launchIn(lifecycleScope)
+
         isProcessing.distinctUntilChanged { old, new ->  old == new }
             .onEach {
                 Log.d(TAG, "isProcessing: $it")
@@ -217,5 +222,4 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     private fun toggleProgressing(isShow: Boolean) {
         isProcessing.tryEmit(isShow)
     }
-
 }

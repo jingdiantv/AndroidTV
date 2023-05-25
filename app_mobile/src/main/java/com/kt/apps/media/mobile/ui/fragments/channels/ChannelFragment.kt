@@ -1,20 +1,16 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
+import android.app.AlertDialog
 import android.os.Bundle
-import android.provider.ContactsContract.Data
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
+import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.OnScrollListener
-import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
+import androidx.recyclerview.widget.RecyclerView.*
 import cn.pedant.SweetAlert.ProgressHelper
-import com.google.android.material.navigation.NavigationBarView
-import com.google.gson.Gson
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
@@ -26,6 +22,7 @@ import com.kt.apps.core.utils.TAG
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.core.utils.showSuccessDialog
+import com.kt.apps.media.mobile.BuildConfig
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
@@ -34,15 +31,15 @@ import com.kt.apps.media.mobile.ui.main.IChannelElement
 import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.utils.debounce
+import com.kt.apps.media.mobile.utils.fastSmoothScrollToPosition
 import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
-import kotlin.coroutines.suspendCoroutine
 
-typealias ResultData = Pair<List<TVChannel>, List<ExtensionsChannel>>
+typealias ResultData = Pair<List<TVChannel>, ExtensionResult>
+
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     override val layoutResId: Int
@@ -60,6 +57,33 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         ProgressHelper(this.context)
     }
 
+    private val defaultSection by lazy {
+        arrayListOf<SectionItem>(
+            SectionItemElement.MenuItem(
+                displayTitle = "TV",
+                id = R.id.tv,
+                icon = resources.getDrawable(com.kt.apps.core.R.drawable.ic_tv)
+            ),
+            SectionItemElement.MenuItem(
+                displayTitle = "Radio",
+                id = R.id.radio,
+                icon = resources.getDrawable(com.kt.apps.core.R.drawable.ic_radio)
+            )
+        )
+    }
+
+    private val addExtensionSection by lazy {
+        if (BuildConfig.isBeta)
+            arrayListOf(
+                SectionItemElement.MenuItem(
+                    displayTitle = "Thêm nguồn",
+                    id = R.id.add_extension,
+                    icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+                )
+            )
+        else emptyList()
+    }
+
     //Views
     private val progressDialog by lazy {
         binding.progressDialog
@@ -72,54 +96,56 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         binding.mainChannelRecyclerView
     }
 
+    private val sectionRecyclerView by lazy {
+        binding.sectionRecyclerView
+    }
+
     private val skeletonScreen by lazy {
         KunSkeleton.bind(mainRecyclerView)
             .adapter(adapter)
-            .recyclerViewLayoutItem(R.layout.item_row_channel_skeleton, R.layout.item_channel_skeleton)
+            .recyclerViewLayoutItem(
+                R.layout.item_row_channel_skeleton,
+                R.layout.item_channel_skeleton
+            )
             .build()
     }
 
-    private val navigationRailView: NavigationBarView by lazy {
-        binding.navigationRailView as NavigationBarView
-    }
-
     private val _tvChannelData by lazy {
-        MutableStateFlow<DataState<List<TVChannel>>>(DataState.None())
+        MutableStateFlow<List<TVChannel>>(emptyList())
     }
 
     private val _extensionsChannelData by lazy {
-        MutableStateFlow<DataState<List<ExtensionsChannel>>>(DataState.None())
+        MutableStateFlow<DataState<ExtensionResult>>(DataState.None())
     }
 
-    private val onItemSelected by lazy {
-        NavigationBarView.OnItemSelectedListener {
-            return@OnItemSelectedListener onChangeItem(it)
-        }
-    }
-
-    private val debounceOnScrollListener  by lazy {
+    private val debounceOnScrollListener by lazy {
         debounce<Unit>(300, viewLifecycleOwner.lifecycleScope) {
             if (adapter.listItem.isEmpty()) {
                 return@debounce
             }
             val item = (binding.mainChannelRecyclerView.layoutManager as LinearLayoutManager)
-                .findLastCompletelyVisibleItemPosition()
+                .findFirstVisibleItemPosition()
             if (item == RecyclerView.NO_POSITION) {
                 return@debounce
             }
             val itemTitle = adapter.listItem[item].first
-            if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                if (navigationRailView.selectedItemId != R.id.radio) {
-                    navigationRailView.setOnItemSelectedListener(null)
-                    navigationRailView.selectedItemId = R.id.radio
-                    navigationRailView.setOnItemSelectedListener(onItemSelected)
-                }
-            } else {
-                if (navigationRailView.selectedItemId != R.id.tv) {
-                    navigationRailView.setOnItemSelectedListener(null)
-                    navigationRailView.selectedItemId = R.id.tv
-                    navigationRailView.setOnItemSelectedListener(onItemSelected)
-                }
+            fun performSelected(id: Int) {
+                sectionAdapter.selectForId(id)
+            }
+            adapter.listItem[item].second.firstOrNull()?.let {
+                (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
+            }?.let {
+                _cacheMenuItem[it]
+            }?.run {
+                performSelected(this)
+            } ?: kotlin.run {
+                performSelected(
+                    if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+                        R.id.radio
+                    } else {
+                        R.id.tv
+                    }
+                )
             }
         }
     }
@@ -133,12 +159,30 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
+    private val sectionAdapter by lazy {
+        SectionAdapter(requireContext()).apply {
+            onItemRecyclerViewCLickListener = { item, _ ->
+                if (onChangeItem(item)) {
+                    this.currentSelectedItem = item
+                }
+            }
+            onItemLongCLickListener = { item ->
+                showAlertRemoveExtension(item.displayTitle)
+                true
+            }
+        }
+    }
+
     private val adapter by lazy {
         TVDashboardAdapter().apply {
-            onChildItemClickListener = { item, _  ->
-                when(item) {
-                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(item.model)
-                    is ChannelElement.ExtensionChannelElement -> tvChannelViewModel?.getExtensionChannel(item.model)
+            onChildItemClickListener = { item, _ ->
+                when (item) {
+                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(
+                        item.model
+                    )
+                    is ChannelElement.ExtensionChannelElement -> tvChannelViewModel?.getExtensionChannel(
+                        item.model
+                    )
                 }
             }
         }
@@ -163,27 +207,21 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val extensionsViewModel: ExtensionsViewModel? by lazy {
         activity?.run {
-            ViewModelProvider(this, factory)[ExtensionsViewModel::class.java].apply {
-                this.extensionsConfigs.observe(this@ChannelFragment, extensionListObserver)
-                this.extensionsChannelData.observe(this@ChannelFragment, listExtensionsObserver)
-            }
+            ViewModelProvider(this, factory)[ExtensionsViewModel::class.java]
         }
     }
 
     private val listTVChannelObserver: Observer<DataState<List<TVChannel>>> by lazy {
         Observer { dataState ->
-            _tvChannelData.tryEmit(dataState)
-        }
-    }
-
-    private val listExtensionsObserver: Observer<DataState<List<ExtensionsChannel>>> by lazy {
-        Observer { dataState ->
-            _extensionsChannelData.tryEmit(dataState)
+            when (dataState) {
+                is DataState.Success -> _tvChannelData.tryEmit(dataState.data)
+                else -> {}
+            }
         }
     }
 
     private val tvChannelStreamObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
-        Observer {dataState ->
+        Observer { dataState ->
             dataState.takeIf { it is DataState.Loading }.apply {
                 progressDialog.fadeIn {
                     progressHelper.spin()
@@ -199,15 +237,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             if (!isLandscape) {
                 return@Observer
             }
-            when(state) {
+            when (state) {
                 PlaybackViewModel.State.IDLE -> {
                     with(mainRecyclerView) {
-                        setPadding(0,  0, 0, 0)
+                        setPadding(0, 0, 0, 0)
                     }
                 }
                 PlaybackViewModel.State.LOADING, PlaybackViewModel.State.PLAYING -> {
                     with(mainRecyclerView) {
-                        setPadding(0,0,0,screenHeight / 3)
+                        setPadding(0, 0, 0, screenHeight / 3)
                         clipToPadding = false
                     }
                 }
@@ -215,17 +253,18 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
         }
     }
-
-    private val extensionListObserver: Observer<List<ExtensionsConfig>> by lazy {
-        Observer {
-            reloadNavigationBar(it)
-        }
-    }
+    private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
 
     override fun initView(savedInstanceState: Bundle?) {
         tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
         playbackViewModel
-        extensionsViewModel
+        extensionsViewModel?.loadExtensionData()
+
+        with(binding.sectionRecyclerView) {
+            layoutManager = LinearLayoutManager(context).apply {
+                orientation = if (isLandscape) VERTICAL else HORIZONTAL
+            }
+        }
 
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
@@ -240,6 +279,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                     3.coerceAtLeast((width / 170 / resources.displayMetrics.scaledDensity).toInt())
             }
         }
+
+        sectionRecyclerView.apply {
+            adapter = sectionAdapter
+        }
+        sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
     }
 
 
@@ -250,19 +294,22 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
         }
-        navigationRailView.setOnItemSelectedListener { item ->
-            return@setOnItemSelectedListener onChangeItem(item)
-        }
+
         lifecycleScope.launch {
-            combine(flow = _tvChannelData, flow2 = _extensionsChannelData) { tvChannel, extensionChannel ->
-                return@combine Pair(tvChannel, extensionChannel)
-            }.collect {
-                if (it.first is DataState.Success && it.second is DataState.Success) {
-                    combineDataAndRefresh(Pair((it.first as DataState.Success<List<TVChannel>>).data, (it.second as DataState.Success<List<ExtensionsChannel>>).data))
-                } else {
-                    mainRecyclerView.clearOnScrollListeners()
-                    skeletonScreen.run()
-                }
+            _tvChannelData.collectLatest { tvChannel ->
+                reloadOriginalSource(tvChannel)
+            }
+        }
+
+        lifecycleScope.launchWhenStarted {
+            extensionsViewModel?.perExtensionChannelData?.collect {
+                appendExtensionSource(it)
+            }
+        }
+
+        lifecycleScope.launchWhenStarted {
+            extensionsViewModel?.extensionsConfigs?.collectLatest {
+                reloadNavigationBar(it)
             }
         }
     }
@@ -272,106 +319,135 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         mainRecyclerView.clearOnScrollListeners()
     }
 
-    private fun combineDataAndRefresh(data: ResultData) {
-        val groupedTV = groupAndSort(data.first).map {
-            return@map Pair<String, List<IChannelElement>>(it.first, it.second.map {tvChannel ->
-                ChannelElement.TVChannelElement(tvChannel)
-            })
-        }
-        val groupedEx = groupAndSort(data.second).map {
-            return@map Pair<String, List<IChannelElement>>(it.first, it.second.map {exChannel ->
-                ChannelElement.ExtensionChannelElement(exChannel)
-            })
+    private fun reloadOriginalSource(data: List<TVChannel>) {
+        val grouped = groupAndSort(data).map {
+            Pair(
+                it.first,
+                it.second.map { tvChannel -> ChannelElement.TVChannelElement(tvChannel) })
         }
         swipeRefreshLayout.isRefreshing = false
-        adapter.onRefresh(groupedTV + groupedEx)
+        adapter.onRefresh(grouped)
         skeletonScreen.hide {
-            mainRecyclerView.addOnScrollListener(_onScrollListener)
             scrollToPosition(0)
+        }
+    }
+
+    private fun appendExtensionSource(data: Map<ExtensionsConfig, List<ExtensionsChannel>>) {
+        data.forEach { entry ->
+            val grouped = groupAndSort(entry.value).map {
+                Pair(
+                    "${it.first} (${entry.key.sourceName})",
+                    it.second.map { exChannel -> ChannelElement.ExtensionChannelElement(exChannel) }
+                )
+            }
+            adapter.onAdd(grouped)
         }
     }
 
     private fun scrollToPosition(index: Int) {
-        mainRecyclerView.removeOnScrollListener(_onScrollListener)
-        mainRecyclerView.smoothScrollToPosition(index)
-        mainRecyclerView.addOnScrollListener(object : OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (newState == SCROLL_STATE_IDLE) {
-                    mainRecyclerView.addOnScrollListener(_onScrollListener)
-                    mainRecyclerView.removeOnScrollListener(this)
-                }
-            }
-        })
+        Log.d(TAG, "scrollToPosition: $index")
+        mainRecyclerView.fastSmoothScrollToPosition(index)
     }
 
 
+    private fun onChangeItem(item: SectionItem): Boolean {
+        val currentSelected = sectionAdapter.currentSelectedItem
+        if (item.id == currentSelected?.id) return false
 
-    private fun onChangeItem(item: MenuItem): Boolean {
-        if (item.itemId == R.id.radio) {
-            if (navigationRailView.selectedItemId == item.itemId) {
+        when (item.id) {
+            R.id.radio -> scrollToPosition(8)
+            R.id.tv -> scrollToPosition(0)
+            R.id.add_extension -> {
+                val dialog = AddExtensionFragment()
+                dialog.onSuccess = {
+                    it.dismiss()
+                    onAddedExtension()
+                }
+                dialog.show(this@ChannelFragment.parentFragmentManager, AddExtensionFragment.TAG)
                 return false
             }
-            scrollToPosition(8)
-            return true
-        }
-        if (item.itemId == R.id.tv) {
-            if (navigationRailView.selectedItemId == item.itemId) {
-                return false
-            }
-            scrollToPosition(0)
-            return true
-        }
+            else -> {
+                val title = item.displayTitle
+                return (extensionsViewModel?.extensionsConfigs?.value ?: emptyList()).findLast {
+                    it.sourceName == title
+                }?.run {
+                    val index = adapter.listItem.indexOfFirst {
+                        val channel = it.second.firstOrNull()
+                        (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(
+                            title
+                        ) == true
+                    }.takeIf {
+                        it != -1
+                    }?.run {
+                        scrollToPosition(this)
+                    }
 
-        if  (item.itemId == R.id.add_extension) {
-            val dialog = AddExtensionFragment()
-            dialog.onSuccess = {
-                it.dismiss()
-                onAddedExtension()
+                    true
+                } ?: false
             }
-            dialog.show(this@ChannelFragment.parentFragmentManager, AddExtensionFragment.TAG)
         }
-        return false
+        return true
     }
 
     private fun onAddedExtension() {
         showSuccessDialog(
             content = "Thêm nguồn kênh thành công!\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh"
         )
+    }
 
+    private fun showAlertRemoveExtension(sourceName: String) {
+        AlertDialog.Builder(context, R.style.AlertDialogTheme).apply {
+            setMessage("Bạn có muốn xóa nguồn $sourceName?")
+            setCancelable(true)
+            setPositiveButton("Có") { dialog, which ->
+                deleteExtension(sourceName = sourceName)
+                dialog.dismiss()
+            }
+            setNegativeButton("Không") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }
+            .create()
+            .show()
+
+    }
+
+    private fun deleteExtension(sourceName: String) {
+        extensionsViewModel?.deleteExtension(sourceName = sourceName)
+        adapter.listItem.filter {
+            return@filter (it.second.firstOrNull() as? ChannelElement.ExtensionChannelElement)
+                ?.model
+                ?.sourceFrom == sourceName
+        }.forEach {
+            adapter.onDelete(it)
+        }
     }
 
     private fun reloadNavigationBar(extra: List<ExtensionsConfig>) {
-        val menu = navigationRailView.menu.let {
-            val defaults = arrayListOf(it.findItem(R.id.tv), it.findItem(R.id.radio))
-            val addSourceItem = it.findItem(R.id.add_extension)
-            it.clear()
-            defaults.forEach {item ->
-                it.add(item.groupId, item.itemId, item.order, item.title).icon = item.icon
-            }
+        _cacheMenuItem = mutableMapOf()
 
-            extra.forEach {item ->
-                it.add(item.sourceName)
-                    .setIcon(R.drawable.round_add_circle_outline_24)
-            }
-
-            it.add(addSourceItem.groupId, addSourceItem.itemId, Menu.NONE, addSourceItem.title).apply {
-                icon = addSourceItem.icon
-                isVisible = addSourceItem.isVisible
-            }
-
-            return@let it
+        val extraSection = extra.map {
+            val id = View.generateViewId()
+            _cacheMenuItem[it.sourceName] = id
+            SectionItemElement.MenuItem(
+                displayTitle = it.sourceName,
+                id = id,
+                icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+            )
         }
-        navigationRailView.labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED
+        sectionAdapter.onRefresh(
+            defaultSection + extraSection + addExtensionSection,
+            notifyDataSetChange = true
+        )
     }
 
-    private inline fun <reified T> groupAndSort(list: List<T>) : List<Pair<String, List<T>>> {
-        return when(T::class) {
+    private inline fun <reified T> groupAndSort(list: List<T>): List<Pair<String, List<T>>> {
+        return when (T::class) {
             TVChannel::class -> list.groupBy { (it as TVChannel).tvGroup }
                 .toList()
                 .sortedWith(Comparator { o1, o2 ->
                     return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
-                        if (o1.first ==TVChannelGroup.VOH.value)  0  else -1
+                        if (o1.first == TVChannelGroup.VOH.value) 0 else -1
                     else 1
                 })
             ExtensionsChannel::class -> list.groupBy { (it as ExtensionsChannel).tvGroup }
@@ -383,4 +459,3 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 }
-

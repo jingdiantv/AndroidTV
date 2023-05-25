@@ -23,6 +23,7 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
 
     private var state: State = State.IDLE
     private var cachedVideoSize: VideoSize? = null
+    private var videoIsLoading: Boolean = false
 
     private val context: Context?
         get() = weakActivity.get()
@@ -54,12 +55,48 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
             })
         }
     }
+    init {
+        motionLayout?.setTransitionListener(object : MotionLayout.TransitionListener {
+            override fun onTransitionStarted(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int
+            ) {
+//                TODO("Not yet implemented")
+            }
+
+            override fun onTransitionChange(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int,
+                progress: Float
+            ) {
+//                TODO("Not yet implemented")
+            }
+
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                Log.d(TAG, "onTransitionCompleted: $currentId ${R.id.fullscreen}")
+
+            }
+
+            override fun onTransitionTrigger(
+                motionLayout: MotionLayout?,
+                triggerId: Int,
+                positive: Boolean,
+                progress: Float
+            ) {
+//                TODO("Not yet implemented")
+            }
+
+        })
+    }
     override fun onStartLoading() {
         if (state != State.FULLSCREEN) {
             motionLayout?.setTransitionDuration(250)
             motionLayout?.transitionToState(R.id.fullscreen)
             state = State.FULLSCREEN
         }
+        videoIsLoading = true
     }
 
     override fun onLoadedVideoSuccess(videoSize: VideoSize) {
@@ -69,6 +106,7 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
             motionLayout?.transitionToState(R.id.fullscreen)
             state = State.FULLSCREEN
         }
+        videoIsLoading = false
     }
 
     override fun onOpenFullScreen() {
@@ -82,7 +120,8 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
     }
 
     override fun onBackEvent(): Boolean {
-        if (state == State.FULLSCREEN) {
+        val isFullScreenState = motionLayout?.currentState == R.id.fullscreen
+        if (state == State.FULLSCREEN || isFullScreenState) {
             motionLayout?.transitionToState(R.id.end)
             state = State.MINIMAL
             return true
@@ -100,11 +139,21 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
         }
     }
 
-    override fun onPause() {
-        if (state == State.FULLSCREEN) {
-            motionLayout?.transitionToState(R.id.end)
-            state = State.MINIMAL
+    override fun onPlayPause(isPause: Boolean) {
+        super.onPlayPause(isPause)
+        if (videoIsLoading) return
+        if (isPause) {
+            if (state == State.FULLSCREEN) {
+                motionLayout?.transitionToState(R.id.end)
+                state = State.MINIMAL
+            }
+        } else {
+            if (state != State.FULLSCREEN) {
+                motionLayout?.transitionToState(R.id.fullscreen)
+                state = State.FULLSCREEN
+            }
         }
+
     }
 
     override fun onTouchEvent(ev: MotionEvent) {

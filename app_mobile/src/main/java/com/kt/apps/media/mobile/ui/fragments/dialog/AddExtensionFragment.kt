@@ -27,6 +27,8 @@ import com.kt.apps.media.mobile.utils.ktFadeOut
 import com.kt.apps.media.mobile.utils.textChanges
 import com.pnikosis.materialishprogress.ProgressWheel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
@@ -191,14 +193,25 @@ class AddExtensionFragment: BaseDialogFragment<AddExtensionDialogBinding>() {
             try {
                 val list = parseFromRemote(extensionConfig)
                 if (list.isNotEmpty()) {
-                    disposableContainer.add(roomDataBase.extensionsConfig()
-                        .insert(extensionConfig)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribeOn(Schedulers.io())
-                        .subscribe {
-                            Log.d(TAG, "addExtensionsSource: Success")
-                            onSuccess(this)
-                        })
+                    disposableContainer.add(
+                        Single.fromCallable {
+                            val existList = roomDataBase.extensionsConfig().getAll()
+                                .blockingFirst(emptyList())
+                            if (existList.indexOfFirst { it.sourceName == name } != -1)  {
+                                throw Error("Tên nguồn không được trùng")
+                            }
+                        }.flatMapCompletable {
+                            roomDataBase.extensionsConfig().insert(extensionConfig)
+                        }
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribeOn(Schedulers.io())
+                            .subscribe({
+                                Log.d(TAG, "addExtensionsSource: Success")
+                                onSuccess(this)
+                            }, {
+                                processState.tryEmit(State.ERROR(it.localizedMessage ?: "Lỗi"))
+                            })
+                    )
                 } else {
                     processState.emit(State.ERROR("Không thể tạo link"))
                 }
