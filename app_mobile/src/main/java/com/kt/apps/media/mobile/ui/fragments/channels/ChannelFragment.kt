@@ -22,6 +22,7 @@ import com.kt.apps.core.utils.TAG
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.core.utils.showSuccessDialog
+import com.kt.apps.media.mobile.BuildConfig
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
@@ -38,6 +39,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 typealias ResultData = Pair<List<TVChannel>, ExtensionResult>
+
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     override val layoutResId: Int
@@ -71,11 +73,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private val addExtensionSection by lazy {
-        SectionItemElement.MenuItem(
-            displayTitle = "Thêm nguồn",
-            id = R.id.add_extension,
-            icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
-        )
+        if (BuildConfig.isBeta)
+            arrayListOf(
+                SectionItemElement.MenuItem(
+                    displayTitle = "Thêm nguồn",
+                    id = R.id.add_extension,
+                    icon = resources.getDrawable(R.drawable.round_add_circle_outline_24)
+                )
+            )
+        else emptyList()
     }
 
     //Views
@@ -97,7 +103,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     private val skeletonScreen by lazy {
         KunSkeleton.bind(mainRecyclerView)
             .adapter(adapter)
-            .recyclerViewLayoutItem(R.layout.item_row_channel_skeleton, R.layout.item_channel_skeleton)
+            .recyclerViewLayoutItem(
+                R.layout.item_row_channel_skeleton,
+                R.layout.item_channel_skeleton
+            )
             .build()
     }
 
@@ -109,7 +118,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         MutableStateFlow<DataState<ExtensionResult>>(DataState.None())
     }
 
-    private val debounceOnScrollListener  by lazy {
+    private val debounceOnScrollListener by lazy {
         debounce<Unit>(300, viewLifecycleOwner.lifecycleScope) {
             if (adapter.listItem.isEmpty()) {
                 return@debounce
@@ -130,11 +139,13 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }?.run {
                 performSelected(this)
             } ?: kotlin.run {
-                performSelected(if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                    R.id.radio
-                } else {
-                    R.id.tv
-                })
+                performSelected(
+                    if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+                        R.id.radio
+                    } else {
+                        R.id.tv
+                    }
+                )
             }
         }
     }
@@ -164,10 +175,14 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val adapter by lazy {
         TVDashboardAdapter().apply {
-            onChildItemClickListener = { item, _  ->
-                when(item) {
-                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(item.model)
-                    is ChannelElement.ExtensionChannelElement -> tvChannelViewModel?.getExtensionChannel(item.model)
+            onChildItemClickListener = { item, _ ->
+                when (item) {
+                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(
+                        item.model
+                    )
+                    is ChannelElement.ExtensionChannelElement -> tvChannelViewModel?.getExtensionChannel(
+                        item.model
+                    )
                 }
             }
         }
@@ -198,15 +213,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val listTVChannelObserver: Observer<DataState<List<TVChannel>>> by lazy {
         Observer { dataState ->
-            when(dataState) {
+            when (dataState) {
                 is DataState.Success -> _tvChannelData.tryEmit(dataState.data)
-                else -> { }
+                else -> {}
             }
         }
     }
 
     private val tvChannelStreamObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
-        Observer {dataState ->
+        Observer { dataState ->
             dataState.takeIf { it is DataState.Loading }.apply {
                 progressDialog.fadeIn {
                     progressHelper.spin()
@@ -222,15 +237,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             if (!isLandscape) {
                 return@Observer
             }
-            when(state) {
+            when (state) {
                 PlaybackViewModel.State.IDLE -> {
                     with(mainRecyclerView) {
-                        setPadding(0,  0, 0, 0)
+                        setPadding(0, 0, 0, 0)
                     }
                 }
                 PlaybackViewModel.State.LOADING, PlaybackViewModel.State.PLAYING -> {
                     with(mainRecyclerView) {
-                        setPadding(0,0,0,screenHeight / 3)
+                        setPadding(0, 0, 0, screenHeight / 3)
                         clipToPadding = false
                     }
                 }
@@ -268,7 +283,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         sectionRecyclerView.apply {
             adapter = sectionAdapter
         }
-        sectionAdapter.onRefresh(defaultSection + arrayListOf(addExtensionSection), notifyDataSetChange = true)
+        sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
     }
 
 
@@ -281,8 +296,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
 
         lifecycleScope.launch {
-            _tvChannelData.collectLatest {
-                tvChannel ->
+            _tvChannelData.collectLatest { tvChannel ->
                 reloadOriginalSource(tvChannel)
             }
         }
@@ -307,7 +321,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private fun reloadOriginalSource(data: List<TVChannel>) {
         val grouped = groupAndSort(data).map {
-            Pair(it.first, it.second.map { tvChannel -> ChannelElement.TVChannelElement(tvChannel) })
+            Pair(
+                it.first,
+                it.second.map { tvChannel -> ChannelElement.TVChannelElement(tvChannel) })
         }
         swipeRefreshLayout.isRefreshing = false
         adapter.onRefresh(grouped)
@@ -317,7 +333,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     private fun appendExtensionSource(data: Map<ExtensionsConfig, List<ExtensionsChannel>>) {
-        data.forEach {entry ->
+        data.forEach { entry ->
             val grouped = groupAndSort(entry.value).map {
                 Pair(
                     "${it.first} (${entry.key.sourceName})",
@@ -338,7 +354,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         val currentSelected = sectionAdapter.currentSelectedItem
         if (item.id == currentSelected?.id) return false
 
-        when(item.id) {
+        when (item.id) {
             R.id.radio -> scrollToPosition(8)
             R.id.tv -> scrollToPosition(0)
             R.id.add_extension -> {
@@ -357,7 +373,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 }?.run {
                     val index = adapter.listItem.indexOfFirst {
                         val channel = it.second.firstOrNull()
-                        (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(title) == true
+                        (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(
+                            title
+                        ) == true
                     }.takeIf {
                         it != -1
                     }?.run {
@@ -418,18 +436,18 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             )
         }
         sectionAdapter.onRefresh(
-            defaultSection + extraSection + arrayListOf(addExtensionSection),
+            defaultSection + extraSection + addExtensionSection,
             notifyDataSetChange = true
         )
     }
 
-    private inline fun <reified T> groupAndSort(list: List<T>) : List<Pair<String, List<T>>> {
-        return when(T::class) {
+    private inline fun <reified T> groupAndSort(list: List<T>): List<Pair<String, List<T>>> {
+        return when (T::class) {
             TVChannel::class -> list.groupBy { (it as TVChannel).tvGroup }
                 .toList()
                 .sortedWith(Comparator { o1, o2 ->
                     return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
-                        if (o1.first ==TVChannelGroup.VOH.value)  0  else -1
+                        if (o1.first == TVChannelGroup.VOH.value) 0 else -1
                     else 1
                 })
             ExtensionsChannel::class -> list.groupBy { (it as ExtensionsChannel).tvGroup }

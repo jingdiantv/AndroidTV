@@ -57,7 +57,7 @@ class App : CoreApp(), Configuration.Provider {
         super.onCreate()
         app = this
         (applicationInjector() as AppComponents).inject(this)
-        enqueuePreloadData()
+        if (BuildConfig.isBeta) enqueuePreloadData()
     }
 
     override fun applicationInjector(): AndroidInjector<out DaggerApplication> {
