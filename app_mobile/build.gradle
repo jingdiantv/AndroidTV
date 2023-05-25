@@ -15,9 +15,9 @@ android {
         applicationId "com.kt.apps.media.mobile.xemtv"
         minSdk 21
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
-
+        versionCode 23052301
+        versionName "$versionCode"
+        setProperty("archivesBaseName", "iMedia.Mobile.$versionName")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -37,6 +37,9 @@ android {
     }
     dataBinding {
         enabled = true
+    }
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 }
 
