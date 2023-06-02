@@ -3,15 +3,16 @@ package com.kt.apps.core.extensions
 import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 import kotlinx.parcelize.Parcelize
 
 @Entity
 @Parcelize
-data class ExtensionsConfig(
-    val sourceName: String,
+open class ExtensionsConfig @JvmOverloads constructor(
+    var sourceName: String,
     @PrimaryKey
     val sourceUrl: String,
-    val type: Type = Type.TV_CHANNEL
+    var type: Type = Type.TV_CHANNEL
 ) : Parcelable {
 
     enum class Type {
@@ -32,4 +33,12 @@ data class ExtensionsConfig(
             )
         }
     }
+}
+
+class ExtensionsConfigWithLoadedListChannel(
+    sourceName: String,
+    sourceUrl: String
+) : ExtensionsConfig(sourceName, sourceUrl) {
+    @Relation(parentColumn = "sourceUrl", entityColumn = "extensionSourceId")
+    var extensionsChannelList: List<ExtensionsChannel>? = null
 }

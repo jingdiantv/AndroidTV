@@ -3,6 +3,7 @@ package com.kt.apps.core.storage.local.converters
 import android.net.Uri
 import androidx.room.TypeConverter
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.storage.local.dto.FootballTeamEntity
 
@@ -22,6 +23,27 @@ class RoomDBTypeConverters {
         str,
         FootballTeamEntity::class.java
     )
+
+    @TypeConverter
+    fun mapToString(map: Map<String, String>): String = Gson().toJson(
+        map,
+        TypeToken.getParameterized(
+            Map::class.java,
+            String::class.java,
+            String::class.java
+        ).type
+    )
+
+    @TypeConverter
+    fun stringToMap(map: String): Map<String, String> = Gson().fromJson(
+        map,
+        TypeToken.getParameterized(
+            Map::class.java,
+            String::class.java,
+            String::class.java
+        ).type
+    )
+
 
     @TypeConverter
     fun stringToExtensionsType(str: String): ExtensionsConfig.Type = try {

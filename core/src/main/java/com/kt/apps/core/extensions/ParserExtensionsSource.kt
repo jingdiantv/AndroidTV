@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.IKeyValueStorage
+import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -20,10 +21,28 @@ import javax.inject.Inject
 class ParserExtensionsSource @Inject constructor(
     private val client: OkHttpClient,
     private val storage: IKeyValueStorage,
+    private val roomDataBase: RoomDataBase
 ) {
+    private val extensionsChannelDao by lazy {
+        roomDataBase.extensionsChannelDao()
+    }
+
+    private val extensionsConfigDao by lazy {
+        roomDataBase.extensionsConfig()
+    }
+
+    private val _intervalRefreshData: Long by lazy {
+        storage.get(EXTRA_INTERVAL_REFRESH_DATA_KEY, Long::class.java)
+            .takeIf {
+                it > -1L
+            }
+            ?: INTERVAL_REFRESH_DATA.also {
+                storage.save(EXTRA_EXTENSIONS_KEY, it)
+            }
+    }
 
     fun parseFromRemoteRx(extension: ExtensionsConfig): Observable<List<ExtensionsChannel>> {
-        return Observable.create<List<ExtensionsChannel>> {
+        val onlineSource = Observable.create<List<ExtensionsChannel>> {
             try {
                 it.onNext(parseFromRemote(extension))
                 it.onComplete()
@@ -31,12 +50,56 @@ class ParserExtensionsSource @Inject constructor(
                 it.onError(e)
             }
         }
+            .flatMap {
+                Logger.d(this@ParserExtensionsSource, "execute", "insert db ${it.size}")
+                Logger.d(this@ParserExtensionsSource, "execute", "insert db ${it.distinctBy { 
+                    it.channelId
+                }.size}")
+                extensionsChannelDao.insert(it)
+                    .doOnComplete {
+                        Logger.d(this@ParserExtensionsSource, "execute", "insert complete")
+                        saveLastTimeRefresh(extension)
+                    }
+                    .andThen(Observable.just(it))
+            }
+            .retry { time, _ ->
+                return@retry time < 3
+            }
             .observeOn(Schedulers.io())
             .subscribeOn(Schedulers.io())
             .doOnNext {
                 Logger.d(this@ParserExtensionsSource, message = Gson().toJson(it))
             }
 
+        val offlineSource = extensionsChannelDao.getAllBySourceId(extension.sourceUrl)
+            .toObservable()
+
+        if (System.currentTimeMillis() - getLastTimeRefresh(extension) < _intervalRefreshData) {
+            Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource")
+            return offlineSource
+                .onErrorResumeNext {
+                    onlineSource
+                }
+        }
+        Logger.d(this@ParserExtensionsSource, "execute", "OnineSource")
+        return onlineSource
+
+    }
+
+    private fun saveLastTimeRefresh(config: ExtensionsConfig) {
+        storage.save("${config.sourceUrl}_last_refresh_data", System.currentTimeMillis())
+    }
+
+    private fun getLastTimeRefresh(config: ExtensionsConfig): Long {
+        return try {
+            storage.get("${config.sourceUrl}_last_refresh_data", Long::class.java)
+        } catch (e: Exception) {
+            0L
+        }
+    }
+
+    fun setIntervalRefreshData(time: Long) {
+        storage.save(EXTRA_INTERVAL_REFRESH_DATA_KEY, time)
     }
 
     fun parseFromRemote(extension: ExtensionsConfig): List<ExtensionsChannel> {
@@ -183,7 +246,8 @@ class ParserExtensionsSource @Inject constructor(
                     .replace("\${offset}", "${System.currentTimeMillis() + OFFSET_TIME}"),
                 referer = referer,
                 userAgent = userAgent,
-                props = props
+                props = props,
+                extensionSourceId = extension.sourceUrl
             )
             Logger.d(this@ParserExtensionsSource, "Channel", message = "$channel")
             channel
@@ -209,6 +273,8 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     companion object {
+        private const val EXTRA_INTERVAL_REFRESH_DATA_KEY = "extra:interval_refresh_data"
+        private const val INTERVAL_REFRESH_DATA: Long = 60 * 60 * 1000
         private const val OFFSET_TIME = 2 * 60 * 60 * 1000
         private const val EXTRA_EXTENSIONS_KEY = "extra:extensions_key"
         private const val TAG_START = "#EXTM3U"
