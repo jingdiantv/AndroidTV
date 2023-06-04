@@ -5,6 +5,7 @@ import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.utils.trustEveryone
+import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import okhttp3.HttpUrl
@@ -21,22 +22,10 @@ class ParserExtensionsSource @Inject constructor(
     private val client: OkHttpClient,
     private val storage: IKeyValueStorage,
 ) {
-
-    fun parseFromRemoteRx(extension: ExtensionsConfig): Observable<List<ExtensionsChannel>> {
-        return Observable.create<List<ExtensionsChannel>> {
-            try {
-                it.onNext(parseFromRemote(extension))
-                it.onComplete()
-            } catch (e: Exception) {
-                it.onError(e)
-            }
+    fun parseFromRemoteMaybe(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
+        return Maybe.fromCallable {
+            return@fromCallable parseFromRemote(extension)
         }
-            .observeOn(Schedulers.io())
-            .subscribeOn(Schedulers.io())
-            .doOnNext {
-                Logger.d(this@ParserExtensionsSource, message = Gson().toJson(it))
-            }
-
     }
 
     fun parseFromRemote(extension: ExtensionsConfig): List<ExtensionsChannel> {

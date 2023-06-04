@@ -34,6 +34,7 @@ import com.kt.apps.media.mobile.utils.debounce
 import com.kt.apps.media.mobile.utils.fastSmoothScrollToPosition
 import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -114,38 +115,31 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         MutableStateFlow<List<TVChannel>>(emptyList())
     }
 
-    private val _extensionsChannelData by lazy {
-        MutableStateFlow<DataState<ExtensionResult>>(DataState.None())
-    }
-
     private val debounceOnScrollListener by lazy {
         debounce<Unit>(300, viewLifecycleOwner.lifecycleScope) {
             if (adapter.listItem.isEmpty()) {
                 return@debounce
             }
-            val item = (binding.mainChannelRecyclerView.layoutManager as LinearLayoutManager)
-                .findFirstVisibleItemPosition()
-            if (item == RecyclerView.NO_POSITION) {
-                return@debounce
-            }
-            val itemTitle = adapter.listItem[item].first
-            fun performSelected(id: Int) {
-                sectionAdapter.selectForId(id)
-            }
-            adapter.listItem[item].second.firstOrNull()?.let {
-                (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
-            }?.let {
-                _cacheMenuItem[it]
-            }?.run {
-                performSelected(this)
-            } ?: kotlin.run {
-                performSelected(
-                    if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                        R.id.radio
-                    } else {
-                        R.id.tv
-                    }
-                )
+            (mainRecyclerView.layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+                .let { if (it == NO_POSITION) (mainRecyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition() else it }
+                .takeIf { it != NO_POSITION }
+                ?.run {
+                    Log.d(TAG, "debounceOnScrollListener: $this")
+                    val id = findMenuIdByItemPosition(this)
+                    sectionAdapter.selectForId(id)
+                }
+        }
+    }
+
+    private fun findMenuIdByItemPosition(position: Int): Int {
+        return adapter.listItem[position].second.firstOrNull()?.let {
+            (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
+        }?.let { _cacheMenuItem[it] } ?: kotlin.run {
+            val itemTitle = adapter.listItem[position].first
+            if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+                R.id.radio
+            } else {
+                R.id.tv
             }
         }
     }
@@ -289,14 +283,16 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     override fun initAction(savedInstanceState: Bundle?) {
         binding.swipeRefreshLayout.setOnRefreshListener {
+            _tvChannelData.value = emptyList()
             tvChannelViewModel?.getListTVChannel(true)
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
         }
 
-        lifecycleScope.launch {
+        lifecycleScope.launchWhenStarted {
             _tvChannelData.collectLatest { tvChannel ->
+                delay(500)
                 reloadOriginalSource(tvChannel)
             }
         }
@@ -327,6 +323,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
         swipeRefreshLayout.isRefreshing = false
         adapter.onRefresh(grouped)
+        extensionsViewModel?.perExtensionChannelData?.replayCache?.forEach {
+            appendExtensionSource(it)
+        }
+        sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
         skeletonScreen.hide {
             scrollToPosition(0)
         }

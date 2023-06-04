@@ -48,12 +48,10 @@ class ExtensionsViewModel @Inject constructor(
         compositeDisposable.add(
             observableData.flatMapIterable { x -> x }
                 .flatMapMaybe {
-                    Maybe.fromObservable(
-                        parserExtensionsSource.parseFromRemoteRx(it)
+                    parserExtensionsSource.parseFromRemoteMaybe(it)
                             .map {result ->
                                 Pair(it, result)
                             }
-                    )
                 }
                 .subscribe ({
                     _perExtensionChannelData.value = mapOf(it.first to it.second)
