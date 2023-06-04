@@ -87,8 +87,8 @@ class FragmentExtensions : BaseRowSupportFragment() {
             roomDataBase.extensionsConfig()
                 .getExtensionById(extensionsID)
                 .subscribeOn(Schedulers.io())
-                .flatMap {
-                    parserExtensionsSource.parseFromRemoteRx(it)
+                .flatMapMaybe {
+                    parserExtensionsSource.parseFromRemoteMaybe(it)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ tvList ->

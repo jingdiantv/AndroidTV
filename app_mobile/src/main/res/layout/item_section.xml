@@ -13,7 +13,7 @@
     <LinearLayout
         android:id="@+id/item_container"
         android:layout_width="96dp"
-        android:layout_height="96dp"
+        android:layout_height="wrap_content"
         android:foreground="@drawable/ripple_selected_item"
         android:foregroundTint="@color/white"
         android:gravity="center"
@@ -23,9 +23,8 @@
 
         <ImageView
             android:id="@+id/logo"
-            android:layout_width="96dp"
-            android:layout_height="0dp"
-            android:layout_weight="3"
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
             android:contentDescription="TODO"
             android:src="@drawable/round_add_circle_outline_24"
             android:scaleType="fitCenter"
@@ -36,11 +35,12 @@
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingVertical="10dp"
+            android:paddingBottom="8dp"
             android:gravity="center"
             android:lines="2"
             android:ellipsize="middle"
             android:textColor="@color/disabled_color"
+            android:textSize="16sp"
             tools:text="Channel name" />
     </LinearLayout>
 </layout>

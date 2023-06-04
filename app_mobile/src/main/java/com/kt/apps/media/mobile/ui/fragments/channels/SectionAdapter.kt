@@ -76,7 +76,6 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
     }
 
     fun selectForId(id: Int) {
-        if (currentSelectedItem?.id == id) return
         listItem.firstOrNull {
             it.id == id
         }?.run {
