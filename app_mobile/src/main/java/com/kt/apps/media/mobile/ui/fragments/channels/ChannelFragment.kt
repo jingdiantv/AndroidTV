@@ -126,7 +126,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 ?.run {
                     Log.d(TAG, "debounceOnScrollListener: $this")
                     val id = findMenuIdByItemPosition(this)
-                    sectionAdapter.selectForId(id)
+                    val adapterId = sectionAdapter.selectForId(id)
+                    sectionRecyclerView.bringToFront()
+                    sectionRecyclerView.fastSmoothScrollToPosition(adapterId)
                 }
         }
     }
@@ -254,12 +256,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         playbackViewModel
         extensionsViewModel?.loadExtensionData()
 
-        with(binding.sectionRecyclerView) {
-            layoutManager = LinearLayoutManager(context).apply {
-                orientation = if (isLandscape) VERTICAL else HORIZONTAL
-            }
-        }
-
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
             layoutManager = LinearLayoutManager(this@ChannelFragment.context).apply {
@@ -275,7 +271,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
 
         sectionRecyclerView.apply {
-            adapter = sectionAdapter
+            adapter = this@ChannelFragment.sectionAdapter
+            layoutManager = LinearLayoutManager(context).apply {
+                orientation = if (isLandscape) VERTICAL else HORIZONTAL
+            }
         }
         sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
     }
@@ -315,6 +314,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         mainRecyclerView.clearOnScrollListeners()
     }
 
+    override fun onStart() {
+        super.onStart()
+        mainRecyclerView.addOnScrollListener(_onScrollListener)
+    }
+
     private fun reloadOriginalSource(data: List<TVChannel>) {
         val grouped = groupAndSort(data).map {
             Pair(
@@ -327,6 +331,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             appendExtensionSource(it)
         }
         sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
+        sectionRecyclerView.fastSmoothScrollToPosition(0)
         skeletonScreen.hide {
             scrollToPosition(0)
         }

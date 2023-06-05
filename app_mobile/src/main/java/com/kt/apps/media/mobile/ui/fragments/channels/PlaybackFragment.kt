@@ -167,13 +167,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
 
-
-        isPlaying.distinctUntilChanged { old, new ->  old == new }
-            .debounce(250)
-            .onEach {
-                if (!it) callback?.onPauseAction(userAction = false)
-            }.launchIn(lifecycleScope)
-
         isProcessing.distinctUntilChanged { old, new ->  old == new }
             .onEach {
                 Log.d(TAG, "isProcessing: $it")
@@ -201,6 +194,11 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                     }
                 }
             }.launchIn(lifecycleScope)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        exoPlayerManager.pause()
     }
 
     private fun playVideo(data: TVChannelLinkStream) {
