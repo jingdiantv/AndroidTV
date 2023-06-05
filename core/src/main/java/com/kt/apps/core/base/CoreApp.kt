@@ -7,10 +7,12 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.kt.apps.core.Constants
+import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.logging.Logger
 import dagger.android.DaggerApplication
 
 abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
+    abstract val coreComponents: CoreComponents
 
     override fun onCreate() {
         super.onCreate()
