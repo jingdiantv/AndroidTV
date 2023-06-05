@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.CoreApp
@@ -31,6 +32,7 @@ interface CoreComponents {
     fun roomDatabase(): RoomDataBase
     fun firebaseRemoteConfig(): FirebaseRemoteConfig
     fun firebaseDatabase(): FirebaseDatabase
+    fun fireStore(): FirebaseFirestore
     fun firebaseAnalytics(): FirebaseAnalytics
     fun sharedPreferences(): SharedPreferences
     fun okHttpClient(): OkHttpClient
