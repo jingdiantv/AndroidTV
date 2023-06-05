@@ -1,15 +1,15 @@
 package com.kt.apps.core.tv.usecase
 
-import com.google.gson.Gson
 import com.kt.apps.core.base.rxjava.BaseUseCase
-import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.datasource.ITVDataSource
+import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import io.reactivex.rxjava3.core.Observable
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
+@TVScope
 class GetListTVChannel @Inject constructor(
     private val tvDataSources: Map<TVDataSourceFrom, @JvmSuppressWildcards ITVDataSource>,
 ) : BaseUseCase<List<TVChannel>>() {
