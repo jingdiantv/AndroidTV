@@ -70,7 +70,7 @@ class DashboardTVChannelPresenter : Presenter() {
 
             is ExtensionsChannel -> {
                 cardView.titleText = item.tvChannelName
-                cardView.contentText = null
+                cardView.contentText = ""
                 cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
                 updateCardBackgroundColor(cardView, false)
                 cardView.mainImageView.setBackgroundResource(com.kt.apps.core.R.drawable.channel_bg)

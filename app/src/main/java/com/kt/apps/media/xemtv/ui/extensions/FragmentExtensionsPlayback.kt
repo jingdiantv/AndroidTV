@@ -172,7 +172,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                         null,
                         referer = tvChannel.referer,
                         linkStream = listOf(realUrl),
-                        true,
+                        false,
                         isHls = realUrl.contains("m3u8"),
                         headers = tvChannel.props
                     )
@@ -182,7 +182,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                         null,
                         referer = tvChannel.referer,
                         linkStream = listOf(linkToPlay),
-                        true,
+                        false,
                         isHls = linkToPlay.contains("m3u8"),
                         headers = tvChannel.props
                     )
@@ -195,7 +195,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 null,
                 referer = tvChannel.referer,
                 linkStream = listOf(linkToPlay),
-                true,
+                false,
                 isHls = linkToPlay.contains("m3u8"),
                 headers = tvChannel.props
             )

@@ -16,3 +16,8 @@ interface IKeyCodeHandler {
     fun onKeyCodePlay()
     fun onKeyCodeMenu()
 }
+
+interface IMediaKeycodeHandler : IKeyCodeHandler {
+    fun onKeyCodeForward()
+    fun onKeyCodeRewind()
+}

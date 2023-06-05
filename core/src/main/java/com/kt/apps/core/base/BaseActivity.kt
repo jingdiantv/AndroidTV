@@ -14,7 +14,6 @@ import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.FragmentActivity
@@ -250,6 +249,23 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
             KeyEvent.KEYCODE_INFO -> {
 
             }
+
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                iKeyCodeHandler.takeIf {
+                    it is IMediaKeycodeHandler
+                }?.let {
+                    (it as IMediaKeycodeHandler).onKeyCodeForward()
+                }
+            }
+
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                iKeyCodeHandler.takeIf {
+                    it is IMediaKeycodeHandler
+                }?.let {
+                    (it as IMediaKeycodeHandler).onKeyCodeRewind()
+                }
+            }
+
 
             KeyEvent.KEYCODE_MENU -> {
                 iKeyCodeHandler.onKeyCodeMenu()
