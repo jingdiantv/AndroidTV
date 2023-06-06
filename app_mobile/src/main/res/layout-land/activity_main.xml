@@ -59,24 +59,6 @@
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
         </LinearLayout>
 
-
-        <FrameLayout
-            android:id="@+id/progress_dialog"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:alpha="0"
-            android:background="#30ffffff"
-            android:visibility="visible">
-
-            <com.pnikosis.materialishprogress.ProgressWheel
-                android:id="@+id/progressWheel"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_gravity="center"
-                wheel:matProg_progressIndeterminate="true" />
-        </FrameLayout>
-
     </FrameLayout>
 
 </layout>

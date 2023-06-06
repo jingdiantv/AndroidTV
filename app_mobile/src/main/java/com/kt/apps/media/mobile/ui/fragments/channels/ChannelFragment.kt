@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewTreeObserver
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -54,10 +55,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     private val isLandscape: Boolean
         get() = resources.getBoolean(R.bool.is_landscape)
 
-    private val progressHelper by lazy {
-        ProgressHelper(this.context)
-    }
-
     private val defaultSection by lazy {
         arrayListOf<SectionItem>(
             SectionItemElement.MenuItem(
@@ -86,9 +83,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     //Views
-    private val progressDialog by lazy {
-        binding.progressDialog
-    }
     private val swipeRefreshLayout by lazy {
         binding.swipeRefreshLayout
     }
@@ -196,7 +190,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         activity?.run {
             ViewModelProvider(this, factory)[TVChannelViewModel::class.java].apply {
                 this.tvChannelLiveData.observe(this@ChannelFragment, listTVChannelObserver)
-                this.tvWithLinkStreamLiveData.observe(this@ChannelFragment, tvChannelStreamObserver)
             }
         }
     }
@@ -212,18 +205,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             when (dataState) {
                 is DataState.Success -> _tvChannelData.tryEmit(dataState.data)
                 else -> {}
-            }
-        }
-    }
-
-    private val tvChannelStreamObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
-        Observer { dataState ->
-            dataState.takeIf { it is DataState.Loading }.apply {
-                progressDialog.fadeIn {
-                    progressHelper.spin()
-                }
-            } ?: progressDialog.fadeOut {
-                progressHelper.stopSpinning()
             }
         }
     }
@@ -251,6 +232,14 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
     private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
 
+    private val victim: ViewTreeObserver.OnGlobalLayoutListener by lazy {
+        ViewTreeObserver.OnGlobalLayoutListener {
+            adapter.spanCount =
+                3.coerceAtLeast((mainRecyclerView.width / 170 / resources.displayMetrics.scaledDensity).toInt())
+            forceUploadViewIfNeeded()
+            mainRecyclerView.viewTreeObserver.removeOnGlobalLayoutListener(victim)
+        }
+    }
     override fun initView(savedInstanceState: Bundle?) {
         tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
         playbackViewModel
@@ -264,10 +253,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
             setHasFixedSize(true)
             setItemViewCacheSize(9)
-            viewTreeObserver.addOnGlobalLayoutListener {
-                this@ChannelFragment.adapter.spanCount =
-                    3.coerceAtLeast((width / 170 / resources.displayMetrics.scaledDensity).toInt())
-            }
+            viewTreeObserver.addOnGlobalLayoutListener(victim)
         }
 
         sectionRecyclerView.apply {
@@ -319,6 +305,14 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         mainRecyclerView.addOnScrollListener(_onScrollListener)
     }
 
+    private fun forceUploadViewIfNeeded() {
+        with(mainRecyclerView) {
+            if ((adapter?.itemCount ?: 0) > 0) {
+                adapter = null
+                adapter = this@ChannelFragment.adapter
+            }
+        }
+    }
     private fun reloadOriginalSource(data: List<TVChannel>) {
         val grouped = groupAndSort(data).map {
             Pair(
@@ -356,8 +350,8 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
 
     private fun onChangeItem(item: SectionItem): Boolean {
-        val currentSelected = sectionAdapter.currentSelectedItem
-        if (item.id == currentSelected?.id) return false
+//        val currentSelected = sectionAdapter.currentSelectedItem
+//        if (item.id == currentSelected?.id) return false
 
         when (item.id) {
             R.id.radio -> scrollToPosition(8)
