@@ -140,6 +140,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         useCatchup: Boolean = false
     ) {
         lastExpandUrlTask?.let { disposable.remove(it) }
+        disposable.clear()
         val linkToPlay = if (!useCatchup) {
             tvChannel.tvStreamLink
         } else {
@@ -159,12 +160,20 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         Logger.d(
             this,
             "LinkPlayVideo",
-            Gson().toJson(linkToPlay)
+            linkToPlay
+        )
+
+        prepare(
+            tvChannel.tvChannelName,
+            null,
+            false
         )
 
         if (linkToPlay.isShortLink()) {
-            lastExpandUrlTask = Observable.just(linkToPlay.expandUrl())
-                .observeOn(Schedulers.io())
+            lastExpandUrlTask = Observable.fromCallable {
+                linkToPlay.expandUrl()
+            }
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     playVideo(
@@ -190,17 +199,34 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             disposable.add(lastExpandUrlTask!!)
 
         } else {
-            playVideo(
-                tvChannel.tvChannelName,
-                null,
-                referer = tvChannel.referer,
-                linkStream = listOf(linkToPlay),
-                false,
-                isHls = linkToPlay.contains("m3u8"),
-                headers = tvChannel.props
-            )
-        }
+            disposable.add(Observable.fromCallable {
+                linkToPlay.expandUrl()
+            }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ realUrl ->
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        null,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(realUrl),
+                        false,
+                        isHls = realUrl.contains("m3u8"),
+                        headers = tvChannel.props
+                    )
+                }, {
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        null,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(linkToPlay),
+                        false,
+                        isHls = linkToPlay.contains("m3u8"),
+                        headers = tvChannel.props
+                    )
+                }))
 
+        }
     }
 
     companion object {

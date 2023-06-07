@@ -11,6 +11,7 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
+import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
@@ -141,7 +142,9 @@ abstract class AbstractExoPlayerManager(
         headers: Map<String, String>? = null
     ): List<MediaSource> {
         val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
-        val defaultHeader = getDefaultHeaders(data.first().referer, data.first())
+        val defaultHeader = getDefaultHeaders(data.first().referer.ifEmpty {
+            data.first().m3u8Link.getBaseUrl()
+        }, data.first())
         headers?.let { prop -> defaultHeader.putAll(prop) }
         dfSource.setKeepPostFor302Redirects(true)
         dfSource.setAllowCrossProtocolRedirects(true)
@@ -150,36 +153,24 @@ abstract class AbstractExoPlayerManager(
         }
         dfSource.setUserAgent(defaultHeader["user-agent"])
         dfSource.setDefaultRequestProperties(defaultHeader)
-        return data.map { it.m3u8Link }.map {
+        return data.map { it.m3u8Link.trim() }.map {
             if (isHls) {
-                DefaultMediaSourceFactory(dfSource)
-                    .setServerSideAdInsertionMediaSourceFactory(DefaultMediaSourceFactory(dfSource))
+                HlsMediaSource.Factory(dfSource)
                     .createMediaSource(MediaItem.fromUri(it.trim()))
             } else if (it.contains(".mpd")) {
                 val uriBuilder = Uri.parse(it.trim()).buildUpon()
-
-                headers?.get("inputstream.adaptive.license_key")?.let { otherProps ->
-                    val jsonObject = JSONObject(otherProps)
-                    val keys = jsonObject.optJSONArray("keys") ?: JSONArray()
-
-                    if (keys.length() > 0) {
-                        keys.optJSONObject(0)?.let {
-                            if (it.has("kty")) {
-                                uriBuilder.appendQueryParameter("kty", it.optString("kty"))
-                            }
-                            if (it.has("kid")) {
-                                uriBuilder.appendQueryParameter("kid", it.optString("kid"))
-                            }
-                            if (it.has("k")) {
-                                uriBuilder.appendQueryParameter("k", it.optString("k"))
-                            }
-                        }
-                    }
-                }
-
                 DashMediaSource.Factory(dfSource)
                     .createMediaSource(
                         MediaItem.Builder()
+                            .setDrmConfiguration(
+                                MediaItem.DrmConfiguration.Builder(C.CLEARKEY_UUID)
+                                    .setLicenseUri(headers?.get("referer")?.ifEmpty {
+                                        it
+                                    } ?: it)
+                                    .setMultiSession(true)
+                                    .setLicenseRequestHeaders(headers ?: mapOf())
+                                    .build()
+                            )
                             .setUri(uriBuilder.build())
                             .build()
                     )
