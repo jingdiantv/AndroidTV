@@ -1,30 +1,12 @@
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
-
 package com.kt.apps.core.base.leanback;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnLayoutChangeListener;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,7 +18,6 @@ import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.Row;
-import androidx.leanback.widget.RowHeaderPresenter;
 import androidx.leanback.widget.SectionRow;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
@@ -53,32 +34,12 @@ import com.kt.apps.core.R;
  * Use {@link #setPresenterSelector(PresenterSelector)} in subclass constructor to customize
  * Presenters. App may override {@link BrowseSupportFragment#onCreateHeadersSupportFragment()}.
  */
-@SuppressLint("RestrictedApi")
 public class HeadersSupportFragment extends BaseRowSupportFragmentLeanback {
-
-    /**
-     * Interface definition for a callback to be invoked when a header item is clicked.
-     */
     public interface OnHeaderClickedListener {
-        /**
-         * Called when a header item has been clicked.
-         *
-         * @param viewHolder Row ViewHolder object corresponding to the selected Header.
-         * @param row        Row object corresponding to the selected Header.
-         */
         void onHeaderClicked(RowHeaderPresenter.ViewHolder viewHolder, Row row);
     }
 
-    /**
-     * Interface definition for a callback to be invoked when a header item is selected.
-     */
     public interface OnHeaderViewSelectedListener {
-        /**
-         * Called when a header item has been selected.
-         *
-         * @param viewHolder Row ViewHolder object corresponding to the selected Header.
-         * @param row        Row object corresponding to the selected Header.
-         */
         void onHeaderSelected(RowHeaderPresenter.ViewHolder viewHolder, Row row);
     }
 
@@ -86,8 +47,6 @@ public class HeadersSupportFragment extends BaseRowSupportFragmentLeanback {
     OnHeaderClickedListener mOnHeaderClickedListener;
     private boolean mHeadersEnabled = true;
     private boolean mHeadersGone = false;
-    private int mBackgroundColor;
-    private boolean mBackgroundColorSet;
 
     private static final PresenterSelector sHeaderPresenter = new ClassPresenterSelector()
             .addClassPresenter(DividerRow.class, new DividerPresenter())
@@ -139,22 +98,14 @@ public class HeadersSupportFragment extends BaseRowSupportFragmentLeanback {
                                     (Row) viewHolder.getItem());
                         }
                     });
-                    if (mWrapper != null) {
-                        viewHolder.itemView.addOnLayoutChangeListener(sLayoutChangeListener);
-                    } else {
-                        headerView.addOnLayoutChangeListener(sLayoutChangeListener);
-                    }
+                    viewHolder.itemView.addOnLayoutChangeListener(sLayoutChangeListener);
                 }
 
             };
 
-    static OnLayoutChangeListener sLayoutChangeListener = new OnLayoutChangeListener() {
-        @Override
-        public void onLayoutChange(View v, int left, int top, int right, int bottom,
-                                   int oldLeft, int oldTop, int oldRight, int oldBottom) {
-            v.setPivotX(v.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL ? v.getWidth() : 0);
-            v.setPivotY(v.getMeasuredHeight() / 2);
-        }
+    static OnLayoutChangeListener sLayoutChangeListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+        v.setPivotX(v.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL ? v.getWidth() : 0);
+        v.setPivotY((float) v.getMeasuredHeight() / 2);
     };
 
     @Override
@@ -169,22 +120,23 @@ public class HeadersSupportFragment extends BaseRowSupportFragmentLeanback {
         if (listView == null) {
             return;
         }
-        if (mBackgroundColorSet) {
-            listView.setBackgroundColor(mBackgroundColor);
-            updateFadingEdgeToBrandColor(mBackgroundColor);
-        } else {
-            Drawable d = listView.getBackground();
-            if (d instanceof ColorDrawable) {
-                updateFadingEdgeToBrandColor(((ColorDrawable) d).getColor());
-            }
-        }
         updateListViewVisibility();
+        TextView appVersionTxt = view.findViewById(R.id.app_version);
+        if (appVersionTxt != null) {
+            appVersionTxt.setText(mAppVersion);
+        }
+    }
+
+    private String mAppVersion;
+
+    public void setAppVersion(String appVersion) {
+        this.mAppVersion = appVersion;
     }
 
     private void updateListViewVisibility() {
         final VerticalGridView listView = getVerticalGridView();
         if (listView != null) {
-            getView().setVisibility(mHeadersGone ? View.GONE : View.VISIBLE);
+            requireView().setVisibility(mHeadersGone ? View.GONE : View.VISIBLE);
             if (!mHeadersGone) {
                 if (mHeadersEnabled) {
                     listView.setChildrenVisibility(View.VISIBLE);
@@ -240,26 +192,6 @@ public class HeadersSupportFragment extends BaseRowSupportFragmentLeanback {
         ItemBridgeAdapter adapter = getBridgeAdapter();
         adapter.setAdapterListener(mAdapterListener);
         adapter.setWrapper(mWrapper);
-    }
-
-    void setBackgroundColor(int color) {
-        mBackgroundColor = color;
-        mBackgroundColorSet = true;
-
-        if (getVerticalGridView() != null) {
-            getVerticalGridView().setBackgroundColor(mBackgroundColor);
-            updateFadingEdgeToBrandColor(mBackgroundColor);
-        }
-    }
-
-    private void updateFadingEdgeToBrandColor(int backgroundColor) {
-        View fadingView = getView().findViewById(R.id.fade_out_edge);
-        Drawable background = fadingView.getBackground();
-        if (background instanceof GradientDrawable) {
-            background.mutate();
-            ((GradientDrawable) background).setColors(
-                    new int[]{Color.TRANSPARENT, backgroundColor});
-        }
     }
 
     @Override

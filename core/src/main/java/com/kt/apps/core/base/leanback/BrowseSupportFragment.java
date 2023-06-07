@@ -29,6 +29,7 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -50,7 +51,6 @@ import androidx.leanback.widget.PageRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.Row;
-import androidx.leanback.widget.RowHeaderPresenter;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.TitleViewAdapter;
 import androidx.leanback.widget.VerticalGridView;
@@ -322,7 +322,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
      * {@link BrowseSupportFragment}.
      */
     private final class FragmentHostImpl implements FragmentHost {
-        boolean mShowTitleView = true;
+        boolean mShowTitleView = false;
 
         FragmentHostImpl() {
         }
@@ -451,7 +451,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
             return mFragmentHost;
         }
 
-        void setFragmentHost(FragmentHostImpl fragmentHost) {
+        public void setFragmentHost(FragmentHostImpl fragmentHost) {
             this.mFragmentHost = fragmentHost;
         }
     }
@@ -704,7 +704,6 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     private PresenterSelector mAdapterPresenter;
 
     private int mHeadersState = HEADERS_ENABLED;
-    private int mBrandColor = Color.TRANSPARENT;
     private boolean mBrandColorSet;
 
     public BrowseFrameLayout mBrowseFrame;
@@ -757,31 +756,6 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         args.putString(ARG_TITLE, title);
         args.putInt(ARG_HEADERS_STATE, headersState);
         return args;
-    }
-
-    /**
-     * Sets the brand color for the browse fragment. The brand color is used as
-     * the primary color for UI elements in the browse fragment. For example,
-     * the background color of the headers fragment uses the brand color.
-     *
-     * @param color The color to use as the brand color of the fragment.
-     */
-    public void setBrandColor(@ColorInt int color) {
-        mBrandColor = color;
-        mBrandColorSet = true;
-
-        if (mHeadersSupportFragment != null) {
-            mHeadersSupportFragment.setBackgroundColor(mBrandColor);
-        }
-    }
-
-    /**
-     * Returns the brand color for the browse fragment.
-     * The default is transparent.
-     */
-    @ColorInt
-    public int getBrandColor() {
-        return mBrandColor;
     }
 
     /**
@@ -934,6 +908,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
      *
      * @return Currently bound HeadersSupportFragment or null if HeadersSupportFragment has not been created yet.
      */
+    @Nullable
     public HeadersSupportFragment getHeadersSupportFragment() {
         return mHeadersSupportFragment;
     }
@@ -1295,10 +1270,6 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         mScaleFrameLayout = (ScaleFrameLayout) root.findViewById(R.id.scale_frame);
         mScaleFrameLayout.setPivotX(0);
         mScaleFrameLayout.setPivotY(mContainerListAlignTop);
-
-        if (mBrandColorSet) {
-            mHeadersSupportFragment.setBackgroundColor(mBrandColor);
-        }
 
         mSceneWithHeaders = TransitionHelper.createScene(mBrowseFrame, new Runnable() {
             @Override
@@ -1781,7 +1752,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
                     break;
             }
             if (mHeadersSupportFragment != null) {
-                mHeadersSupportFragment.setHeadersGone(!mCanShowHeaders);
+                mHeadersSupportFragment.setHeadersGone(true);
             }
         }
     }

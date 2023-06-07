@@ -4,8 +4,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.leanback.widget.*
+import androidx.leanback.widget.HeaderItem
+import androidx.leanback.widget.Presenter
+import androidx.leanback.widget.PresenterSelector
+import androidx.leanback.widget.Row
+import androidx.leanback.widget.RowHeaderView
 import com.kt.apps.core.GlideApp
+import com.kt.apps.core.base.leanback.RowHeaderPresenter
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.media.xemtv.R
 
@@ -14,12 +19,11 @@ typealias HeaderItemLongClickListener = ((headerId: Long) -> Unit)
 class DashboardIconHeaderPresenterSelector : PresenterSelector() {
     var onHeaderLongClickedListener: HeaderItemLongClickListener? = null
     override fun getPresenter(item: Any?): Presenter {
-        return HeaderIconPresenter(onHeaderLongClickedListener).apply {
-        }
+        return HeaderIconPresenter(onHeaderLongClickedListener)
     }
 
     class HeaderIconPresenter(
-        val onHeaderLongClickedListener: HeaderItemLongClickListener? = null
+        private val onHeaderLongClickedListener: HeaderItemLongClickListener? = null
     ) : RowHeaderPresenter() {
         override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
             val view = LayoutInflater.from(parent!!.context)

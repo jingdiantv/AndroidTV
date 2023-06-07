@@ -34,6 +34,10 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
+    private val filterGroup by lazy {
+        requireArguments().getString("filterGroup")
+    }
+
 
     private val tvChannelViewModel by lazy {
         ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
@@ -81,7 +85,11 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     mRowsAdapter.clear()
                     val channelWithCategory = it.data
                         .filter {
-                            !it.isRadio
+                            if (filterGroup == "Tất cả") {
+                                !it.isRadio
+                            } else {
+                                it.tvGroup == filterGroup && !it.isRadio
+                            }
                         }
                         .groupBy {
                             it.tvGroup

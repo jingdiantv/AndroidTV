@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv.presenter
 
+import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import androidx.leanback.widget.ImageCardView
@@ -10,7 +11,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
 
-import com.kt.apps.core.Constants
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.loadImgByDrawableIdResName
@@ -27,22 +27,27 @@ class DashboardTVChannelPresenter : Presenter() {
     private var sSelectedBackgroundColor: Int by Delegates.notNull()
     private var sDefaultBackgroundColor: Int by Delegates.notNull()
 
+
+    class TVImageCardView(context: Context) : ImageCardView(ContextThemeWrapper(context, R.style.ImageCardViewStyleTitle)) {
+        override fun setSelected(selected: Boolean) {
+            findViewById<TextView>(androidx.leanback.R.id.title_text)
+                .background = null
+            background = null
+            infoAreaBackground = null
+            super.setSelected(selected)
+        }
+
+        override fun invalidate() {
+            super.invalidate()
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         sDefaultBackgroundColor = Color.TRANSPARENT
         sSelectedBackgroundColor = Color.TRANSPARENT
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
 
-        val wrapper = ContextThemeWrapper(parent.context, R.style.ImageCardViewStyleTitle)
-        val cardView:ImageCardView = object : ImageCardView(wrapper) {
-            override fun setSelected(selected: Boolean) {
-                updateCardBackgroundColor(this, selected)
-                super.setSelected(selected)
-            }
-
-            override fun invalidate() {
-                super.invalidate()
-            }
-        }
+        val cardView:ImageCardView = TVImageCardView(parent.context)
 
 
         cardView.isFocusable = true
@@ -75,13 +80,8 @@ class DashboardTVChannelPresenter : Presenter() {
                 updateCardBackgroundColor(cardView, false)
                 cardView.mainImageView.setBackgroundResource(com.kt.apps.core.R.drawable.channel_bg)
                 cardView.let { imgView ->
-                    val channelName = item.tvChannelName
-                    val name = Constants.mapChannel[channelName]
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
-                    name?.let {
-                        imgView.mainImageView
-                            .loadImgByDrawableIdResName(it, item.logoChannel)
-                    } ?: imgView.mainImageView.loadImgByUrl(item.logoChannel)
+                    imgView.mainImageView.loadImgByUrl(item.logoChannel.trim())
                 }
             }
         }
