@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
+import android.widget.Toast
+import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -34,6 +36,7 @@ import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.utils.debounce
 import com.kt.apps.media.mobile.utils.fastSmoothScrollToPosition
 import com.kt.apps.media.mobile.utils.screenHeight
+import com.kt.apps.media.mobile.utils.screenWidth
 import com.kt.skeleton.KunSkeleton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -98,6 +101,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     private val skeletonScreen by lazy {
         KunSkeleton.bind(mainRecyclerView)
             .adapter(adapter)
+            .itemCount(10)
             .recyclerViewLayoutItem(
                 R.layout.item_row_channel_skeleton,
                 R.layout.item_channel_skeleton
@@ -231,17 +235,8 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
     private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
-
-    private val victim: ViewTreeObserver.OnGlobalLayoutListener by lazy {
-        ViewTreeObserver.OnGlobalLayoutListener {
-            adapter.spanCount =
-                3.coerceAtLeast((mainRecyclerView.width / 170 / resources.displayMetrics.scaledDensity).toInt())
-            forceUploadViewIfNeeded()
-            mainRecyclerView.viewTreeObserver.removeOnGlobalLayoutListener(victim)
-        }
-    }
     override fun initView(savedInstanceState: Bundle?) {
-        tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
+        tvChannelViewModel
         playbackViewModel
         extensionsViewModel?.loadExtensionData()
 
@@ -253,7 +248,12 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
             setHasFixedSize(true)
             setItemViewCacheSize(9)
-            viewTreeObserver.addOnGlobalLayoutListener(victim)
+            doOnPreDraw {
+                val spanCount = 3.coerceAtLeast((mainRecyclerView.measuredWidth / 170 / resources.displayMetrics.scaledDensity).toInt())
+                this@ChannelFragment.adapter.spanCount = spanCount
+
+                Toast.makeText(this@ChannelFragment.requireContext(), "$spanCount ${mainRecyclerView.measuredWidth}", Toast.LENGTH_LONG).show()
+            }
         }
 
         sectionRecyclerView.apply {
@@ -263,12 +263,15 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
         }
         sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
+        skeletonScreen.run()
+        tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
     }
 
 
     override fun initAction(savedInstanceState: Bundle?) {
         binding.swipeRefreshLayout.setOnRefreshListener {
             _tvChannelData.value = emptyList()
+            skeletonScreen.run()
             tvChannelViewModel?.getListTVChannel(true)
         }
         with(binding.mainChannelRecyclerView) {
@@ -303,15 +306,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     override fun onStart() {
         super.onStart()
         mainRecyclerView.addOnScrollListener(_onScrollListener)
-    }
-
-    private fun forceUploadViewIfNeeded() {
-        with(mainRecyclerView) {
-            if ((adapter?.itemCount ?: 0) > 0) {
-                adapter = null
-                adapter = this@ChannelFragment.adapter
-            }
-        }
     }
     private fun reloadOriginalSource(data: List<TVChannel>) {
         val grouped = groupAndSort(data).map {
@@ -449,6 +443,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                         if (o1.first == TVChannelGroup.VOH.value) 0 else -1
                     else 1
                 })
+                .map {
+                    return@map Pair(TVChannelGroup.valueOf(it.first).value, it.second)
+                }
             ExtensionsChannel::class -> list.groupBy { (it as ExtensionsChannel).tvGroup }
                 .toList()
                 .sortedWith(Comparator { o1, o2 ->

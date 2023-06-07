@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.kt.apps.media.mobile.xemtv",
+  "variantName": "playStoreRelease",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 23052301,
+      "versionName": "23052301",
+      "outputFile": "iMedia.Mobile.23052301-playStore-release.apk"
+    }
+  ],
+  "elementType": "File"
+}
