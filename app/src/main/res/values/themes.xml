@@ -20,4 +20,11 @@
         <item name="colorControlActivated">#CF9500</item>
         <item name="colorPrimary">#CF9500</item>
     </style>
+
+    <style name="TabTextAppearance" parent="TextAppearance.Design.Tab">
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="TextAppearancePrefixText" parent="TextAppearance.MaterialComponents.Headline5">
+    </style>
 </resources>
