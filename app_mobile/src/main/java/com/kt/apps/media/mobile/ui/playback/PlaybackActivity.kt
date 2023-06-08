@@ -24,7 +24,7 @@ import com.kt.apps.core.utils.visible
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityPlaybackBinding
 import com.kt.apps.media.mobile.ui.main.TVChannelAdapter
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
 

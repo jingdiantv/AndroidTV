@@ -56,20 +56,6 @@
 
     <Transition
         android:id="@+id/transition_show_video"
-        app:constraintSetEnd="@id/end"
         app:constraintSetStart="@+id/start" />
 
-    <Transition
-        android:id="@+id/collapse_show_video"
-        app:constraintSetStart="@id/start"
-        app:constraintSetEnd="@id/fullscreen"
-        app:duration="1000"
-        app:motionInterpolator="linear"
-        >
-        <OnSwipe
-            app:dragDirection="dragDown"
-            app:touchAnchorId="@id/fragment_container_playback"
-            app:touchAnchorSide="bottom"
-            />
-    </Transition>
 </MotionScene>

@@ -16,7 +16,7 @@ import kotlin.math.abs
 
 interface ComplexLayoutHandler {
     val motionLayout: MotionLayout?
-
+    var onPlaybackStateChange: (PlaybackState) -> Unit
     fun onStartLoading()
     fun onLoadedVideoSuccess(videoSize: VideoSize)
     fun onOpenFullScreen()
@@ -34,6 +34,7 @@ class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActiv
         object FULLSCREEN: State()
     }
 
+
     private val swipeThreshold = 100
     private val velocitySwipeThreshold = 100
 
@@ -45,6 +46,8 @@ class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActiv
 
     override val motionLayout: MotionLayout?
         get() = weakActivity.get()?.binding?.complexMotionLayout
+
+    override var onPlaybackStateChange: (PlaybackState) -> Unit = { }
 
     private var state: State = State.IDLE
     private var cachedVideoSize: VideoSize? = null
@@ -71,6 +74,46 @@ class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActiv
         })
     }
 
+    init {
+        motionLayout?.setTransitionListener(object : MotionLayout.TransitionListener {
+            override fun onTransitionStarted(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int
+            ) {
+                Log.d(TAG, "onTransitionStarted: $startId $endId")
+            }
+
+            override fun onTransitionChange(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int,
+                progress: Float
+            ) {
+                Log.d(TAG, "onTransitionChange: $startId $endId")
+            }
+
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                Log.d(TAG, "onTransitionCompleted: $currentId ${R.id.fullscreen}")
+                onPlaybackStateChange(when(currentId) {
+                    R.id.fullscreen -> PlaybackState.Fullscreen
+                    R.id.end -> PlaybackState.Minimal
+                    R.id.start -> PlaybackState.Invisible
+                    else -> PlaybackState.Invisible
+                })
+            }
+
+            override fun onTransitionTrigger(
+                motionLayout: MotionLayout?,
+                triggerId: Int,
+                positive: Boolean,
+                progress: Float
+            ) {
+                Log.d(TAG, "onTransitionChange: $triggerId")
+            }
+
+        })
+    }
     override fun onTouchEvent(ev: MotionEvent) {
         gestureDetector.onTouchEvent(ev)
     }
@@ -108,9 +151,11 @@ class PortraitLayoutHandler(private val weakActivity: WeakReference<ComplexActiv
         }
     }
 
-    override fun onLoadedVideoSuccess(videoSize: VideoSize) {
-        this.state = State.SUCCESS(videoSize)
-        calculateCurrentSize(videoSize)
+    override fun onLoadedVideoSuccess(videoSize: VideoSize) {   
+        if (this.state != State.FULLSCREEN) {
+            this.state = State.SUCCESS(videoSize)
+            calculateCurrentSize(videoSize)
+        }
     }
 
 

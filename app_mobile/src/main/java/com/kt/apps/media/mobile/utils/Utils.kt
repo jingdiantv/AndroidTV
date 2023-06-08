@@ -12,6 +12,9 @@ import android.widget.ImageButton
 import androidx.annotation.CheckResult
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
+import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
 import kotlinx.coroutines.*
@@ -130,4 +133,25 @@ suspend fun Animator.awaitEnd() = suspendCancellableCoroutine<Unit> { cont ->
             }
         }
     })
+}
+
+inline fun <reified T> groupAndSort(list: List<T>): List<Pair<String, List<T>>> {
+    return when (T::class) {
+        TVChannel::class -> list.groupBy { (it as TVChannel).tvGroup }
+            .toList()
+            .sortedWith(Comparator { o1, o2 ->
+                return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
+                    if (o1.first == TVChannelGroup.VOH.value) 0 else -1
+                else 1
+            })
+            .map {
+                return@map Pair(TVChannelGroup.valueOf(it.first).value, it.second)
+            }
+        ExtensionsChannel::class -> list.groupBy { (it as ExtensionsChannel).tvGroup }
+            .toList()
+            .sortedWith(Comparator { o1, o2 ->
+                return@Comparator o1.first.compareTo(o2.first)
+            })
+        else -> emptyList()
+    }
 }

@@ -4,46 +4,42 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.ViewTreeObserver
-import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
-import cn.pedant.SweetAlert.ProgressHelper
+import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
-import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.TAG
-import com.kt.apps.core.utils.fadeIn
-import com.kt.apps.core.utils.fadeOut
+import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.mobile.BuildConfig
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
+import com.kt.apps.media.mobile.ui.fragments.models.ExtensionsViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.ChannelElement
-import com.kt.apps.media.mobile.ui.main.IChannelElement
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.utils.debounce
 import com.kt.apps.media.mobile.utils.fastSmoothScrollToPosition
+import com.kt.apps.media.mobile.utils.groupAndSort
 import com.kt.apps.media.mobile.utils.screenHeight
-import com.kt.apps.media.mobile.utils.screenWidth
 import com.kt.skeleton.KunSkeleton
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
-
-typealias ResultData = Pair<List<TVChannel>, ExtensionResult>
 
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
@@ -125,7 +121,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                     Log.d(TAG, "debounceOnScrollListener: $this")
                     val id = findMenuIdByItemPosition(this)
                     val adapterId = sectionAdapter.selectForId(id)
-                    sectionRecyclerView.bringToFront()
                     sectionRecyclerView.fastSmoothScrollToPosition(adapterId)
                 }
         }
@@ -249,10 +244,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             setHasFixedSize(true)
             setItemViewCacheSize(9)
             doOnPreDraw {
-                val spanCount = 3.coerceAtLeast((mainRecyclerView.measuredWidth / 170 / resources.displayMetrics.scaledDensity).toInt())
-                this@ChannelFragment.adapter.spanCount = spanCount
 
-                Toast.makeText(this@ChannelFragment.requireContext(), "$spanCount ${mainRecyclerView.measuredWidth}", Toast.LENGTH_LONG).show()
+                val spanCount = 3.coerceAtLeast((mainRecyclerView.measuredWidth / 220.dpToPx()))
+                this@ChannelFragment.adapter.spanCount = spanCount
             }
         }
 
@@ -344,8 +338,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
 
     private fun onChangeItem(item: SectionItem): Boolean {
-//        val currentSelected = sectionAdapter.currentSelectedItem
-//        if (item.id == currentSelected?.id) return false
 
         when (item.id) {
             R.id.radio -> scrollToPosition(8)
@@ -432,26 +424,5 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             defaultSection + extraSection + addExtensionSection,
             notifyDataSetChange = true
         )
-    }
-
-    private inline fun <reified T> groupAndSort(list: List<T>): List<Pair<String, List<T>>> {
-        return when (T::class) {
-            TVChannel::class -> list.groupBy { (it as TVChannel).tvGroup }
-                .toList()
-                .sortedWith(Comparator { o1, o2 ->
-                    return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
-                        if (o1.first == TVChannelGroup.VOH.value) 0 else -1
-                    else 1
-                })
-                .map {
-                    return@map Pair(TVChannelGroup.valueOf(it.first).value, it.second)
-                }
-            ExtensionsChannel::class -> list.groupBy { (it as ExtensionsChannel).tvGroup }
-                .toList()
-                .sortedWith(Comparator { o1, o2 ->
-                    return@Comparator o1.first.compareTo(o2.first)
-                })
-            else -> emptyList()
-        }
     }
 }

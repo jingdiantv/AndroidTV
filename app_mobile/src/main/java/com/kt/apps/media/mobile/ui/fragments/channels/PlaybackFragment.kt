@@ -5,10 +5,12 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import cn.pedant.SweetAlert.ProgressHelper
+import com.google.android.exoplayer2.ui.StyledPlayerView.ControllerVisibilityListener
 import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
@@ -16,10 +18,14 @@ import com.kt.apps.core.base.player.ExoPlayerManagerMobile
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.TAG
+import com.kt.apps.core.utils.fadeIn
+import com.kt.apps.core.utils.fadeOut
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.FragmentPlaybackBinding
+import com.kt.apps.media.mobile.ui.complex.PlaybackState
 import com.kt.apps.media.mobile.ui.fragments.dialog.JobQueue
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
+import com.kt.apps.media.mobile.ui.fragments.lightweightchannels.LightweightChannelFragment
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import com.kt.apps.media.mobile.utils.ktFadeIn
 import com.kt.apps.media.mobile.utils.ktFadeOut
 import com.pnikosis.materialishprogress.ProgressWheel
@@ -38,6 +44,7 @@ interface IPlaybackAction {
 }
 
 class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
+
     override val layoutResId: Int
         get() = R.layout.fragment_playback
     override val screenName: String
@@ -50,7 +57,17 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     lateinit var exoPlayerManager: ExoPlayerManagerMobile
 
     var callback: IPlaybackAction? = null
+    private var _cachePlayingState: Boolean = false
 
+    private var _displayState: PlaybackState = PlaybackState.Invisible
+    var displayState: PlaybackState
+        get() = _displayState
+        set(value) {
+            _displayState = value
+            if (value != PlaybackState.Fullscreen) {
+                showHideChannelList(false)
+            }
+        }
 
     private val progressHelper by lazy {
         ProgressHelper(this.context)
@@ -74,7 +91,11 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     }
 
     private val titleLabel: TextView by lazy {
-        binding.exoPlayer.findViewById(R.id.title)
+        binding.exoPlayer.findViewById(R.id.title_player)
+    }
+
+    private val channelFragmentContainer: FragmentContainerView by lazy {
+        binding.exoPlayer.findViewById(R.id.player_overlay_container)
     }
 
     private val isProcessing by lazy {
@@ -84,6 +105,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     private val isPlaying by lazy {
         MutableStateFlow(false)
     }
+
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
         activity?.run {
@@ -120,6 +142,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                 is DataState.Loading -> {
                     stopCurrentVideo()
                     toggleProgressing(true)
+                    showHideChannelList(false)
                 }
                 else -> {}
             }
@@ -141,6 +164,10 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             exoPlayer.showController()
             exoPlayer.setShowNextButton(false)
             exoPlayer.setShowPreviousButton(false)
+            exoPlayer.setControllerVisibilityListener(ControllerVisibilityListener { visibility ->
+                if (visibility != View.VISIBLE)
+                    channelFragmentContainer.visibility = visibility
+            })
         }
 
         fullScreenButton.visibility = View.VISIBLE
@@ -152,14 +179,11 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             exoPlayerManager.exoPlayer?.run {
                 if (isPlaying) {
                     pause()
+                    showHideChannelList(isShow = true)
                 } else {
                     play()
+                    showHideChannelList(isShow = false)
                 }
-            }
-            if (isPlaying.value) {
-                callback?.onPauseAction(userAction = true)
-            } else {
-                callback?.onPlayAction(userAction =  true)
             }
         }
     }
@@ -198,7 +222,27 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     override fun onStop() {
         super.onStop()
+        _cachePlayingState = exoPlayerManager.exoPlayer?.isPlaying ?: false
         exoPlayerManager.pause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        _cachePlayingState = if (_cachePlayingState) {
+            exoPlayerManager.exoPlayer?.play()
+            false
+        } else false
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+        childFragmentManager.beginTransaction()
+            .replace(R.id.player_overlay_container, LightweightChannelFragment.newInstance())
+            .commit()
+
+        channelFragmentContainer.visibility = View.INVISIBLE
     }
 
     private fun playVideo(data: TVChannelLinkStream) {
@@ -214,10 +258,22 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         exoPlayerManager.exoPlayer?.stop()
     }
 
-    val animationQueue: JobQueue by lazy {
+    private val animationQueue: JobQueue by lazy {
         JobQueue()
     }
     private fun toggleProgressing(isShow: Boolean) {
         isProcessing.tryEmit(isShow)
+    }
+
+    private fun showHideChannelList(isShow: Boolean) {
+        if (isShow && displayState == PlaybackState.Fullscreen) {
+            channelFragmentContainer.fadeIn {  }
+            return
+        }
+        if (!isShow && displayState == PlaybackState.Fullscreen) {
+            channelFragmentContainer.fadeOut {  }
+            return
+        }
+        channelFragmentContainer.visibility = View.INVISIBLE
     }
 }

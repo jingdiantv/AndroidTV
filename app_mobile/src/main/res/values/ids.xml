@@ -2,4 +2,6 @@
 <resources>
     <item name="exo_controll_group" type="id" />
     <item name="controller_dock" type="id" />
+    <item name="player_controller_container" type="id" />
+    <item name="transition_show_video" type="id" />
 </resources>

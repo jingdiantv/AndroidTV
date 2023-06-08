@@ -1,11 +1,9 @@
 package com.kt.apps.media.mobile.ui.complex
 
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.MotionEvent
-import android.view.OrientationEventListener
-import androidx.constraintlayout.motion.widget.MotionLayout
+import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.video.VideoSize
@@ -17,14 +15,13 @@ import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
 import com.kt.apps.media.mobile.ui.fragments.channels.IPlaybackAction
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackFragment
-import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackViewModel
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import java.lang.ref.WeakReference
 import javax.inject.Inject
-import kotlin.properties.Delegates
-import kotlin.properties.ObservableProperty
-import kotlin.reflect.KProperty
 
+enum class  PlaybackState {
+    Fullscreen, Minimal, Invisible
+}
 class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     @Inject
     lateinit var factory: ViewModelProvider.Factory
@@ -32,13 +29,6 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     override val layoutRes: Int
         get() = R.layout.activity_complex
 
-    private val _portraitLayoutHandler: PortraitLayoutHandler by lazy {
-        PortraitLayoutHandler(WeakReference(this))
-    }
-
-    private val _landscapeLayoutHandler: LandscapeLayoutHandler by lazy {
-        LandscapeLayoutHandler(WeakReference(this))
-    }
     private var layoutHandler: ComplexLayoutHandler? = null
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
@@ -62,10 +52,15 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
 
         val metrics = resources.displayMetrics
         layoutHandler = if (metrics.widthPixels <= metrics.heightPixels) {
-            _portraitLayoutHandler
+            PortraitLayoutHandler(WeakReference(this))
         } else {
-           _landscapeLayoutHandler
+            LandscapeLayoutHandler(WeakReference(this))
         }
+
+        layoutHandler?.onPlaybackStateChange = {
+            binding.fragmentContainerPlayback.getFragment<PlaybackFragment>().displayState = it
+        }
+
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
@@ -94,6 +89,7 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         //Deeplink handle
         handleIntent(intent)
     }
+
 
     override fun onBackPressed() {
         if (layoutHandler?.onBackEvent() == true) {

@@ -3,10 +3,10 @@ package com.kt.apps.media.mobile.di.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseViewModelFactory
-import com.kt.apps.media.mobile.di.viewmodels.ViewModelKey
-import com.kt.apps.media.mobile.ui.fragments.channels.ExtensionsViewModel
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackViewModel
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.ChannelViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.ExtensionsViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
@@ -28,6 +28,11 @@ abstract class ViewModelModule {
     @IntoMap
     @ViewModelKey(ExtensionsViewModel::class)
     abstract fun bindExtensionsViewModel(playbackViewModel: ExtensionsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ChannelViewModel::class)
+    abstract fun bindChannelViewModel(playbackViewModel: ChannelViewModel): ViewModel
     @Binds
     abstract fun bindViewModelFactory(
         factory: BaseViewModelFactory

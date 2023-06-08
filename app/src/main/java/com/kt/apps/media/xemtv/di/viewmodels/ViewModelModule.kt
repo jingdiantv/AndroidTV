@@ -30,6 +30,7 @@ abstract class ViewModelModule {
     @ViewModelKey(ExtensionsViewModel::class)
     abstract fun bindExtensionsViewModel(extensionsViewModel: ExtensionsViewModel): ViewModel
 
+
     @Binds
     abstract fun bindViewModelFactory(
         factory: BaseViewModelFactory

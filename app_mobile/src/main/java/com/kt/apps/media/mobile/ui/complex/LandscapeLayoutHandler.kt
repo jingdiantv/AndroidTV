@@ -34,6 +34,9 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
     override val motionLayout: MotionLayout?
         get() = weakActivity.get()?.binding?.complexMotionLayout
 
+    override var onPlaybackStateChange: (PlaybackState) -> Unit = { }
+
+
     private val gestureDetector: GestureDetector by lazy {
         GestureDetector(context, object: GestureDetector.SimpleOnGestureListener() {
 
@@ -62,7 +65,7 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
                 startId: Int,
                 endId: Int
             ) {
-//                TODO("Not yet implemented")
+                Log.d(TAG, "onTransitionStarted: $startId $endId")
             }
 
             override fun onTransitionChange(
@@ -71,12 +74,17 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
                 endId: Int,
                 progress: Float
             ) {
-//                TODO("Not yet implemented")
+                Log.d(TAG, "onTransitionChange: $startId $endId")
             }
 
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
                 Log.d(TAG, "onTransitionCompleted: $currentId ${R.id.fullscreen}")
-
+                onPlaybackStateChange(when(currentId) {
+                    R.id.fullscreen -> PlaybackState.Fullscreen
+                    R.id.end -> PlaybackState.Minimal
+                    R.id.start -> PlaybackState.Invisible
+                    else -> PlaybackState.Invisible
+                })
             }
 
             override fun onTransitionTrigger(
@@ -85,7 +93,7 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
                 positive: Boolean,
                 progress: Float
             ) {
-//                TODO("Not yet implemented")
+                Log.d(TAG, "onTransitionChange: $triggerId")
             }
 
         })
@@ -101,7 +109,8 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
 
     override fun onLoadedVideoSuccess(videoSize: VideoSize) {
         cachedVideoSize = videoSize
-        if (state != State.FULLSCREEN) {
+        val isFullScreenState = motionLayout?.currentState == R.id.fullscreen
+        if (state != State.FULLSCREEN || !isFullScreenState) {
             motionLayout?.setTransitionDuration(250)
             motionLayout?.transitionToState(R.id.fullscreen)
             state = State.FULLSCREEN
