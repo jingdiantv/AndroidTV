@@ -63,7 +63,24 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Logger.e(this, message = "onViewCreated")
         initAction(view)
+        view.findViewById<TextInputEditText>(R.id.textInputEditText).setupFocusChangeShowKeyboard()
+        view.findViewById<TextInputEditText>(R.id.textInputEditText_2).setupFocusChangeShowKeyboard()
         view.findViewById<TextInputEditText>(R.id.textInputEditText).requestFocus()
+    }
+
+    private fun TextInputEditText.setupFocusChangeShowKeyboard() {
+        val oldFocusChange = onFocusChangeListener
+        setOnFocusChangeListener { v, hasFocus ->
+            if (hasFocus) {
+                val imm: InputMethodManager = requireContext().getSystemService(
+                    InputMethodManager::class.java
+                )
+                if (imm.isActive(v)) {
+                    imm.showSoftInput(v, 0)
+                }
+            }
+            oldFocusChange?.onFocusChange(v, hasFocus)
+        }
     }
 
     override fun initAction(rootView: View) {
