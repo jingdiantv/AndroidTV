@@ -35,4 +35,18 @@ abstract class ExtensionsChannelDAO {
     @Query("SELECT * FROM extensionschannel WHERE extensionSourceId=:sourceId")
     abstract fun getAllBySourceId(sourceId: String): Single<List<ExtensionsChannel>>
 
+    @Transaction
+    @Query(
+        "SELECT * FROM extensionschannel WHERE extensionSourceId=:sourceId " +
+                "AND tvGroup=:category " +
+                "LIMIT :limit " +
+                "OFFSET :offset "
+    )
+    abstract fun getAllBySourceIdAndGroup(
+        sourceId: String,
+        category: String,
+        limit: Int,
+        offset: Int,
+    ): Single<List<ExtensionsChannel>>
+
 }

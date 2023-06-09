@@ -21,23 +21,29 @@ abstract class TVChannelRecommendationDAO {
                 "channelPreviewProviderId as ${SearchManager.SUGGEST_COLUMN_DURATION} " +
                 "FROM TVChannelEntity WHERE :title LIKE '%'"
     )
+    @Transaction
     abstract fun contentProviderQuery(title: String): Cursor?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
     abstract fun insert(tvChannel: TVChannelEntity): Completable
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
     abstract fun insert(list: List<TVChannelEntity>): Completable
 
     @Update
+    @Transaction
     abstract fun update(tvChannel: TVChannelEntity): Completable
 
     @Delete
     abstract fun delete(tvChannel: TVChannelEntity): Completable
 
     @Query("SELECT * from TVChannelEntity")
+    @Transaction
     abstract fun getAll(): Observable<List<TVChannelEntity>>
 
     @Query("SELECT * from TVChannelEntity WHERE channelId=:channelID LIMIT 1")
+    @Transaction
     abstract fun getChannelByID(channelID: String): Observable<TVChannelEntity>
 }

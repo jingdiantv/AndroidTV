@@ -31,6 +31,19 @@ data class ExtensionsChannel(
     val extensionSourceId: String
 ) : Parcelable {
     override fun toString(): String {
-        return Gson().toJson(this)
+        return "{" +
+                "tvGroup=$tvGroup,\n" +
+                "logoChannel=$logoChannel,\n" +
+                "tvChannelName=$tvChannelName,\n" +
+                "tvStreamLink=$tvStreamLink,\n" +
+                "sourceFrom=$sourceFrom,\n" +
+                "channelPreviewProviderId=$channelPreviewProviderId,\n" +
+                "isHls=$isHls,\n" +
+                "catchupSource=$catchupSource,\n" +
+                "userAgent=$userAgent,\n" +
+                "referer=$referer,\n" +
+                "extensionSourceId=$extensionSourceId,\n" +
+                "props=$props," +
+                "}"
     }
 }

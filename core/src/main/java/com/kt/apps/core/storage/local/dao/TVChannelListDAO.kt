@@ -30,6 +30,7 @@ abstract class TVChannelListDAO {
     ): Completable
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
     abstract fun insertListChannel(
         channel: TVChannelDTO
     ): Completable

@@ -25,9 +25,10 @@ import com.kt.apps.core.storage.local.dto.*
         ExtensionsConfig::class,
         TVChannelDTO::class,
         TVChannelDTO.TVChannelUrl::class,
-        ExtensionsChannel::class
+        ExtensionsChannel::class,
+        ExtensionChannelCategory::class
     ],
-    version = 6
+    version = 7
 )
 abstract class RoomDataBase : RoomDatabase() {
     abstract fun mapChannelDao(): MapChannelDao
@@ -38,6 +39,7 @@ abstract class RoomDataBase : RoomDatabase() {
     abstract fun tvChannelDao(): TVChannelListDAO
     abstract fun tvChannelUrlDao(): TVChannelUrlDAO
     abstract fun extensionsChannelDao(): ExtensionsChannelDAO
+    abstract fun extensionsChannelCategoryDao(): ExtensionsChannelCategoryDao
 
     companion object {
         private val MIGRATE_1_2 by lazy {
@@ -84,6 +86,14 @@ abstract class RoomDataBase : RoomDatabase() {
             }
         }
 
+        private val MIGRATE_6_7 by lazy {
+            object : Migration(6, 7) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `ExtensionChannelCategory` (`configSourceUrl` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`configSourceUrl`, `name`))")
+                }
+            }
+        }
+
         @Volatile
         var INSTANCE: RoomDataBase? = null
         fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
@@ -93,6 +103,7 @@ abstract class RoomDataBase : RoomDatabase() {
                 .addMigrations(MIGRATE_3_4)
                 .addMigrations(MIGRATE_4_5)
                 .addMigrations(MIGRATE_5_6)
+                .addMigrations(MIGRATE_6_7)
                 .build()
                 .also {
                     INSTANCE = it

@@ -33,6 +33,28 @@ open class ExtensionsConfig @JvmOverloads constructor(
             )
         }
     }
+
+    override fun toString(): String {
+        return "{" +
+                "sourceName: $sourceName,\n" +
+                "sourceUrl: $sourceUrl,\n" +
+                "type: $type\n" +
+                "}"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other is ExtensionsConfig) {
+            return sourceName == other.sourceName && sourceUrl == other.sourceName
+        }
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        var result = sourceName.hashCode()
+        result = 31 * result + sourceUrl.hashCode()
+        result = 31 * result + type.hashCode()
+        return result
+    }
 }
 
 class ExtensionsConfigWithLoadedListChannel(
