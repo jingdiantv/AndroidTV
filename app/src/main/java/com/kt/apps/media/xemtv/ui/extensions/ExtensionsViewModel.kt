@@ -12,6 +12,7 @@ import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.media.xemtv.di.AppScope
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 @AppScope
@@ -29,16 +30,46 @@ class ExtensionsViewModel @Inject constructor(
 
 
     private val _extensionsChannelListCache by lazy {
-        mutableMapOf<String, List<ExtensionsChannel>>()
+        mutableMapOf<String, WeakReference<List<ExtensionsChannel>>>()
     }
 
-    val channelListCache: Map<String, List<ExtensionsChannel>>
+    val channelListCache: Map<String, WeakReference<List<ExtensionsChannel>>>
         get() = _extensionsChannelListCache
 
 
     fun appendExtensionsCache(id: String, channelList: List<ExtensionsChannel>) {
         Logger.e(this@ExtensionsViewModel, message = "id = $id")
-        _extensionsChannelListCache[id] = channelList
+        _extensionsChannelListCache[id] = WeakReference(channelList)
+    }
+
+    fun loadChannelForConfig(configId: String): LiveData<DataState<List<ExtensionsChannel>>> {
+        if (_extensionsChannelListCache[configId] != null
+            && !_extensionsChannelListCache[configId]!!.get().isNullOrEmpty()
+        ) {
+            return MutableLiveData(DataState.Success(_extensionsChannelListCache[configId]!!.get()!!))
+        }
+        val liveData = MutableLiveData<DataState<List<ExtensionsChannel>>>()
+        liveData.postValue(DataState.Loading())
+        add(
+            roomDataBase.extensionsConfig()
+                .getExtensionById(configId)
+                .subscribeOn(Schedulers.io())
+                .flatMap {
+                    parserExtensionsSource.parseFromRemoteRx(it)
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .retry { t1, t2 ->
+                    return@retry t1 < 3
+                }
+                .subscribe({ tvList ->
+                    appendExtensionsCache(configId, tvList)
+                    liveData.postValue(DataState.Success(tvList))
+                }, {
+                    liveData.postValue(DataState.Error(it))
+                    Logger.e(this, exception = it)
+                })
+        )
+        return liveData
     }
 
     fun loadAllListExtensionsChannelConfig(refreshCache: Boolean = false) {
@@ -74,6 +105,17 @@ class ExtensionsViewModel @Inject constructor(
                     appendExtensionsCache(extensionsID, tvList)
                 }, {
                     Logger.e(this, exception = it)
+                })
+        )
+    }
+
+    fun insertDefaultSource() {
+        add(
+            parserExtensionsSource.insertAll()
+                .subscribe({
+                    Logger.d(this@ExtensionsViewModel, message = "insertDefaultSourceSuccess")
+                }, {
+                    Logger.e(this@ExtensionsViewModel, exception = it)
                 })
         )
     }

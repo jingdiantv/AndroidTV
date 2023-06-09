@@ -151,6 +151,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                 super.onPlaybackStateChanged(playbackState)
                 onPlayerPlaybackStateChanged(playbackState)
                 if (playbackState == ExoPlayer.STATE_READY) {
+                    progressManager.hide()
                     val player = exoPlayerManager.exoPlayer ?: return
                     durationSet = true
                     updateProgress(player)
@@ -433,6 +434,29 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }, mPlayerListener, isLive, isHls, headers)
     }
 
+    fun prepare(
+        title: String,
+        subTitle: String?,
+        isLive: Boolean,
+    ) {
+        progressManager.show()
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        setVideoInfo(title, subTitle, isLive)
+
+        mPlaybackOverlaysContainerView?.fadeIn()
+        mPlaybackInfoContainerView?.fadeIn()
+        if (mGridViewPickHeight > 0) {
+            mGridViewOverlays?.translationY = mGridViewPickHeight
+        }
+        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+        mPlayPauseIcon?.requestFocus()
+        if (isLive) {
+            progressBarContainer?.gone()
+        } else {
+            progressBarContainer?.visible()
+        }
+    }
+
     fun playVideo(
         title: String, subTitle: String?,
         linkStreams: List<LinkStream>,
@@ -441,6 +465,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         isHls: Boolean,
         headers: Map<String, String> = mapOf()
     ) {
+        progressManager.hide()
         mGlueHost.setSurfaceHolderCallback(null)
         exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener, headers)
         mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
@@ -467,17 +492,6 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             progressBarContainer?.visible()
         }
         changeNextFocus()
-    }
-
-    private fun buildMediaSource(referer: String): DefaultMediaSourceFactory {
-        val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
-        dfSource.setDefaultRequestProperties(
-            getHeaderFromLinkStream(referer, "")
-        )
-        return DefaultMediaSourceFactory(dfSource)
-            .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
-            })
-
     }
 
     fun getBackgroundView(): View? {
@@ -507,8 +521,12 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
-        mPlaybackTitleView?.text = title
-        mPlaybackInfoView?.text = info
+        if (!mPlaybackTitleView?.text.toString().equals(title, ignoreCase = true)) {
+            mPlaybackTitleView?.text = title
+        }
+        if (!mPlaybackInfoView?.text.toString().equals(info, ignoreCase = true)) {
+            mPlaybackInfoView?.text = info
+        }
         if (mPlaybackTitleView?.isSelected != true) {
             mPlaybackTitleView?.isSelected = true
         }

@@ -11,6 +11,7 @@ import com.kt.apps.media.xemtv.BuildConfig
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.databinding.ActivityMainBinding
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.extensions.ExtensionsViewModel
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import javax.inject.Inject
@@ -34,6 +35,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         ViewModelProvider(this, factory)[TVChannelViewModel::class.java]
     }
 
+
+    private val extensionsViewModel by lazy {
+        ViewModelProvider(this, factory)[ExtensionsViewModel::class.java]
+    }
+
     override val layoutRes: Int
         get() = R.layout.activity_main
 
@@ -52,6 +58,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         Logger.e(this, exception = it)
                     })
             )
+        }
+
+        if (BuildConfig.isBeta) {
+            extensionsViewModel.insertDefaultSource()
         }
 
         supportFragmentManager.beginTransaction()
