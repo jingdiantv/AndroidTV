@@ -9,6 +9,7 @@ import android.view.View
 import androidx.constraintlayout.motion.widget.MotionLayout
 import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.utils.TAG
+import com.kt.apps.core.utils.visible
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
 import com.kt.apps.media.mobile.utils.hitRectOnScreen
@@ -171,6 +172,7 @@ class LandscapeLayoutHandler(private val weakActivity: WeakReference<ComplexActi
 
     private fun onDoubleTap(ev: MotionEvent) {
         val hitRect = Rect()
+        if (fragmentContainerPlayback?.visibility == View.VISIBLE) else return
         fragmentContainerPlayback?.getHitRect(hitRect)
         if (hitRect.contains(ev.x.toInt(), ev.y.toInt())) {
             motionLayout?.transitionToState(R.id.fullscreen)
