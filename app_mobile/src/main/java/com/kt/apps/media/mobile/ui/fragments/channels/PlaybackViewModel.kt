@@ -26,6 +26,7 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             super.onPlaybackStateChanged(playbackState)
+            Log.d(TAG, "onPlaybackStateChanged: $playbackState")
             when(playbackState) {
                 Player.STATE_READY -> {
                     videoState.postValue(State.PLAYING)

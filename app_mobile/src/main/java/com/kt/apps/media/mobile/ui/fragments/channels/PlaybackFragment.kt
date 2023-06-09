@@ -29,8 +29,7 @@ import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import com.kt.apps.media.mobile.utils.ktFadeIn
 import com.kt.apps.media.mobile.utils.ktFadeOut
 import com.pnikosis.materialishprogress.ProgressWheel
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
@@ -153,6 +152,9 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         Observer { state ->
             when(state) {
                 PlaybackViewModel.State.LOADING -> toggleProgressing(true)
+                PlaybackViewModel.State.PLAYING -> {
+                    toggleProgressing(false)
+                }
                 else -> { toggleProgressing(false) }
             }
         }
@@ -168,7 +170,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                 if (visibility != View.VISIBLE)
                     channelFragmentContainer.visibility = visibility
                 else
-                    if (!isPlaying.value)
+                    if (exoPlayer.player?.isPlaying == false && !isProcessing.value)
                         showHideChannelList(isShow = true)
             })
         }
@@ -253,8 +255,9 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             LinkStream(it, data.channel.tvChannelWebDetailPage, data.channel.tvChannelWebDetailPage)
         }, data.channel.isHls, playbackViewModel?.playerListener)
         binding.exoPlayer.player = exoPlayerManager.exoPlayer
-
-        titleLabel.text = data.channel.tvChannelName
+        activity?.runOnUiThread {
+            titleLabel.text = data.channel.tvChannelName
+        }
     }
 
     private fun stopCurrentVideo() {
