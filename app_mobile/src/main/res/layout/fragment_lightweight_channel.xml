@@ -11,7 +11,7 @@
         tools:context=".ui.fragments.lightweightchannels.LightweightChannelFragment"
 
         android:padding="20dp"
-        android:background="@color/exo_bottom_bar_background"
+        android:background="@color/player_background"
         >
 
         <androidx.recyclerview.widget.RecyclerView
