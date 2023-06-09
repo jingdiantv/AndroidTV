@@ -12,16 +12,17 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.leanback.BrowseSupportFragment.FragmentHostImpl
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import javax.inject.Inject
 
 abstract class BaseTabLayoutFragment : BaseRowSupportFragment() {
     abstract val currentPage: Int
     abstract val tabLayout: LeanbackTabLayout
+    abstract fun requestFocusChildContent(): View
 }
 
 class FragmentTVDashboardNew : BaseTabLayoutFragment() {
@@ -37,6 +38,8 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
         requireView().findViewById<LeanbackViewPager>(R.id.view_pager)
     }
 
+    private var type = PlaybackActivity.Type.TV
+
     override val currentPage: Int
         get() = requireView().findViewById<LeanbackViewPager>(R.id.view_pager).currentItem
 
@@ -50,7 +53,7 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
 
         fun onRefresh(listTvChannel: List<TVChannel>) {
             totalList.clear()
-            totalList.add("Tất cả")
+            totalList.add(FragmentTVDashboard.FILTER_TOTAL)
             totalList.addAll(
                 listTvChannel.groupBy {
                     it.tvGroup
@@ -64,21 +67,10 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
         }
 
         override fun getItem(position: Int): Fragment {
-            return if (position == 0) {
-                FragmentTVGrid().apply {
-                    this.mainFragmentAdapter.setFragmentHost(this@FragmentTVDashboardNew.mainFragmentAdapter.fragmentHost as FragmentHostImpl?)
-                }
-            } else {
-                FragmentTVDashboard().apply {
-                    mMainFragmentAdapter = this@FragmentTVDashboardNew.mMainFragmentAdapter
-                    this.arguments = bundleOf(
-                        "filterGroup" to totalList[position]
-                    )
-                }
-            }
+            return FragmentTVDashboard.newInstance(totalList[position], type, mMainFragmentAdapter)
         }
 
-        override fun getPageTitle(position: Int): CharSequence? {
+        override fun getPageTitle(position: Int): CharSequence {
             return if (position == 0) {
                 totalList[position]
             } else {
@@ -95,6 +87,10 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
         TVViewPager(childFragmentManager)
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        type = requireArguments().getParcelable(EXTRA_TYPE) ?: PlaybackActivity.Type.TV
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewPager.adapter = pagerAdapter
@@ -111,7 +107,8 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner, Observer {
             when (it) {
                 is DataState.Success -> {
-                    pagerAdapter.onRefresh(it.data)
+                    val totalList = it.data.filter(filterByType())
+                    pagerAdapter.onRefresh(totalList)
                     tabLayout.setupWithViewPager(viewPager, true)
                 }
 
@@ -121,6 +118,39 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
             }
         })
 
+    }
+
+    private fun filterByType() = { channel: TVChannel ->
+        if (type == PlaybackActivity.Type.TV) {
+            !channel.isRadio
+        } else {
+            channel.isRadio
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putAll(arguments)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        if (savedInstanceState?.containsKey(EXTRA_TYPE) == true) {
+            type = savedInstanceState.getParcelable(EXTRA_TYPE) ?: PlaybackActivity.Type.TV
+        }
+    }
+
+    override fun requestFocusChildContent(): View {
+        return viewPager
+    }
+
+    companion object {
+        private const val EXTRA_TYPE = "extra:type"
+        fun newInstance(dashboardType: PlaybackActivity.Type) = FragmentTVDashboardNew().apply {
+            arguments = bundleOf(
+                EXTRA_TYPE to dashboardType
+            )
+        }
     }
 
 }

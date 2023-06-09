@@ -1,23 +1,27 @@
 package com.kt.apps.media.xemtv.ui.extensions
 
+import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
+import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.tab.LeanbackTabLayout
 import androidx.leanback.tab.LeanbackViewPager
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.observe
-import androidx.transition.Scene
 import com.google.android.material.button.MaterialButton
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.leanback.findCurrentFocusedPosition
 import com.kt.apps.core.utils.leanback.findCurrentFocusedView
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.tv.BaseTabLayoutFragment
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import javax.inject.Inject
 
 class FragmentDashboardExtensions : BaseTabLayoutFragment() {
@@ -59,17 +63,7 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
 
     override fun initAction(rootView: View) {
         extensionsViewModel.loadAllListExtensionsChannelConfig(true)
-        val emptyScene: Scene = Scene.getSceneForLayout(
-            rootView as ViewGroup,
-            R.layout.fragment_extensions_dashboard_empty_sence,
-            requireContext()
-        )
-        val anotherScene: Scene =
-            Scene.getSceneForLayout(rootView, R.layout.fragment_extensions_dashboard, requireContext())
-
-        viewPager.adapter = pagerAdapter
         setAlignment(mAlignedTop)
-
         _btnAddSource?.setOnClickListener {
             requireActivity().supportFragmentManager
                 .beginTransaction()
@@ -87,9 +81,25 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                 is DataState.Success -> {
                     val listConfig = it.data
                     pagerAdapter.onRefresh(listConfig)
-                    if (listConfig.size > 1) {
+                    if (listConfig.isNotEmpty()) {
                         viewPager.currentItem = 0
+                        val constrainSet = ConstraintSet()
+                        constrainSet.clone(
+                            LayoutInflater.from(requireContext())
+                                .inflate(R.layout.fragment_extensions_dashboard, null, false)
+                                    as ConstraintLayout
+                        )
+                        constrainSet.applyTo(view as ConstraintLayout)
+                    } else {
+                        val constrainSet = ConstraintSet()
+                        constrainSet.clone(
+                            LayoutInflater.from(requireContext())
+                                .inflate(R.layout.fragment_extensions_dashboard_empty_sence, null, false)
+                                    as ConstraintLayout
+                        )
+                        constrainSet.applyTo(view as ConstraintLayout)
                     }
+                    viewPager.adapter = pagerAdapter
                     tabLayout.setupWithViewPager(viewPager, true)
                 }
 
@@ -103,6 +113,31 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
             }
         }
 
+        val disposable = CompositeDisposable()
+
+        tabLayout.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            for (i in 0 until tabLayout.tabCount) {
+                tabLayout.getTabAt(i)?.view?.setOnLongClickListener {
+                    val data = (extensionsViewModel.totalExtensionsConfig.value as? DataState.Success)?.data
+                        ?: return@setOnLongClickListener false
+                    val deleteSourceFragment = DeleteSourceFragment(
+                        data[i],
+                        progressManager,
+                        disposable,
+                        RoomDataBase.getInstance(requireContext())
+                    ) {
+                        extensionsViewModel.loadAllListExtensionsChannelConfig(true)
+                    }
+                    GuidedStepSupportFragment.addAsRoot(
+                        requireActivity(),
+                        deleteSourceFragment,
+                        android.R.id.content
+                    )
+                    return@setOnLongClickListener true
+                }
+            }
+        }
+
     }
 
     fun onFocusSearch(
@@ -110,10 +145,20 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
         direction: Int
     ): View? {
         if (focused == _btnAddSource) {
+            if (
+                pagerAdapter.count == 0
+                && (direction == View.FOCUS_RIGHT
+                        || direction == View.FOCUS_DOWN
+                        || direction == View.FOCUS_UP)
+            ) {
+                return _btnAddSource
+            }
             if (direction == View.FOCUS_RIGHT) {
                 if (tabLayout.tabCount > 0) {
                     return tabLayout.getTabAt(0)?.view
                 }
+            } else if (direction == View.FOCUS_DOWN) {
+                return viewPager
             }
         }
 
@@ -134,6 +179,10 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
         }
 
         throw Throwable("Return to parent focus search")
+    }
+
+    override fun requestFocusChildContent(): View {
+        return viewPager
     }
 
     class ExtensionsChannelViewPager(fragmentManager: FragmentManager) : FragmentStatePagerAdapter(fragmentManager) {

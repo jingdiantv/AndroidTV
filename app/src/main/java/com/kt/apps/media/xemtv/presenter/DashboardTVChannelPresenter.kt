@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
+import com.kt.apps.core.Constants
 
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
@@ -80,8 +81,12 @@ class DashboardTVChannelPresenter : Presenter() {
                 updateCardBackgroundColor(cardView, false)
                 cardView.mainImageView.setBackgroundResource(com.kt.apps.core.R.drawable.channel_bg)
                 cardView.let { imgView ->
+                    val name = Constants.mapChannel[item.tvChannelName]
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
-                    imgView.mainImageView.loadImgByUrl(item.logoChannel.trim())
+                    name?.let {
+                        imgView.mainImageView
+                            .loadImgByDrawableIdResName(it, item.logoChannel.trim())
+                    } ?: imgView.mainImageView.loadImgByUrl(item.logoChannel.trim())
                 }
             }
         }

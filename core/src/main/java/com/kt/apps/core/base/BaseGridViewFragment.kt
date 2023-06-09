@@ -9,14 +9,13 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
-import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.transition.TransitionHelper
 import androidx.leanback.widget.*
 import com.kt.apps.core.R
+import com.kt.apps.core.base.leanback.BrowseSupportFragment
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.databinding.DefaultGridFragmentBinding
-import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
@@ -63,7 +62,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
     protected val mViewSelectedListener by lazy {
         OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
             val position: Int = mGridViewHolder?.gridView?.selectedPosition ?: -1
-            Logger.d(this, message = "Selected position: $position")
+            Logger.d(this@BaseGridViewFragment, message = "Selected position: $position")
             gridOnItemSelected(position)
             mOnItemViewSelectedListener?.onItemSelected(
                 itemViewHolder, item,

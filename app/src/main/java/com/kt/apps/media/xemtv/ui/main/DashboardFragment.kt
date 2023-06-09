@@ -94,6 +94,13 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                             .getTabAt((tabFocused - 1) % tabCount)!!.view
                     }
                 }
+
+                if (mMainFragment is BaseTabLayoutFragment
+                    && focused is TabLayout.TabView
+                    && direction == View.FOCUS_DOWN
+                ) {
+                    return (mMainFragment as BaseTabLayoutFragment).requestFocusChildContent()
+                }
                 return this@DashboardFragment.onFocusSearchListener.onFocusSearch(focused, direction)
             }
         }
@@ -182,82 +189,6 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
         setHeaderPresenterSelector(DashboardIconHeaderPresenterSelector())
         headersSupportFragment?.setAppVersion(displayVersionName)
         startEntranceTransition()
-    }
-
-    class DeleteSourceFragment(
-        val extensions: ExtensionsConfig,
-        val progressBarManager: ProgressBarManager,
-        val disposable: CompositeDisposable,
-        val roomDataBase: RoomDataBase,
-        val onDeleteSuccess: () -> Unit,
-
-        ) : GuidedStepSupportFragment() {
-
-        override fun onCreateGuidance(savedInstanceState: Bundle?): GuidanceStylist.Guidance {
-            return GuidanceStylist.Guidance(
-                "Xoá nguồn: ${extensions.sourceName}",
-                "Sau khi xoá, nguồn kênh sẽ không còn tồn tại nữa!",
-                "",
-                ContextCompat.getDrawable(
-                    requireContext(),
-                    com.kt.apps.media.xemtv.R.drawable.round_insert_link_64
-                )
-            )
-        }
-
-        @SuppressLint("CommitTransaction")
-        override fun onGuidedActionClicked(action: GuidedAction?) {
-            super.onGuidedActionClicked(action)
-            when (action?.id) {
-                1L -> {
-                    progressBarManager.show()
-                    disposable.add(
-                        roomDataBase.extensionsConfig()
-                            .delete(extensions)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe({
-                                progressBarManager.hide()
-                                requireActivity().supportFragmentManager
-                                    .beginTransaction()
-                                    .remove(this)
-                                    .commit()
-                                onDeleteSuccess()
-                                showSuccessDialog(content = "Xoá nguồn kênh thành công")
-                            }, {
-                                Logger.e(this@DeleteSourceFragment, exception = it)
-                                progressBarManager.hide()
-                                showSuccessDialog(content = "Xoá nguồn kênh thất bại")
-                            })
-                    )
-                }
-
-                2L -> {
-                    requireActivity().supportFragmentManager
-                        .beginTransaction()
-                        .remove(this)
-                        .commit()
-                }
-            }
-        }
-
-        override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-            super.onCreateActions(actions, savedInstanceState)
-            actions.add(
-                GuidedAction.Builder()
-                    .id(1)
-                    .title("Có")
-                    .description("Xoá nguồn kênh")
-                    .build()
-            )
-
-            actions.add(
-                GuidedAction.Builder()
-                    .id(2)
-                    .title("Huỷ")
-                    .build()
-            )
-        }
     }
 
     fun onAddExtensionsPage(extensions: ExtensionsConfig) {
@@ -374,6 +305,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                 mapOf(
                     DashboardPageRowFactory.ROW_TV to "Truyền hình",
                     DashboardPageRowFactory.ROW_RADIO to "Phát thanh",
+                    DashboardPageRowFactory.ROW_FOOTBALL to "Bóng đá",
                     DashboardPageRowFactory.ROW_IPTV to "IPTV",
                 )
             } else {

@@ -6,16 +6,17 @@ import androidx.leanback.app.BackgroundManager
 import androidx.leanback.widget.Row
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.R
+import com.kt.apps.core.base.leanback.BrowseSupportFragment
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.media.xemtv.ui.extensions.FragmentDashboardExtensions
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
-import com.kt.apps.media.xemtv.ui.radio.RadioFragment
+import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboardNew
 
 typealias OnFragmentChange = (pageID: Long) -> Unit
 class DashboardPageRowFactory(
     private val backgroundManager: BackgroundManager,
-) : com.kt.apps.core.base.leanback.BrowseSupportFragment.FragmentFactory<Fragment>() {
+) : BrowseSupportFragment.FragmentFactory<Fragment>() {
     var onFragmentChangeListener: OnFragmentChange? = null
     override fun createFragment(row: Any?): Fragment {
         val rowId = (row as? Row)?.id ?: throw IllegalStateException("Null row id")
@@ -26,7 +27,7 @@ class DashboardPageRowFactory(
             ROW_TV -> {
                 backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.bg_football)
                 backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
-                FragmentTVDashboardNew()
+                FragmentTVDashboardNew.newInstance(PlaybackActivity.Type.TV)
             }
 
             ROW_FOOTBALL -> {
@@ -36,7 +37,7 @@ class DashboardPageRowFactory(
 
             ROW_RADIO -> {
                 backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
-                RadioFragment()
+                FragmentTVDashboardNew.newInstance(PlaybackActivity.Type.RADIO)
             }
 
             ROW_IPTV -> {
