@@ -167,6 +167,9 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
             exoPlayer.setControllerVisibilityListener(ControllerVisibilityListener { visibility ->
                 if (visibility != View.VISIBLE)
                     channelFragmentContainer.visibility = visibility
+                else
+                    if (!isPlaying.value)
+                        showHideChannelList(isShow = true)
             })
         }
 

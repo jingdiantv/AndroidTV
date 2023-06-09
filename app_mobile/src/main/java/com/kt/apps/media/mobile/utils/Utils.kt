@@ -2,7 +2,9 @@ package com.kt.apps.media.mobile.utils
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.content.Context
 import android.graphics.Rect
+import android.net.ConnectivityManager
 import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.view.ViewPropertyAnimator
@@ -17,6 +19,7 @@ import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.utils.fadeIn
 import com.kt.apps.core.utils.fadeOut
+import com.kt.apps.media.mobile.App
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

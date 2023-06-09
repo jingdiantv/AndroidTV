@@ -1,21 +1,32 @@
 package com.kt.apps.media.mobile.ui.complex
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import android.view.Window
+import android.widget.ImageView
+import android.widget.Toast
+import androidx.lifecycle.*
 import com.google.android.exoplayer2.video.VideoSize
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.dialog.MaterialDialogs
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
+import com.kt.apps.media.mobile.models.NetworkState
+import com.kt.apps.media.mobile.models.NoNetworkException
 import com.kt.apps.media.mobile.ui.fragments.channels.IPlaybackAction
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackFragment
+import com.kt.apps.media.mobile.ui.fragments.models.NetworkStateViewModel
 import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -37,11 +48,16 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         }
     }
 
+    private val networkStateViewModel: NetworkStateViewModel? by lazy {
+        ViewModelProvider(this, factory)[NetworkStateViewModel::class.java]
+    }
+
     private val linkStreamDataObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
         Observer {dataState ->
             when(dataState) {
                 is DataState.Loading ->
                     layoutHandler?.onStartLoading()
+                is DataState.Error -> handleStreamLinkError(dataState.throwable)
                 else -> return@Observer
             }
         }
@@ -82,8 +98,16 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                     if (userAction) layoutHandler?.onPlayPause(isPause = false)
                 }
             }
+        }
 
-
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                networkStateViewModel?.networkStatus?.
+                        collectLatest {state ->
+                            if (state == NetworkState.Unavailable)
+                                showNoNetworkAlert(autoHide = true)
+                        }
+            }
         }
 
         //Deeplink handle
@@ -119,6 +143,29 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                 }
             } else {
                 intent.data = null
+            }
+        }
+    }
+
+    private fun handleStreamLinkError(throwable: Throwable) {
+        if (throwable is NoNetworkException) {
+            showNoNetworkAlert()
+        }
+    }
+
+    private fun showNoNetworkAlert(autoHide: Boolean = false) {
+        val dialog = AlertDialog.Builder(this, R.style.WrapContentDialog).apply {
+            setCancelable(true)
+            setView(layoutInflater.inflate(R.layout.no_internet_dialog, null))
+        }
+            .create().apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+            }
+        dialog.show()
+        if (autoHide) {
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(1200)
+                dialog.dismiss()
             }
         }
     }

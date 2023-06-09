@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -26,8 +27,10 @@ import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.mobile.BuildConfig
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
+import com.kt.apps.media.mobile.models.NetworkState
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
 import com.kt.apps.media.mobile.ui.fragments.models.ExtensionsViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.NetworkStateViewModel
 import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.ChannelElement
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
@@ -39,6 +42,8 @@ import com.kt.skeleton.KunSkeleton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
@@ -166,9 +171,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         TVDashboardAdapter().apply {
             onChildItemClickListener = { item, _ ->
                 when (item) {
-                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(
-                        item.model
-                    )
+                    is ChannelElement.TVChannelElement -> onClickItemChannel(item.model)
                     is ChannelElement.ExtensionChannelElement -> tvChannelViewModel?.getExtensionChannel(
                         item.model
                     )
@@ -244,7 +247,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             setHasFixedSize(true)
             setItemViewCacheSize(9)
             doOnPreDraw {
-
                 val spanCount = 3.coerceAtLeast((mainRecyclerView.measuredWidth / 220.dpToPx()))
                 this@ChannelFragment.adapter.spanCount = spanCount
             }
@@ -424,5 +426,9 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             defaultSection + extraSection + addExtensionSection,
             notifyDataSetChange = true
         )
+    }
+
+    private fun onClickItemChannel(channel: TVChannel) {
+        tvChannelViewModel?.loadLinkStreamForChannel(channel)
     }
 }

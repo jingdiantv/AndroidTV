@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseViewModelFactory
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackViewModel
-import com.kt.apps.media.mobile.ui.fragments.models.ChannelViewModel
 import com.kt.apps.media.mobile.ui.fragments.models.ExtensionsViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.NetworkStateViewModel
 import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import dagger.Binds
 import dagger.Module
@@ -31,8 +31,9 @@ abstract class ViewModelModule {
 
     @Binds
     @IntoMap
-    @ViewModelKey(ChannelViewModel::class)
-    abstract fun bindChannelViewModel(playbackViewModel: ChannelViewModel): ViewModel
+    @ViewModelKey(NetworkStateViewModel::class)
+    abstract fun bindNetworkStateViewModel(networkStateViewModel: NetworkStateViewModel): ViewModel
+
     @Binds
     abstract fun bindViewModelFactory(
         factory: BaseViewModelFactory

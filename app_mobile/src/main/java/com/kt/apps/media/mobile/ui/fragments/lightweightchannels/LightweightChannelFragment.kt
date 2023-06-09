@@ -38,7 +38,7 @@ class LightweightChannelFragment : BaseFragment<FragmentLightweightChannelBindin
         LightweightChannelAdapter().apply {
             onChildItemClickListener = { item, _ ->
                 when (item) {
-                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(
+                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.loadLinkStreamForChannel(
                         item.model
                     )
                     else -> {}

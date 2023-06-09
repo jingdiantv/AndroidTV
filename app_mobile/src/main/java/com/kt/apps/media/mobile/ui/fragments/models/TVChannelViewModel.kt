@@ -11,6 +11,9 @@ import com.kt.apps.core.tv.viewmodels.BaseTVChannelViewModel
 import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
 import com.kt.apps.core.utils.expandUrl
 import com.kt.apps.core.utils.isShortLink
+import com.kt.apps.media.mobile.App
+import com.kt.apps.media.mobile.isNetworkAvailable
+import com.kt.apps.media.mobile.models.NoNetworkException
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -19,6 +22,7 @@ import javax.inject.Inject
 
 class TVChannelViewModel @Inject constructor(
     interactors: TVChannelInteractors,
+    private val app: App,
     private val workManager: WorkManager
 ) : BaseTVChannelViewModel(interactors) {
 
@@ -26,6 +30,12 @@ class TVChannelViewModel @Inject constructor(
         super.onFetchTVListSuccess(listChannel)
     }
 
+    fun loadLinkStreamForChannel(tvDetail: TVChannel, isBackup: Boolean = false) {
+        if (app.isNetworkAvailable())
+            getLinkStreamForChannel(tvDetail, isBackup)
+        else
+            _tvWithLinkStreamLiveData.postValue(DataState.Error(NoNetworkException()))
+    }
     fun playMobileTvByDeepLinks(uri: Uri) : Boolean {
         !(uri.host?.contentEquals(Constants.DEEPLINK_HOST) ?: return false)
         val lastPath = uri.pathSegments.last() ?: return false
