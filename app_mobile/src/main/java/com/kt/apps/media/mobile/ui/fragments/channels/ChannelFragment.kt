@@ -259,6 +259,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
         }
         sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
+        _tvChannelData.value = emptyList()
         skeletonScreen.run()
         tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
     }
@@ -277,7 +278,8 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         lifecycleScope.launchWhenStarted {
             _tvChannelData.collectLatest { tvChannel ->
                 delay(500)
-                reloadOriginalSource(tvChannel)
+                if (tvChannel.isNotEmpty())
+                    reloadOriginalSource(tvChannel)
             }
         }
 
