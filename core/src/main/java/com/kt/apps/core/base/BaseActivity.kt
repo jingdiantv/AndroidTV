@@ -201,7 +201,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
                 iKeyCodeHandler.onDpadUp()
             }
 
-            KeyEvent.KEYCODE_DPAD_DOWN_LEFT -> {
+            KeyEvent.KEYCODE_DPAD_DOWN_LEFT, KeyEvent.KEYCODE_DPAD_LEFT -> {
                 iKeyCodeHandler.onDpadLeft()
             }
 
