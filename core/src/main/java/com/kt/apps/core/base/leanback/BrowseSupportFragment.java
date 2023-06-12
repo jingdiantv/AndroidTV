@@ -321,7 +321,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
      * Default implementation of {@link FragmentHost} that is used only by
      * {@link BrowseSupportFragment}.
      */
-    private final class FragmentHostImpl implements FragmentHost {
+    public final class FragmentHostImpl implements FragmentHost {
         boolean mShowTitleView = false;
 
         FragmentHostImpl() {
