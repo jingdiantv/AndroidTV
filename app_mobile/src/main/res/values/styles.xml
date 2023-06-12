@@ -30,7 +30,7 @@
         <item name="android:textColorPrimary">@color/white</item>
 
         <!-- Used for the background -->
-        <item name="android:background">#CD000000</item>
+        <item name="android:background">#00000000</item>
         <item name="android:colorPrimary">@color/white</item>
         <item name="android:colorAccent">@color/white</item>
 

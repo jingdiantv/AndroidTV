@@ -113,8 +113,6 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         //Deeplink handle
         handleIntent(intent)
     }
-
-
     override fun onBackPressed() {
         if (layoutHandler?.onBackEvent() == true) {
             return
