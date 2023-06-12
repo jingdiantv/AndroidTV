@@ -105,6 +105,8 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         MutableStateFlow(false)
     }
 
+    private var shouldShowChannelList: Boolean = false
+
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
         activity?.run {
@@ -170,7 +172,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                 if (visibility != View.VISIBLE)
                     channelFragmentContainer.visibility = visibility
                 else
-                    if (exoPlayer.player?.isPlaying == false && !isProcessing.value)
+                    if (shouldShowChannelList)
                         showHideChannelList(isShow = true)
             })
         }
@@ -182,12 +184,14 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
         playPauseButton.setOnClickListener {
             exoPlayerManager.exoPlayer?.run {
-                if (isPlaying) {
+                shouldShowChannelList = if (isPlaying) {
                     pause()
                     showHideChannelList(isShow = true)
+                    true
                 } else {
                     play()
                     showHideChannelList(isShow = false)
+                    false
                 }
             }
         }
@@ -229,10 +233,12 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         super.onStop()
         _cachePlayingState = exoPlayerManager.exoPlayer?.isPlaying ?: false
         exoPlayerManager.pause()
+        shouldShowChannelList = false
     }
 
     override fun onResume() {
         super.onResume()
+        shouldShowChannelList = false
         _cachePlayingState = if (_cachePlayingState) {
             exoPlayerManager.exoPlayer?.play()
             false
