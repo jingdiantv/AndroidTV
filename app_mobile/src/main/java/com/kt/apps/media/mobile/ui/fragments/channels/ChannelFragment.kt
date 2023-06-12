@@ -271,7 +271,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                                 when (state) {
                                     PlaybackViewModel.State.IDLE -> setPadding(0, 0, 0, 0)
                                     PlaybackViewModel.State.LOADING, PlaybackViewModel.State.LOADING -> {
-                                        setPadding(0,0,0,screenHeight / 3)
+                                        setPadding(0,0,0,(screenHeight * 0.4).toInt())
                                         clipToPadding = false
                                     }
                                     else -> { }
