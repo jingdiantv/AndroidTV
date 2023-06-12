@@ -1,6 +1,5 @@
 package com.kt.apps.media.xemtv.ui.main
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
@@ -21,7 +20,6 @@ import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.leanback.findCurrentFocusedPosition
-import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.xemtv.BuildConfig
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.extensions.FragmentAddExtensions
@@ -31,9 +29,7 @@ import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.StringBuilder
 import javax.inject.Inject
 
@@ -140,7 +136,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                     }
                 )
                 .append(".")
-                .append(BuildConfig.VERSION_CODE)
+                .append(BuildConfig.VERSION_NAME)
                 .append(
                     if (BuildConfig.DEBUG) {
                         "-" + BuildConfig.BUILD_TYPE
