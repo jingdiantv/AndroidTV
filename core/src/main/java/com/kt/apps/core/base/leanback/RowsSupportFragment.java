@@ -241,8 +241,14 @@ public class RowsSupportFragment extends BaseRowSupportFragmentLeanback implemen
     void onRowSelected(RecyclerView parent, RecyclerView.ViewHolder viewHolder,
                        int position, int subposition) {
         if (mSelectedViewHolder != viewHolder || mSubPosition != subposition) {
-            if (DEBUG) Log.v(TAG, "new row selected position " + position + " subposition "
-                    + subposition + " view " + viewHolder.itemView);
+            if (DEBUG) {
+                try {
+                    Log.v(TAG, "new row selected position " + position + " subposition "
+                            + subposition + " view " + viewHolder.itemView);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+            }
             mSubPosition = subposition;
             if (mSelectedViewHolder != null) {
                 setRowViewSelected(mSelectedViewHolder, false, false);
@@ -255,7 +261,8 @@ public class RowsSupportFragment extends BaseRowSupportFragmentLeanback implemen
         // When RowsSupportFragment is embedded inside a page fragment, we want to show
         // the title view only when we're on the first row or there is no data.
         if (mMainFragmentAdapter != null) {
-            mMainFragmentAdapter.getFragmentHost().showTitleView(position <= 0);
+            //Disable show title
+//            mMainFragmentAdapter.getFragmentHost().showTitleView(position <= 0);
         }
     }
 

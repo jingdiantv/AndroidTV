@@ -13,11 +13,7 @@
  */
 package com.kt.apps.core.base.leanback.util;
 
-import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
-
 import android.util.Log;
-
-import androidx.annotation.RestrictTo;
 
 import java.util.ArrayList;
 
