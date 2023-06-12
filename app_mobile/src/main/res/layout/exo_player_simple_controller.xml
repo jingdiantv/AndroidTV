@@ -163,6 +163,8 @@
                 <ImageButton
                     android:id="@id/exo_fullscreen"
                     style="@style/ExoStyledControls.Button.Bottom.FullScreen"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:visibility="visible" />
 
                 <ImageButton
@@ -193,19 +195,20 @@
 
             </HorizontalScrollView>
 
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+        </FrameLayout>
 
-                <com.pnikosis.materialishprogress.ProgressWheel
-                    android:id="@+id/progressWheel"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:layout_gravity="start"
-                    android:visibility="gone"
-                    app:matProg_barColor="@color/white"
-                    wheel:matProg_progressIndeterminate="true" />
-            </FrameLayout>
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.pnikosis.materialishprogress.ProgressWheel
+                android:id="@+id/progressWheel"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                app:matProg_barColor="@color/white"
+                wheel:matProg_progressIndeterminate="true" />
         </FrameLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 

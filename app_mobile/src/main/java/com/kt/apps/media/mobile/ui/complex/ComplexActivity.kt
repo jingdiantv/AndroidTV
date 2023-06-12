@@ -12,6 +12,7 @@ import androidx.lifecycle.*
 import com.google.android.exoplayer2.video.VideoSize
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.dialog.MaterialDialogs
+import com.google.android.material.textview.MaterialTextView
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
@@ -20,8 +21,10 @@ import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
 import com.kt.apps.media.mobile.models.NetworkState
 import com.kt.apps.media.mobile.models.NoNetworkException
+import com.kt.apps.media.mobile.models.PlaybackFailException
 import com.kt.apps.media.mobile.ui.fragments.channels.IPlaybackAction
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackFragment
+import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackViewModel
 import com.kt.apps.media.mobile.ui.fragments.models.NetworkStateViewModel
 import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import kotlinx.coroutines.*
@@ -46,6 +49,10 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         ViewModelProvider(this, factory)[TVChannelViewModel::class.java].apply {
             this.tvWithLinkStreamLiveData.observe(this@ComplexActivity, linkStreamDataObserver)
         }
+    }
+
+    private val playbackViewModel: PlaybackViewModel by lazy {
+        ViewModelProvider(this, factory)[PlaybackViewModel::class.java]
     }
 
     private val networkStateViewModel: NetworkStateViewModel? by lazy {
@@ -102,11 +109,28 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                networkStateViewModel?.networkStatus?.
-                        collectLatest {state ->
-                            if (state == NetworkState.Unavailable)
-                                showNoNetworkAlert(autoHide = true)
+                launch {
+                    networkStateViewModel?.networkStatus?.
+                    collectLatest {state ->
+                        if (state == NetworkState.Unavailable)
+                            showNoNetworkAlert(autoHide = true)
+                    }
+                }
+
+                launch {
+                    playbackViewModel.state.collectLatest { state ->
+                        when (state) {
+                            is PlaybackViewModel.State.FINISHED ->
+                                if (state.error != null) {
+                                    val error = (state.error as PlaybackFailException).error
+                                    val channelName = (tvChannelViewModel?.lastWatchedChannel?.channel?.tvChannelName ?: "")
+                                    val message = "Kênh $channelName hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.errorCode} ${error.message}"
+                                    showErrorAlert(message)
+                                }
+                            else -> { }
                         }
+                    }
+                }
             }
         }
 
@@ -166,6 +190,19 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                 dialog.dismiss()
             }
         }
+    }
+
+    private fun showErrorAlert(message: String) {
+        AlertDialog.Builder(this, R.style.WrapContentDialog).apply {
+            setCancelable(true)
+            setView(layoutInflater.inflate(R.layout.error_dialog, null).apply {
+                findViewById<MaterialTextView>(R.id.alert_message).text = message
+            })
+        }
+            .create()
+            .show()
+
+
     }
 
 }

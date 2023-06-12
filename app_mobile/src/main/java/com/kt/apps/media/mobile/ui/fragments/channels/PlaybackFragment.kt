@@ -6,9 +6,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.fragment.app.FragmentContainerView
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import cn.pedant.SweetAlert.ProgressHelper
 import com.google.android.exoplayer2.ui.StyledPlayerView.ControllerVisibilityListener
 import com.google.android.exoplayer2.video.VideoSize
@@ -81,10 +79,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         binding.exoPlayer.findViewById(com.google.android.exoplayer2.ui.R.id.exo_play_pause)
     }
 
-    private val controlDock: View by lazy {
-        binding.exoPlayer.findViewById(R.id.controller_dock)
-    }
-
     private val progressWheel: ProgressWheel by lazy {
         binding.exoPlayer.findViewById(R.id.progressWheel)
     }
@@ -101,10 +95,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         MutableStateFlow<Boolean>(false)
     }
 
-    private val isPlaying by lazy {
-        MutableStateFlow(false)
-    }
-
     private var shouldShowChannelList: Boolean = false
 
 
@@ -119,14 +109,10 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     private val playbackViewModel: PlaybackViewModel? by lazy {
         activity?.run {
             ViewModelProvider(this,factory)[PlaybackViewModel::class.java].apply {
-                this.videoState.observe(this@PlaybackFragment, loadingObserver)
                 this.videoSizeStateLiveData.observe(this@PlaybackFragment) {videoSize ->
                     videoSize?.run {
                         callback?.onLoadedSuccess(this)
                     }
-                }
-                this.isPlayingState.observe(this@PlaybackFragment) { isPlayingState ->
-                    isPlaying.tryEmit(isPlayingState)
                 }
             }
         }
@@ -146,18 +132,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                     showHideChannelList(false)
                 }
                 else -> {}
-            }
-        }
-    }
-
-    private val loadingObserver: Observer<PlaybackViewModel.State> by lazy {
-        Observer { state ->
-            when(state) {
-                PlaybackViewModel.State.LOADING -> toggleProgressing(true)
-                PlaybackViewModel.State.PLAYING -> {
-                    toggleProgressing(false)
-                }
-                else -> { toggleProgressing(false) }
             }
         }
     }
@@ -200,33 +174,40 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
 
-        isProcessing.distinctUntilChanged { old, new ->  old == new }
-            .onEach {
-                Log.d(TAG, "isProcessing: $it")
-                if (it) {
-                    animationQueue.submit(coroutineContext) {
-                        binding.exoPlayer.showController()
-                        progressWheel.visibility = View.VISIBLE
-                        val fadeIn = async {
-                            progressWheel.ktFadeIn()
-                            progressHelper.spin()
-                        }
-                        val fadeOut = async {
-                            controlDock.ktFadeOut()
-                        }
-                        awaitAll(fadeIn, fadeOut)
-                    }
-                } else {
-                    animationQueue.submit(coroutineContext) {
-                        awaitAll(async {
-                            progressWheel.ktFadeOut()
-                            progressHelper.stopSpinning()
-                        }, async {
-                            controlDock.ktFadeIn()
-                        })
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    playbackViewModel?.state?.map {
+                        it == PlaybackViewModel.State.LOADING
+                    }?.collectLatest {
+                        toggleProgressing(it)
                     }
                 }
-            }.launchIn(lifecycleScope)
+
+                launch {
+                    isProcessing
+                        .collectLatest {
+                            if (it) {
+                                animationQueue.submit(kotlin.coroutines.coroutineContext) {
+                                    binding.exoPlayer.showController()
+                                    progressWheel.visibility = View.VISIBLE
+                                    awaitAll(async {
+                                        progressWheel.ktFadeIn()
+                                        progressHelper.spin()
+                                    })
+                                }
+                            } else {
+                                animationQueue.submit(kotlin.coroutines.coroutineContext) {
+                                    awaitAll(async {
+                                        progressWheel.ktFadeOut()
+                                        progressHelper.stopSpinning()
+                                    })
+                                }
+                            }
+                        }
+                }
+            }
+        }
     }
 
     override fun onStop() {

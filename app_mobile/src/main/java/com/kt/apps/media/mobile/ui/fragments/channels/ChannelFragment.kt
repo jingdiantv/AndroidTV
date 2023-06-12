@@ -6,9 +6,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.view.doOnPreDraw
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
@@ -182,9 +180,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val playbackViewModel: PlaybackViewModel? by lazy {
         activity?.run {
-            ViewModelProvider(this, factory)[PlaybackViewModel::class.java].apply {
-                this.videoState.observe(this@ChannelFragment, playbackStateObserver)
-            }
+            ViewModelProvider(this, factory)[PlaybackViewModel::class.java]
         }
     }
 
@@ -211,27 +207,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
-    private val playbackStateObserver: Observer<PlaybackViewModel.State> by lazy {
-        Observer { state ->
-            if (!isLandscape) {
-                return@Observer
-            }
-            when (state) {
-                PlaybackViewModel.State.IDLE -> {
-                    with(mainRecyclerView) {
-                        setPadding(0, 0, 0, 0)
-                    }
-                }
-                PlaybackViewModel.State.LOADING, PlaybackViewModel.State.PLAYING -> {
-                    with(mainRecyclerView) {
-                        setPadding(0, 0, 0, screenHeight / 3)
-                        clipToPadding = false
-                    }
-                }
-                else -> {}
-            }
-        }
-    }
     private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
     override fun initView(savedInstanceState: Bundle?) {
         tvChannelViewModel
@@ -260,38 +235,62 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
         sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
         _tvChannelData.value = emptyList()
+
         skeletonScreen.run()
         tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
     }
 
 
     override fun initAction(savedInstanceState: Bundle?) {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            _tvChannelData.value = emptyList()
-            skeletonScreen.run()
-            tvChannelViewModel?.getListTVChannel(true)
+        with(binding.swipeRefreshLayout) {
+            setDistanceToTriggerSync(screenHeight / 3)
+            setOnRefreshListener {
+                _tvChannelData.value = emptyList()
+                skeletonScreen.run()
+                tvChannelViewModel?.getListTVChannel(true)
+            }
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
         }
 
-        lifecycleScope.launchWhenStarted {
-            _tvChannelData.collectLatest { tvChannel ->
-                delay(500)
-                if (tvChannel.isNotEmpty())
-                    reloadOriginalSource(tvChannel)
-            }
-        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    _tvChannelData.collectLatest { tvChannel ->
+                        delay(500)
+                        if (tvChannel.isNotEmpty())
+                            reloadOriginalSource(tvChannel)
+                    }
+                }
 
-        lifecycleScope.launchWhenStarted {
-            extensionsViewModel?.perExtensionChannelData?.collect {
-                appendExtensionSource(it)
-            }
-        }
+                if (isLandscape)
+                    launch {
+                        playbackViewModel?.state?.collectLatest {state ->
+                            with(mainRecyclerView) {
+                                when (state) {
+                                    PlaybackViewModel.State.IDLE -> setPadding(0, 0, 0, 0)
+                                    PlaybackViewModel.State.LOADING, PlaybackViewModel.State.LOADING -> {
+                                        setPadding(0,0,0,screenHeight / 3)
+                                        clipToPadding = false
+                                    }
+                                    else -> { }
+                                }
+                            }
+                        }
+                    }
 
-        lifecycleScope.launchWhenStarted {
-            extensionsViewModel?.extensionsConfigs?.collectLatest {
-                reloadNavigationBar(it)
+                launch {
+                    extensionsViewModel?.perExtensionChannelData?.collect {
+                        appendExtensionSource(it)
+                    }
+                }
+
+                launch {
+                    extensionsViewModel?.extensionsConfigs?.collectLatest {
+                        reloadNavigationBar(it)
+                    }
+                }
             }
         }
     }
