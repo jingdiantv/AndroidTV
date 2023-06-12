@@ -9,10 +9,12 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.base.player.ExoPlayerManagerMobile
+import com.kt.apps.core.extensions.ParserExtensionsProgramSchedule
 import com.kt.apps.core.extensions.ParserExtensionsSource
-import com.kt.apps.core.logging.ActionLoggerFactory
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
+import com.kt.apps.core.usecase.GetListProgrammeForChannel
 import dagger.BindsInstance
 import dagger.Component
 import io.reactivex.rxjava3.disposables.DisposableContainer
@@ -42,6 +44,9 @@ interface CoreComponents {
     fun exoPlayerManager(): ExoPlayerManagerMobile
 
     fun parserExtensionsSource(): ParserExtensionsSource
+    fun parserExtensionsProgram(): ParserExtensionsProgramSchedule
+    fun getCurrentProgrammeForChannel() : GetCurrentProgrammeForChannel
+    fun getListProgrammeForChannel() : GetListProgrammeForChannel
 
     fun inject(scope: BaseViewModel)
 

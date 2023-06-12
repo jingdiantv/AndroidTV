@@ -4,7 +4,6 @@ import com.kt.apps.core.logging.Logger
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLConnection
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
@@ -39,7 +38,11 @@ fun String.toDate(
 ): Date? {
     val formatter = SimpleDateFormat(pattern, locale)
     if (isUtc) formatter.timeZone = TimeZone.getTimeZone("UTC")
-    return formatter.parse(this)
+    return try {
+        formatter.parse(this)
+    } catch (e: java.lang.Exception) {
+        null
+    }
 }
 
 fun Date.formatDateTime(pattern: String, locale: Locale = Locale.getDefault()): String {
@@ -90,4 +93,15 @@ fun String.expandUrl(): String {
         }
     }
     return this
+}
+
+const val DATE_TIME_FORMAT_0700 = "yyyyMMddHHmmss +0700"
+const val DATE_TIME_FORMAT = "yyyyMMddHHmmss"
+fun String.toDateTime(): Date {
+    return SimpleDateFormat(DATE_TIME_FORMAT_0700).parse(this)
+}
+
+fun String.toDateTimeFormat(format: String): String {
+    val date = this.toDateTime()
+    return date.formatDateTime(format)
 }

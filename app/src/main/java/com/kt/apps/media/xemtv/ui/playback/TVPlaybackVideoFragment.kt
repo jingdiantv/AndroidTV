@@ -9,16 +9,19 @@ import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.PresenterSelector
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.observe
 import com.google.android.exoplayer2.PlaybackException
 import com.kt.apps.core.R
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logPlaybackRetryGetStreamLink
 import com.kt.apps.core.logging.logPlaybackRetryPlayVideo
 import com.kt.apps.core.logging.logPlaybackShowError
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.utils.removeAllSpecialChars
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
@@ -160,6 +163,20 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             loadChannelListByDataState(it)
         }
+        tvChannelViewModel.programmeForChannelLiveData.observe(viewLifecycleOwner) {
+            if (it is DataState.Success) {
+                if (
+                    tvChannelViewModel.lastWatchedChannel
+                        ?.channel
+                        ?.channelId
+                        ?.removeAllSpecialChars()
+                        ?.removePrefix("viechannel")
+                    == it.data.channel
+                ) {
+                    showInfo(it.data)
+                }
+            }
+        }
     }
 
     private fun setBackgroundByStreamingType(it: TVChannelLinkStream) {
@@ -201,7 +218,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
                 progressBarManager.hide()
                 val tvChannel = dataState.data
                 if (tvChannel.channel.isRadio) {
-                    getBackgroundView()?.setBackgroundResource(com.kt.apps.core.R.drawable.bg_radio_playing)
+                    getBackgroundView()?.setBackgroundResource(R.drawable.bg_radio_playing)
                 } else {
                     getBackgroundView()?.background = ColorDrawable(Color.TRANSPARENT)
                 }
@@ -229,6 +246,24 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
         }
     }
 
+    private fun showInfo(tvChannel: TVScheduler.Programme) {
+        Logger.d(this@TVPlaybackVideoFragment, "ChannelInfo", message = "$tvChannel")
+        val channelTitle = tvChannel.title.takeIf {
+            it.trim().isNotBlank()
+        }?.trim() ?: ""
+        prepare(
+            tvChannel.channel.uppercase() + if (channelTitle.isNotBlank()) {
+                " - $channelTitle"
+            } else {
+                ""
+            },
+            tvChannel.description.takeIf {
+                it.isNotBlank()
+            }?.trim(),
+            true
+        )
+    }
+
     private fun playVideo(tvChannel: TVChannelLinkStream) {
         playVideo(
             title = tvChannel.channel.tvChannelName,
@@ -242,6 +277,7 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
             true,
             isHls = tvChannel.channel.isHls
         )
+        tvChannelViewModel.loadProgramForChannel(tvChannel.channel)
         Logger.d(this, message = "PlayVideo: $tvChannel")
         if (tvChannelViewModel.tvChannelLiveData.value is DataState.Success) {
             val listChannel = (tvChannelViewModel.tvChannelLiveData.value as DataState.Success<List<TVChannel>>).data

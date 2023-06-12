@@ -7,8 +7,11 @@ import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.extensions.ParserExtensionsSource
+import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
+import com.kt.apps.core.usecase.GetListProgrammeForChannel
 import com.kt.apps.media.xemtv.di.AppScope
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -18,7 +21,9 @@ import javax.inject.Inject
 @AppScope
 class ExtensionsViewModel @Inject constructor(
     private val parserExtensionsSource: ParserExtensionsSource,
-    private val roomDataBase: RoomDataBase
+    private val roomDataBase: RoomDataBase,
+    private val getCurrentProgrammeForChannel: GetCurrentProgrammeForChannel,
+    private val getListProgrammeForChannel: GetListProgrammeForChannel
 ) : BaseViewModel() {
 
     private val _totalExtensionsConfig by lazy {
@@ -70,6 +75,24 @@ class ExtensionsViewModel @Inject constructor(
                 })
         )
         return liveData
+    }
+
+    private val _programmeForChannelLiveData by lazy {
+        MutableLiveData<DataState<TVScheduler.Programme>>()
+    }
+
+    val programmeForChannelLiveData: LiveData<DataState<TVScheduler.Programme>>
+        get() = _programmeForChannelLiveData
+
+    fun loadProgramForChannel(channel: ExtensionsChannel) {
+        add(
+            getCurrentProgrammeForChannel.invoke(channel)
+                .subscribe({
+                    _programmeForChannelLiveData.postValue(DataState.Success(it))
+                }, {
+                    _programmeForChannelLiveData.postValue(DataState.Error(it))
+                })
+        )
     }
 
     fun loadAllListExtensionsChannelConfig(refreshCache: Boolean = false) {

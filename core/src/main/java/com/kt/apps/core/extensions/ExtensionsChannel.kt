@@ -3,8 +3,9 @@ package com.kt.apps.core.extensions
 import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.gson.Gson
+import androidx.room.Ignore
+import com.kt.apps.core.extensions.model.TVScheduler
+import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
 @Keep
@@ -30,8 +31,14 @@ data class ExtensionsChannel(
     val props: Map<String, String> = mapOf(),
     val extensionSourceId: String
 ) : Parcelable {
+
+    @IgnoredOnParcel
+    @Ignore
+    var currentProgramme: TVScheduler.Programme? = null
+
     override fun toString(): String {
         return "{" +
+                "channelId=$channelId,\n" +
                 "tvGroup=$tvGroup,\n" +
                 "logoChannel=$logoChannel,\n" +
                 "tvChannelName=$tvChannelName,\n" +
@@ -44,6 +51,7 @@ data class ExtensionsChannel(
                 "referer=$referer,\n" +
                 "extensionSourceId=$extensionSourceId,\n" +
                 "props=$props," +
+                "currentProgramme: $currentProgramme" +
                 "}"
     }
 }

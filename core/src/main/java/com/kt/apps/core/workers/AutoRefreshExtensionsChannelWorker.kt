@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.kt.apps.core.base.CoreApp
+import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.storage.getLastRefreshExtensions
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.saveLastRefreshExtensions
@@ -55,17 +56,27 @@ class AutoRefreshExtensionsChannelWorker(
                         System.currentTimeMillis() - keyValueStorage.getLastRefreshExtensions(it) > 0.5 * HOUR
                     }
                     .flatMap {
-                        parserExtensionsSource.parseFromRemoteRx(it)
-                            .doOnComplete {
-                                keyValueStorage.saveLastRefreshExtensions(it)
-                            }
+                        if (it.type == ExtensionsConfig.Type.FOOTBALL) {
+                            roomDatabase.extensionsChannelDao()
+                                .deleteBySourceId(it.sourceUrl)
+                                .andThen(
+                                    parserExtensionsSource.parseFromRemoteRx(it)
+                                        .doOnComplete {
+                                            keyValueStorage.saveLastRefreshExtensions(it)
+                                        }
+                                )
+                        } else {
+                            parserExtensionsSource.parseFromRemoteRx(it)
+                                .doOnComplete {
+                                    keyValueStorage.saveLastRefreshExtensions(it)
+                                }
+                        }
                     }
                     .subscribe({
                         Log.e("TAG", "Refresh success")
                     }, {
                         Log.e("TAG", "Refresh error: ${it.message}", it)
                     }, {
-                        Log.e("TAG", "Refresh")
                     })
 
             )

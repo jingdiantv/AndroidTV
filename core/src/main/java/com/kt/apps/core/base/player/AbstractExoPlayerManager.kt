@@ -155,26 +155,35 @@ abstract class AbstractExoPlayerManager(
         dfSource.setDefaultRequestProperties(defaultHeader)
         return data.map { it.m3u8Link.trim() }.map {
             if (isHls) {
+                Logger.d(this,"HlsMediaSource", "HlsMediaSource: $it")
                 HlsMediaSource.Factory(dfSource)
                     .createMediaSource(MediaItem.fromUri(it.trim()))
             } else if (it.contains(".mpd")) {
+                Logger.d(this,"MediaSource", "DashMediaSource: $it")
+                val mapK = mutableMapOf<String, String>()
+                headers?.get("inputstream.adaptive.license_key")?.let { otherProps ->
+                    val jsonObject = JSONObject(otherProps)
+                    val keys = jsonObject.optJSONArray("keys") ?: JSONArray()
+                    mapK["keys"] = keys.toString()
+                    mapK["type"] = jsonObject.optString("type")
+                }
                 val uriBuilder = Uri.parse(it.trim()).buildUpon()
                 DashMediaSource.Factory(dfSource)
                     .createMediaSource(
                         MediaItem.Builder()
                             .setDrmConfiguration(
-                                MediaItem.DrmConfiguration.Builder(C.CLEARKEY_UUID)
+                                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
                                     .setLicenseUri(headers?.get("referer")?.ifEmpty {
                                         it
                                     } ?: it)
-                                    .setMultiSession(true)
-                                    .setLicenseRequestHeaders(headers ?: mapOf())
+                                    .setLicenseRequestHeaders(mapK)
                                     .build()
                             )
                             .setUri(uriBuilder.build())
                             .build()
                     )
             } else {
+                Logger.d(this,"MediaSource", "ProgressiveMediaSource: $it")
                 ProgressiveMediaSource.Factory(dfSource)
                     .createMediaSource(MediaItem.fromUri(it.trim()))
             }

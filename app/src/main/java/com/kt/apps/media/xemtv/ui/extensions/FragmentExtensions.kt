@@ -30,10 +30,6 @@ class FragmentExtensions : BaseRowSupportFragment() {
     @Inject
     lateinit var parserExtensionsSource: ParserExtensionsSource
 
-    private val disposable by lazy {
-        CompositeDisposable()
-    }
-
     private val mRowsAdapter: ArrayObjectAdapter by lazy {
         ArrayObjectAdapter(ListRowPresenter().apply {
             shadowEnabled = false
@@ -125,7 +121,6 @@ class FragmentExtensions : BaseRowSupportFragment() {
 
     override fun onDetach() {
         super.onDetach()
-        disposable.clear()
     }
 
     override fun onDestroyView() {

@@ -107,6 +107,9 @@ class ParserExtensionsSource @Inject constructor(
                     Observable.just(it)
                 }
             }
+            .doOnEach {
+                programScheduleParser.parseForConfig(extension)
+            }
 
         if (System.currentTimeMillis() - getLastTimeRefresh(extension) < _intervalRefreshData) {
             Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource")
@@ -144,7 +147,7 @@ class ParserExtensionsSource @Inject constructor(
         val response = client
             .newBuilder()
             .callTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(600, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
             .newCall(
@@ -156,6 +159,7 @@ class ParserExtensionsSource @Inject constructor(
 
         if (response.code in 200..299) {
             val bodyStr = response.body.string()
+            response.body.close()
             val index = bodyStr.indexOf(TAG_EXT_INFO)
             programScheduleParser.parseForConfig(extension, getByRegex(REGEX_PROGRAM_SCHEDULE_URL, bodyStr))
             return parseFromText(bodyStr.substring(maxOf(0, index), bodyStr.length), extension)
@@ -224,7 +228,9 @@ class ParserExtensionsSource @Inject constructor(
             .removeSuffix("#")
             .trim()
 
-        Logger.d(this@ParserExtensionsSource, "ChannelLink", channelLink)
+        if (DEBUG) {
+            Logger.d(this@ParserExtensionsSource, "ChannelLink", channelLink)
+        }
         listChannelInfoStr.forEach { line ->
             if (line.removePrefix("#").startsWith("http")) {
                 channelLink = line.trim().removePrefix("#").trim()
@@ -242,7 +248,9 @@ class ParserExtensionsSource @Inject constructor(
                 channelLink = channelLink.trim()
                     .removeSuffix("#")
                     .trim()
-                Logger.d(this@ParserExtensionsSource, "ChannelLink", channelLink)
+                if (DEBUG) {
+                    Logger.d(this@ParserExtensionsSource, "ChannelLink", channelLink)
+                }
             }
 
             if (line.contains(CATCHUP_SOURCE_PREFIX)) {
@@ -329,13 +337,13 @@ class ParserExtensionsSource @Inject constructor(
 
     fun insertAll(): Completable {
         if (!storage.get("beta_insert_default_source", Boolean::class.java)) {
+            val defaultList = mapBongDa.mapToListExConfig(ExtensionsConfig.Type.FOOTBALL)
+                .toMutableList().apply {
+                    addAll(filmData.mapToListExConfig(ExtensionsConfig.Type.MOVIE))
+                    addAll(tvChannel.mapToListExConfig(ExtensionsConfig.Type.TV_CHANNEL))
+                }
             return roomDataBase.extensionsConfig()
-                .insertAll(*mapData.map {
-                    ExtensionsConfig(
-                        sourceName = it.key,
-                        sourceUrl = it.value
-                    )
-                }.toTypedArray())
+                .insertAll(*defaultList.toTypedArray())
                 .subscribeOn(Schedulers.io())
                 .doOnComplete {
                     storage.save("beta_insert_default_source", true)
@@ -399,16 +407,31 @@ class ParserExtensionsSource @Inject constructor(
             "http-user-agent" to "user-agent"
         )
 
-        val mapData = mapOf(
-            "Bóng đá" to "http://gg.gg/SN-90phut",
-            "VthanhTV" to "http://vthanhtivi.pw",
-            "Phim lẻ" to "http://hqth.me/phimle",
+        val filmData = mapOf(
             "Phim lẻ TVHay" to "http://hqth.me/tvhayphimle",
             "Phim lẻ FPTPlay" to "http://hqth.me/fptphimle",
             "Phim bộ" to "http://hqth.me/phimbo",
             "Phim miễn phí" to "https://hqth.me/phimfree",
             "Film" to "https://gg.gg/films24",
         )
+
+        val mapBongDa : Map<String, String> = mapOf(
+            "Bóng đá" to "http://gg.gg/SN-90phut",
+        )
+
+        val tvChannel : Map<String, String> by lazy {
+            mapOf(
+                "K+" to "https://s.id/nhamng",
+                "VThanhTV" to "http://vthanhtivi.pw",
+            )
+        }
+        private fun Map<String, String>.mapToListExConfig(type: ExtensionsConfig.Type) = map {
+            ExtensionsConfig(
+                sourceName = it.key,
+                sourceUrl = it.value,
+                type = type
+            )
+        }
     }
 
 }

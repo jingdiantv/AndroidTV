@@ -92,6 +92,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             }
         }
 
+        extensionsViewModel.programmeForChannelLiveData.observe(viewLifecycleOwner) {
+            if (it is DataState.Success) {
+                if (itemToPlay?.channelId == it.data.channel) {
+                    itemToPlay?.currentProgramme = it.data
+                    itemToPlay?.let { it1 -> showInfo(it1) }
+                }
+            }
+        }
+
 
     }
 
@@ -143,6 +152,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         tvChannel: ExtensionsChannel,
         useCatchup: Boolean = false
     ) {
+        extensionsViewModel.loadProgramForChannel(tvChannel)
         lastExpandUrlTask?.let { disposable.remove(it) }
         disposable.clear()
         val linkToPlay = if (!useCatchup) {
@@ -167,11 +177,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             linkToPlay
         )
 
-        prepare(
-            tvChannel.tvChannelName,
-            null,
-            false
-        )
+        showInfo(tvChannel)
 
         if (linkToPlay.isShortLink()) {
             lastExpandUrlTask = Observable.fromCallable {
@@ -183,7 +189,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                     if (isDetached) return@subscribe
                     playVideo(
                         tvChannel.tvChannelName,
-                        null,
+                        tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(realUrl),
                         false,
@@ -195,7 +201,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                     lifecycle.currentState
                     playVideo(
                         tvChannel.tvChannelName,
-                        null,
+                        tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(linkToPlay),
                         false,
@@ -208,7 +214,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         } else if (linkToPlay.contains(".m3u8")) {
             playVideo(
                 tvChannel.tvChannelName,
-                null,
+                tvChannel.currentProgramme?.description,
                 referer = tvChannel.referer,
                 linkStream = listOf(linkToPlay),
                 false,
@@ -225,7 +231,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                     if (isDetached) return@subscribe
                     playVideo(
                         tvChannel.tvChannelName,
-                        null,
+                        tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(realUrl),
                         false,
@@ -236,7 +242,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                     if (isDetached) return@subscribe
                     playVideo(
                         tvChannel.tvChannelName,
-                        null,
+                        tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(linkToPlay),
                         false,
@@ -246,6 +252,19 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 }))
 
         }
+    }
+
+    private fun showInfo(tvChannel: ExtensionsChannel) {
+        Logger.d(this@FragmentExtensionsPlayback,"ChannelInfo", message = "$tvChannel")
+        prepare(
+            tvChannel.currentProgramme?.title?.takeIf {
+                it.trim().isNotBlank()
+            }?.trim() ?: tvChannel.tvChannelName,
+            tvChannel.currentProgramme?.description?.takeIf {
+                it.isNotBlank()
+            }?.trim(),
+            false
+        )
     }
 
     override fun onDestroyView() {

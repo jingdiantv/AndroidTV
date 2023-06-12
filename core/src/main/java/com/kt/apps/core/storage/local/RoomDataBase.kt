@@ -9,6 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.storage.local.converters.RoomDBTypeConverters
 import com.kt.apps.core.storage.local.dao.*
 import com.kt.apps.core.storage.local.dto.*
@@ -26,9 +27,12 @@ import com.kt.apps.core.storage.local.dto.*
         TVChannelDTO::class,
         TVChannelDTO.TVChannelUrl::class,
         ExtensionsChannel::class,
-        ExtensionChannelCategory::class
+        ExtensionChannelCategory::class,
+        TVScheduler.Programme::class,
+        TVScheduler::class
     ],
-    version = 7
+    version = 8,
+    exportSchema = true,
 )
 abstract class RoomDataBase : RoomDatabase() {
     abstract fun mapChannelDao(): MapChannelDao
@@ -40,6 +44,8 @@ abstract class RoomDataBase : RoomDatabase() {
     abstract fun tvChannelUrlDao(): TVChannelUrlDAO
     abstract fun extensionsChannelDao(): ExtensionsChannelDAO
     abstract fun extensionsChannelCategoryDao(): ExtensionsChannelCategoryDao
+    abstract fun extensionsTVChannelProgramDao(): TVProgramScheduleDao
+    abstract fun tvSchedulerDao(): TVSchedulerDAO
 
     companion object {
         private val MIGRATE_1_2 by lazy {
@@ -94,6 +100,16 @@ abstract class RoomDataBase : RoomDatabase() {
             }
         }
 
+        private val MIGRATE_7_8 by lazy {
+            object : Migration(7, 8) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `Programme` (`channel` TEXT NOT NULL, `channelNumber` TEXT NOT NULL, `start` TEXT NOT NULL, `stop` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `extensionsConfigId` TEXT NOT NULL, `extensionEpgUrl` TEXT NOT NULL, PRIMARY KEY(`channel`, `title`, `start`))")
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `TVScheduler` (`date` TEXT NOT NULL, `sourceInfoName` TEXT NOT NULL, `generatorInfoName` TEXT NOT NULL, `generatorInfoUrl` TEXT NOT NULL, `extensionsConfigId` TEXT NOT NULL, `epgUrl` TEXT NOT NULL, PRIMARY KEY(`epgUrl`))")
+
+                }
+            }
+        }
+
         @Volatile
         var INSTANCE: RoomDataBase? = null
         fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
@@ -104,6 +120,7 @@ abstract class RoomDataBase : RoomDatabase() {
                 .addMigrations(MIGRATE_4_5)
                 .addMigrations(MIGRATE_5_6)
                 .addMigrations(MIGRATE_6_7)
+                .addMigrations(MIGRATE_7_8)
                 .build()
                 .also {
                     INSTANCE = it

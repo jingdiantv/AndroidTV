@@ -16,7 +16,7 @@ open class ExtensionsConfig @JvmOverloads constructor(
 ) : Parcelable {
 
     enum class Type {
-        TV_CHANNEL, FOOTBALL
+        TV_CHANNEL, FOOTBALL, MOVIE
     }
 
     companion object {

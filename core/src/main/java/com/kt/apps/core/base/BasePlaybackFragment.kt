@@ -525,7 +525,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             mPlaybackTitleView?.text = title
         }
         if (!mPlaybackInfoView?.text.toString().equals(info, ignoreCase = true)) {
-            mPlaybackInfoView?.text = info
+            mPlaybackInfoView?.text = info?.trim()
         }
         if (mPlaybackTitleView?.isSelected != true) {
             mPlaybackTitleView?.isSelected = true

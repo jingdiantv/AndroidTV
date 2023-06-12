@@ -1,13 +1,13 @@
 package com.kt.apps.core.tv.viewmodels
 
 import android.net.Uri
-import androidx.core.os.bundleOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logPlayByDeeplinkTV
@@ -155,6 +155,25 @@ open class BaseTVChannelViewModel constructor(
             }
         }
     }
+
+    private val _programmeForChannelLiveData by lazy {
+        MutableLiveData<DataState<TVScheduler.Programme>>()
+    }
+
+    val programmeForChannelLiveData: LiveData<DataState<TVScheduler.Programme>>
+        get() = _programmeForChannelLiveData
+
+    fun loadProgramForChannel(channel: TVChannel) {
+        add(
+            interactors.getCurrentProgrammeForChannel.invoke(channel.channelId)
+                .subscribe({
+                    _programmeForChannelLiveData.postValue(DataState.Success(it))
+                }, {
+                    _programmeForChannelLiveData.postValue(DataState.Error(it))
+                })
+        )
+    }
+
 
     fun clearCurrentPlayingChannelState() {
         _lastWatchedChannel = null
