@@ -4,9 +4,11 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.tv.storage.TVStorage
 import io.reactivex.rxjava3.core.Observable
+import java.util.regex.Pattern
 
 interface ITVDataSource {
     fun getTvList(): Observable<List<TVChannel>>
@@ -14,6 +16,35 @@ interface ITVDataSource {
         tvChannel: TVChannel,
         isBackup: Boolean = false
     ): Observable<TVChannelLinkStream>
+
+    companion object {
+        fun getPriority(group: String): Int {
+            return when (group.lowercase()) {
+                TVChannelGroup.VTV.name.lowercase() -> 100
+                TVChannelGroup.VTC.name.lowercase() -> 200
+                TVChannelGroup.HTV.name.lowercase() -> 300
+                TVChannelGroup.HTVC.name.lowercase() -> 400
+                TVChannelGroup.SCTV.name.lowercase() -> 500
+                TVChannelGroup.THVL.name.lowercase() -> 600
+                else -> 1000
+            }
+        }
+        fun sortTVChannel(): (TVChannel) -> Int = {
+            val priority = getPriority(it.tvGroup)
+            if (priority < 1000) {
+                val matcher = Pattern.compile("[0-9]+")
+                    .matcher(it.tvChannelName)
+                var num = 99
+                while (matcher.find()) {
+                    num = matcher.group(0)?.toInt() ?: 99
+                }
+
+                priority + num
+            } else {
+                priority
+            }
+        }
+    }
 }
 
 fun ITVDataSource.needRefreshData(

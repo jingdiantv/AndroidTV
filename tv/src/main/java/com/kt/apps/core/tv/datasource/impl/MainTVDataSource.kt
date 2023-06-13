@@ -10,6 +10,7 @@ import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.TVChannelDTO
+import com.kt.apps.core.storage.local.dto.TVChannelWithUrls
 import com.kt.apps.core.tv.datasource.ITVDataSource
 import com.kt.apps.core.tv.datasource.needRefreshData
 import com.kt.apps.core.tv.di.TVScope
@@ -19,7 +20,6 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import java.util.regex.Pattern
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -62,27 +62,7 @@ class MainTVDataSource @Inject constructor(
                     onlineSource
                 } else {
                     Logger.d(this@MainTVDataSource, message = "Offline source: ${Gson().toJson(it)}")
-                    Observable.just(
-                        it.map { tvChannelFromDB ->
-                            TVChannel(
-                                tvGroup = tvChannelFromDB.tvChannel.tvGroup,
-                                tvChannelName = tvChannelFromDB.tvChannel.tvChannelName,
-                                tvChannelWebDetailPage = tvChannelFromDB.urls.firstOrNull {
-                                    it.type == TVChannelUrlType.WEB_PAGE.value
-                                }?.url ?: tvChannelFromDB.urls[0].url,
-                                urls = tvChannelFromDB.urls.map { url ->
-                                    TVChannel.Url(
-                                        dataSource = url.src,
-                                        url = url.url,
-                                        type = url.type
-                                    )
-                                },
-                                sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
-                                logoChannel = tvChannelFromDB.tvChannel.logoChannel,
-                                channelId = tvChannelFromDB.tvChannel.channelId
-                            )
-                        }
-                    )
+                    Observable.just(it.mapToTVChannel())
                 }
             }
 
@@ -101,18 +81,6 @@ class MainTVDataSource @Inject constructor(
         return onlineSource
     }
 
-    private fun getPriority(group: String): Int {
-        return when (group.lowercase()) {
-            TVChannelGroup.VTV.name.lowercase() -> 100
-            TVChannelGroup.VTC.name.lowercase() -> 200
-            TVChannelGroup.HTV.name.lowercase() -> 300
-            TVChannelGroup.HTVC.name.lowercase() -> 400
-            TVChannelGroup.SCTV.name.lowercase() -> 500
-            TVChannelGroup.THVL.name.lowercase() -> 600
-            else -> 1000
-        }
-    }
-
     private fun getFireStoreSource(): Observable<List<TVChannel>> {
         return Observable.create<List<TVChannel>> { emitter ->
             fireStoreDataBase.collection("tv_channels")
@@ -121,7 +89,7 @@ class MainTVDataSource @Inject constructor(
                     val list = it.toObjects(TVChannelFromDB::class.java)
                         .filterNotNull()
                         .mapToListChannel()
-                        .sortedBy(sortTVChannel())
+                        .sortedBy(ITVDataSource.sortTVChannel())
                     it.toObjects(TVChannelFromDB::class.java)
                     saveToRoomDB(list)
                     emitter.onNext(list)
@@ -132,22 +100,6 @@ class MainTVDataSource @Inject constructor(
                 }
         }.retry { t1, t2 ->
             t1 < 3
-        }
-    }
-
-    private fun sortTVChannel(): (TVChannel) -> Int = {
-        val priority = getPriority(it.tvGroup)
-        if (priority < 1000) {
-            val matcher = Pattern.compile("[0-9]+")
-                .matcher(it.tvChannelName)
-            var num = 99
-            while (matcher.find()) {
-                num = matcher.group(0)?.toInt() ?: 99
-            }
-
-            priority + num
-        } else {
-            priority
         }
     }
 
@@ -174,6 +126,7 @@ class MainTVDataSource @Inject constructor(
                         val value = it.getValue<List<TVChannelFromDB?>>() ?: return@addOnSuccessListener
                         val tvList = value.filterNotNull()
                             .mapToListChannel()
+                            .sortedBy(ITVDataSource.sortTVChannel())
 
                         totalList.addAll(tvList)
                         emitter.onNext(tvList)
@@ -202,6 +155,32 @@ class MainTVDataSource @Inject constructor(
         }.retry { t1, t2 ->
             t1 < 3
         }
+
+    private fun List<TVChannelWithUrls>.mapToTVChannel(): List<TVChannel> {
+        return this.map {
+            it.mapToTVChannel()
+        }
+    }
+
+    private fun TVChannelWithUrls.mapToTVChannel(): TVChannel {
+        return TVChannel(
+            tvGroup = this.tvChannel.tvGroup,
+            tvChannelName = this.tvChannel.tvChannelName,
+            tvChannelWebDetailPage = this.urls.firstOrNull {
+                it.type == TVChannelUrlType.WEB_PAGE.value
+            }?.url ?: this.urls[0].url,
+            urls = this.urls.map { url ->
+                TVChannel.Url(
+                    dataSource = url.src,
+                    url = url.url,
+                    type = url.type
+                )
+            },
+            sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
+            logoChannel = this.tvChannel.logoChannel,
+            channelId = this.tvChannel.channelId
+        )
+    }
 
     private fun TVChannelFromDB.mapToTVChannel(): TVChannel {
         val totalUrls = this.urls.filterNotNull()
