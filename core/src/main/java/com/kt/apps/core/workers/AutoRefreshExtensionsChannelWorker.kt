@@ -1,20 +1,20 @@
 package com.kt.apps.core.workers
 
 import android.content.Context
-import android.util.Log
-import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.rxjava3.RxWorker
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.getLastRefreshExtensions
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.saveLastRefreshExtensions
-import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.core.Single
 
 class AutoRefreshExtensionsChannelWorker(
     context: Context,
     params: WorkerParameters
-) : Worker(context, params) {
+) : RxWorker(context, params) {
     private val roomDatabase by lazy {
         RoomDataBase.getInstance(context)
     }
@@ -41,54 +41,45 @@ class AutoRefreshExtensionsChannelWorker(
     }
 
     init {
-        Log.e("TAG", "init work")
+        Logger.d(this@AutoRefreshExtensionsChannelWorker, message = "init work")
     }
 
-    override fun doWork(): Result {
-        Log.e("TAG", "doWork")
-        CompositeDisposable()
-            .add(
-                extensionsDao.getAll()
-                    .flatMapIterable {
-                        it
-                    }
-                    .filter {
-                        System.currentTimeMillis() - keyValueStorage.getLastRefreshExtensions(it) > 0.5 * HOUR
-                    }
-                    .concatMapCompletable {
-                        if (it.type == ExtensionsConfig.Type.FOOTBALL) {
-                            roomDatabase.extensionsChannelDao()
-                                .deleteBySourceId(it.sourceUrl)
-                                .andThen(
-                                    parserExtensionsSource.parseFromRemoteRx(it)
-                                        .doOnComplete {
-                                            keyValueStorage.saveLastRefreshExtensions(it)
-                                        }
-                                        .flatMapCompletable {
-                                            roomDatabase.extensionsChannelDao()
-                                                .insert(it)
-                                        }
-                                )
-                        } else {
-                            parserExtensionsSource.parseFromRemoteRx(it)
-                                .flatMapCompletable {
-                                    roomDatabase.extensionsChannelDao()
-                                        .insert(it)
-                                }
-                                .doOnComplete {
-                                    keyValueStorage.saveLastRefreshExtensions(it)
-                                }
-                        }
-                    }
-                    .subscribe({
-                        Log.e("TAG", "Refresh success")
-                    }, {
-                        Log.e("TAG", "Refresh error: ${it.message}", it)
-                    })
+    override fun createWork(): Single<Result> {
+        return extensionsDao.getAll()
+            .flatMapIterable {
+                it
+            }
+            .filter {
+                System.currentTimeMillis() - keyValueStorage.getLastRefreshExtensions(it) >= parserExtensionsSource.getIntervalRefreshData(it.type)
+            }
+            .concatMapCompletable {extensionsConfig ->
+                if (extensionsConfig.type == ExtensionsConfig.Type.FOOTBALL) {
+                    roomDatabase.extensionsChannelDao()
+                        .deleteBySourceId(extensionsConfig.sourceUrl)
+                        .andThen(
+                            parseExtensionsSource(extensionsConfig)
+                        )
+                } else {
+                    parseExtensionsSource(extensionsConfig)
+                }
+            }
+            .toSingleDefault(Result.success())
 
-            )
-        return Result.success()
     }
+
+    private fun parseExtensionsSource(extensionsConfig: ExtensionsConfig) =
+        parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
+            .flatMapCompletable {
+                roomDatabase.extensionsChannelDao()
+                    .insert(it)
+            }
+            .doOnComplete {
+                Logger.d(
+                    this@AutoRefreshExtensionsChannelWorker,
+                    message = "Complete refresh extensions: ${extensionsConfig.sourceUrl}"
+                )
+                keyValueStorage.saveLastRefreshExtensions(extensionsConfig)
+            }
 
     companion object {
         private const val HOUR = 60 * 60 * 1000L
