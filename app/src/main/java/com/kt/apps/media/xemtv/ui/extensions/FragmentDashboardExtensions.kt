@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
@@ -62,7 +63,7 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
     }
 
     override fun initAction(rootView: View) {
-        extensionsViewModel.loadAllListExtensionsChannelConfig(true)
+        extensionsViewModel.loadAllListExtensionsChannelConfig(false)
         setAlignment(mAlignedTop)
         _btnAddSource?.setOnClickListener {
             requireActivity().supportFragmentManager
@@ -81,14 +82,16 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                 is DataState.Success -> {
                     val listConfig = it.data
                     if (listConfig.isNotEmpty()) {
-                        viewPager.currentItem = 0
-                        val constrainSet = ConstraintSet()
-                        constrainSet.clone(
-                            LayoutInflater.from(requireContext())
-                                .inflate(R.layout.fragment_extensions_dashboard, null, false)
-                                    as ConstraintLayout
-                        )
-                        constrainSet.applyTo(view as ConstraintLayout)
+                        if (!viewPager.isVisible) {
+                            viewPager.currentItem = 0
+                            val constrainSet = ConstraintSet()
+                            constrainSet.clone(
+                                LayoutInflater.from(requireContext())
+                                    .inflate(R.layout.fragment_extensions_dashboard, null, false)
+                                        as ConstraintLayout
+                            )
+                            constrainSet.applyTo(view as ConstraintLayout)
+                        }
                     } else {
                         val constrainSet = ConstraintSet()
                         constrainSet.clone(
@@ -195,6 +198,9 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
             get() = _totalList
 
         fun areContentTheSame(targetList: List<ExtensionsConfig>): Boolean {
+            if (totalList.isEmpty()) {
+                return false
+            }
             return totalList.map {
                 it.sourceUrl
             }.reduce { acc, s ->
