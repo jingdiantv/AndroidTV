@@ -6,6 +6,7 @@ import com.google.firebase.database.ktx.getValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
@@ -20,6 +21,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -62,7 +64,8 @@ class MainTVDataSource @Inject constructor(
                     onlineSource
                 } else {
                     Logger.d(this@MainTVDataSource, message = "Offline source: ${Gson().toJson(it)}")
-                    Observable.just(it.mapToTVChannel())
+                    Observable.just(it.mapToTVChannel()
+                        .sortedBy(ITVDataSource.sortTVChannel()))
                 }
             }
 
@@ -83,16 +86,25 @@ class MainTVDataSource @Inject constructor(
 
     private fun getFireStoreSource(): Observable<List<TVChannel>> {
         return Observable.create<List<TVChannel>> { emitter ->
-            fireStoreDataBase.collection("tv_channels")
+            fireStoreDataBase.collection("tv_channels_by_version")
+                .document("1")
                 .get()
                 .addOnSuccessListener {
-                    val list = it.toObjects(TVChannelFromDB::class.java)
-                        .filterNotNull()
-                        .mapToListChannel()
-                        .sortedBy(ITVDataSource.sortTVChannel())
-                    it.toObjects(TVChannelFromDB::class.java)
-                    saveToRoomDB(list)
-                    emitter.onNext(list)
+                    val jsonObject = JSONObject(it.data!!["alls"]!!.toString())
+                    val totalList = mutableListOf<TVChannel>()
+                    supportGroups.forEach {
+                        val listJsonArr = jsonObject.getJSONArray(it.name)
+                        val list = Gson().fromJson<List<TVChannelFromDB?>>(
+                            listJsonArr.toString(),
+                            TypeToken.getParameterized(List::class.java, TVChannelFromDB::class.java).type
+                        ).filterNotNull()
+                        totalList.addAll(list.mapToListChannel()
+                            .sortedBy(ITVDataSource.sortTVChannel())
+                        )
+                    }
+                    saveToRoomDB(totalList)
+                    fireStoreDataBase.clearPersistence()
+                    emitter.onNext(totalList)
                     emitter.onComplete()
                 }
                 .addOnFailureListener {
