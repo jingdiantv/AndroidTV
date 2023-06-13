@@ -260,7 +260,8 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
             tvChannel.description.takeIf {
                 it.isNotBlank()
             }?.trim(),
-            true
+            isLive = true,
+            showProgressManager = false
         )
     }
 
