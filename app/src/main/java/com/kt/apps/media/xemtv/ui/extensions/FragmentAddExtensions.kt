@@ -123,7 +123,7 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             view?.findViewById<TextInputEditText>(R.id.textInputEditText_2)?.text.toString(),
         )
         progressManager.show()
-        val disposable = parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
+        val disposable = parserExtensionsSource.parseFromRemoteMaybe(extensionsConfig)
             .subscribeOn(Schedulers.io())
             .flatMapCompletable {
                 if (it.isNotEmpty()) {

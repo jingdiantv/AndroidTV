@@ -40,7 +40,7 @@ class ParserExtensionsSourceTest {
 
     @Test
     fun parseFromRemoteRx() {
-        parserExtensionsSource.parseFromRemoteRx(config)
+        parserExtensionsSource.parseFromRemoteMaybe(config)
             .test()
             .assertNoErrors()
             .assertComplete()

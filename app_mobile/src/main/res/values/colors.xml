@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="edittext_border">#8BFFFFFF</color>
     <color name="disabled_color">#757575</color>
+    <color name="player_background">#CC000000</color>
 </resources>

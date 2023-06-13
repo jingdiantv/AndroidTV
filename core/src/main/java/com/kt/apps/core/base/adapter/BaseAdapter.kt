@@ -16,7 +16,7 @@ abstract class BaseAdapter<T, VB : ViewDataBinding> : RecyclerView.Adapter<BaseV
             val newPosition = _listItem.indexOf(value)
             field = value
             notifyItemChanged(oldPosition)
-            notifyItemChanged(newPosition)
+            notifyItemChanged(newPosition, value)
         }
 
     val isNextAvailable: Boolean

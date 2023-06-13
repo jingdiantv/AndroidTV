@@ -71,6 +71,8 @@ class GetListTVChannel @Inject constructor(
         while (isLoadingData.get()) {
             if (cacheData != null) {
                 return Observable.just(cacheData!!)
+            } else {
+                return  Observable.empty()
             }
         }
         isLoadingData.compareAndSet(false, true)

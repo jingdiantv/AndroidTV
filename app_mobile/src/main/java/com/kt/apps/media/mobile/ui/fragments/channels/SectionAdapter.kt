@@ -28,8 +28,6 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
     override val itemLayoutRes: Int
         get() = R.layout.item_section
 
-    private val maxItemDisplay: Int = 4
-
     private val isLandscape by lazy { context.resources.getBoolean(R.bool.is_landscape) }
 
     private var calculatePreferWidth: Int = 0
@@ -37,6 +35,10 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
     var onItemLongCLickListener: (item: SectionItem) -> Boolean = {
         false
     }
+
+    var selectedItemPos = -1
+    var lastItemSelectedPos = -1
+
     override fun bindItem(
         item: SectionItem,
         binding: ItemSectionBinding,
@@ -45,13 +47,10 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
     ) {
         binding.title.text = item.displayTitle
         binding.logo.setImageDrawable(item.icon)
-
-        currentSelectedItem?.takeIf {
-            it.id == item.id
-        }?.run {
+        if (selectedItemPos == position) {
             binding.logo.setColorFilter(binding.logo.context.resources.getColor(R.color.white))
             binding.title.setTextColor(binding.title.context.resources.getColor(R.color.white))
-        } ?: kotlin.run {
+        } else {
             binding.logo.setColorFilter(binding.logo.context.resources.getColor(R.color.disabled_color))
             binding.title.setTextColor(binding.title.context.resources.getColor(R.color.disabled_color))
         }
@@ -75,13 +74,22 @@ class SectionAdapter(val context: Context): BaseAdapter<SectionItem, ItemSection
         }
     }
 
-    fun selectForId(id: Int) {
-        if (currentSelectedItem?.id == id) return
-        listItem.firstOrNull {
+    private fun findPosition(id: Int) : Int {
+        return _listItem.indexOfFirst {
             it.id == id
-        }?.run {
-            currentSelectedItem = this
         }
+    }
+    fun selectForId(id: Int) : Int {
+        selectedItemPos = findPosition(id)
+        if (selectedItemPos == -1) return selectedItemPos
+        if (lastItemSelectedPos == -1) {
+            lastItemSelectedPos = findPosition(id)
+        } else {
+            notifyItemChanged(lastItemSelectedPos)
+            lastItemSelectedPos = selectedItemPos
+        }
+        notifyItemChanged(selectedItemPos)
+        return  selectedItemPos
     }
 
     private fun calculatePreferWidth(): Int {

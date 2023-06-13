@@ -163,7 +163,7 @@ open class BaseTVChannelViewModel constructor(
 
     open fun enqueueInsertWatchNextTVChannel(tvChannel: TVChannel) {}
 
-    open fun onFetchTVListSuccess(listChannel: List<TVChannel>) {
+    open fun  onFetchTVListSuccess(listChannel: List<TVChannel>) {
 
     }
 

@@ -1,30 +1,41 @@
 package com.kt.apps.media.mobile.ui.complex
 
+import android.app.AlertDialog
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.MotionEvent
-import android.view.OrientationEventListener
-import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import android.view.View
+import android.view.Window
+import android.widget.ImageView
+import android.widget.Toast
+import androidx.lifecycle.*
 import com.google.android.exoplayer2.video.VideoSize
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.dialog.MaterialDialogs
+import com.google.android.material.textview.MaterialTextView
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
+import com.kt.apps.media.mobile.models.NetworkState
+import com.kt.apps.media.mobile.models.NoNetworkException
+import com.kt.apps.media.mobile.models.PlaybackFailException
 import com.kt.apps.media.mobile.ui.fragments.channels.IPlaybackAction
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackFragment
 import com.kt.apps.media.mobile.ui.fragments.channels.PlaybackViewModel
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.NetworkStateViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.lang.ref.WeakReference
 import javax.inject.Inject
-import kotlin.properties.Delegates
-import kotlin.properties.ObservableProperty
-import kotlin.reflect.KProperty
 
+enum class  PlaybackState {
+    Fullscreen, Minimal, Invisible
+}
 class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     @Inject
     lateinit var factory: ViewModelProvider.Factory
@@ -32,13 +43,6 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     override val layoutRes: Int
         get() = R.layout.activity_complex
 
-    private val _portraitLayoutHandler: PortraitLayoutHandler by lazy {
-        PortraitLayoutHandler(WeakReference(this))
-    }
-
-    private val _landscapeLayoutHandler: LandscapeLayoutHandler by lazy {
-        LandscapeLayoutHandler(WeakReference(this))
-    }
     private var layoutHandler: ComplexLayoutHandler? = null
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
@@ -47,11 +51,20 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         }
     }
 
+    private val playbackViewModel: PlaybackViewModel by lazy {
+        ViewModelProvider(this, factory)[PlaybackViewModel::class.java]
+    }
+
+    private val networkStateViewModel: NetworkStateViewModel? by lazy {
+        ViewModelProvider(this, factory)[NetworkStateViewModel::class.java]
+    }
+
     private val linkStreamDataObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
         Observer {dataState ->
             when(dataState) {
                 is DataState.Loading ->
                     layoutHandler?.onStartLoading()
+                is DataState.Error -> handleStreamLinkError(dataState.throwable)
                 else -> return@Observer
             }
         }
@@ -62,10 +75,15 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
 
         val metrics = resources.displayMetrics
         layoutHandler = if (metrics.widthPixels <= metrics.heightPixels) {
-            _portraitLayoutHandler
+            PortraitLayoutHandler(WeakReference(this))
         } else {
-           _landscapeLayoutHandler
+            LandscapeLayoutHandler(WeakReference(this))
         }
+
+        layoutHandler?.onPlaybackStateChange = {
+            binding.fragmentContainerPlayback.getFragment<PlaybackFragment>().displayState = it
+        }
+
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
@@ -87,14 +105,38 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                     if (userAction) layoutHandler?.onPlayPause(isPause = false)
                 }
             }
+        }
 
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    networkStateViewModel?.networkStatus?.
+                    collectLatest {state ->
+                        if (state == NetworkState.Unavailable)
+                            showNoNetworkAlert(autoHide = true)
+                    }
+                }
 
+                launch {
+                    playbackViewModel.state.collectLatest { state ->
+                        when (state) {
+                            is PlaybackViewModel.State.FINISHED ->
+                                if (state.error != null) {
+                                    val error = (state.error as PlaybackFailException).error
+                                    val channelName = (tvChannelViewModel?.lastWatchedChannel?.channel?.tvChannelName ?: "")
+                                    val message = "Kênh $channelName hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.errorCode} ${error.message}"
+                                    showErrorAlert(message)
+                                }
+                            else -> { }
+                        }
+                    }
+                }
+            }
         }
 
         //Deeplink handle
         handleIntent(intent)
     }
-
     override fun onBackPressed() {
         if (layoutHandler?.onBackEvent() == true) {
             return
@@ -125,6 +167,42 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                 intent.data = null
             }
         }
+    }
+
+    private fun handleStreamLinkError(throwable: Throwable) {
+        if (throwable is NoNetworkException) {
+            showNoNetworkAlert()
+        }
+    }
+
+    private fun showNoNetworkAlert(autoHide: Boolean = false) {
+        val dialog = AlertDialog.Builder(this, R.style.WrapContentDialog).apply {
+            setCancelable(true)
+            setView(layoutInflater.inflate(R.layout.no_internet_dialog, null))
+        }
+            .create().apply {
+                requestWindowFeature(Window.FEATURE_NO_TITLE)
+            }
+        dialog.show()
+        if (autoHide) {
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(1200)
+                dialog.dismiss()
+            }
+        }
+    }
+
+    private fun showErrorAlert(message: String) {
+        AlertDialog.Builder(this, R.style.WrapContentDialog).apply {
+            setCancelable(true)
+            setView(layoutInflater.inflate(R.layout.error_dialog, null).apply {
+                findViewById<MaterialTextView>(R.id.alert_message).text = message
+            })
+        }
+            .create()
+            .show()
+
+
     }
 
 }

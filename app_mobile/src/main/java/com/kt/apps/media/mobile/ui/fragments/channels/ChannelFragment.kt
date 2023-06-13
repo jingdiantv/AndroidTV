@@ -4,41 +4,45 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import android.widget.Toast
+import androidx.core.view.doOnPreDraw
+import androidx.lifecycle.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.*
-import cn.pedant.SweetAlert.ProgressHelper
+import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import com.kt.apps.core.base.BaseFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
-import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.TAG
-import com.kt.apps.core.utils.fadeIn
-import com.kt.apps.core.utils.fadeOut
+import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.mobile.BuildConfig
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityMainBinding
+import com.kt.apps.media.mobile.models.NetworkState
 import com.kt.apps.media.mobile.ui.fragments.dialog.AddExtensionFragment
+import com.kt.apps.media.mobile.ui.fragments.models.ExtensionsViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.NetworkStateViewModel
+import com.kt.apps.media.mobile.ui.fragments.models.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.ChannelElement
-import com.kt.apps.media.mobile.ui.main.IChannelElement
-import com.kt.apps.media.mobile.ui.main.TVChannelViewModel
 import com.kt.apps.media.mobile.ui.main.TVDashboardAdapter
 import com.kt.apps.media.mobile.utils.debounce
 import com.kt.apps.media.mobile.utils.fastSmoothScrollToPosition
+import com.kt.apps.media.mobile.utils.groupAndSort
 import com.kt.apps.media.mobile.utils.screenHeight
 import com.kt.skeleton.KunSkeleton
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-typealias ResultData = Pair<List<TVChannel>, ExtensionResult>
 
 class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
@@ -52,10 +56,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val isLandscape: Boolean
         get() = resources.getBoolean(R.bool.is_landscape)
-
-    private val progressHelper by lazy {
-        ProgressHelper(this.context)
-    }
 
     private val defaultSection by lazy {
         arrayListOf<SectionItem>(
@@ -85,9 +85,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     }
 
     //Views
-    private val progressDialog by lazy {
-        binding.progressDialog
-    }
     private val swipeRefreshLayout by lazy {
         binding.swipeRefreshLayout
     }
@@ -103,6 +100,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     private val skeletonScreen by lazy {
         KunSkeleton.bind(mainRecyclerView)
             .adapter(adapter)
+            .itemCount(10)
             .recyclerViewLayoutItem(
                 R.layout.item_row_channel_skeleton,
                 R.layout.item_channel_skeleton
@@ -114,38 +112,32 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         MutableStateFlow<List<TVChannel>>(emptyList())
     }
 
-    private val _extensionsChannelData by lazy {
-        MutableStateFlow<DataState<ExtensionResult>>(DataState.None())
-    }
-
     private val debounceOnScrollListener by lazy {
         debounce<Unit>(300, viewLifecycleOwner.lifecycleScope) {
             if (adapter.listItem.isEmpty()) {
                 return@debounce
             }
-            val item = (binding.mainChannelRecyclerView.layoutManager as LinearLayoutManager)
-                .findFirstVisibleItemPosition()
-            if (item == RecyclerView.NO_POSITION) {
-                return@debounce
-            }
-            val itemTitle = adapter.listItem[item].first
-            fun performSelected(id: Int) {
-                sectionAdapter.selectForId(id)
-            }
-            adapter.listItem[item].second.firstOrNull()?.let {
-                (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
-            }?.let {
-                _cacheMenuItem[it]
-            }?.run {
-                performSelected(this)
-            } ?: kotlin.run {
-                performSelected(
-                    if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
-                        R.id.radio
-                    } else {
-                        R.id.tv
-                    }
-                )
+            (mainRecyclerView.layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+                .let { if (it == NO_POSITION) (mainRecyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition() else it }
+                .takeIf { it != NO_POSITION }
+                ?.run {
+                    Log.d(TAG, "debounceOnScrollListener: $this")
+                    val id = findMenuIdByItemPosition(this)
+                    val adapterId = sectionAdapter.selectForId(id)
+                    sectionRecyclerView.fastSmoothScrollToPosition(adapterId)
+                }
+        }
+    }
+
+    private fun findMenuIdByItemPosition(position: Int): Int {
+        return adapter.listItem[position].second.firstOrNull()?.let {
+            (it as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom
+        }?.let { _cacheMenuItem[it] } ?: kotlin.run {
+            val itemTitle = adapter.listItem[position].first
+            if (itemTitle == TVChannelGroup.VOV.value || itemTitle == TVChannelGroup.VOH.value) {
+                R.id.radio
+            } else {
+                R.id.tv
             }
         }
     }
@@ -177,9 +169,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         TVDashboardAdapter().apply {
             onChildItemClickListener = { item, _ ->
                 when (item) {
-                    is ChannelElement.TVChannelElement -> tvChannelViewModel?.getLinkStreamForChannel(
-                        item.model
-                    )
+                    is ChannelElement.TVChannelElement -> onClickItemChannel(item.model)
                     is ChannelElement.ExtensionChannelElement -> tvChannelViewModel?.getExtensionChannel(
                         item.model
                     )
@@ -190,9 +180,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val playbackViewModel: PlaybackViewModel? by lazy {
         activity?.run {
-            ViewModelProvider(this, factory)[PlaybackViewModel::class.java].apply {
-                this.videoState.observe(this@ChannelFragment, playbackStateObserver)
-            }
+            ViewModelProvider(this, factory)[PlaybackViewModel::class.java]
         }
     }
 
@@ -200,7 +188,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         activity?.run {
             ViewModelProvider(this, factory)[TVChannelViewModel::class.java].apply {
                 this.tvChannelLiveData.observe(this@ChannelFragment, listTVChannelObserver)
-                this.tvWithLinkStreamLiveData.observe(this@ChannelFragment, tvChannelStreamObserver)
             }
         }
     }
@@ -220,51 +207,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
     }
 
-    private val tvChannelStreamObserver: Observer<DataState<TVChannelLinkStream>> by lazy {
-        Observer { dataState ->
-            dataState.takeIf { it is DataState.Loading }.apply {
-                progressDialog.fadeIn {
-                    progressHelper.spin()
-                }
-            } ?: progressDialog.fadeOut {
-                progressHelper.stopSpinning()
-            }
-        }
-    }
-
-    private val playbackStateObserver: Observer<PlaybackViewModel.State> by lazy {
-        Observer { state ->
-            if (!isLandscape) {
-                return@Observer
-            }
-            when (state) {
-                PlaybackViewModel.State.IDLE -> {
-                    with(mainRecyclerView) {
-                        setPadding(0, 0, 0, 0)
-                    }
-                }
-                PlaybackViewModel.State.LOADING, PlaybackViewModel.State.PLAYING -> {
-                    with(mainRecyclerView) {
-                        setPadding(0, 0, 0, screenHeight / 3)
-                        clipToPadding = false
-                    }
-                }
-                else -> {}
-            }
-        }
-    }
     private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
-
     override fun initView(savedInstanceState: Bundle?) {
-        tvChannelViewModel?.getListTVChannel(savedInstanceState == null)
+        tvChannelViewModel
         playbackViewModel
         extensionsViewModel?.loadExtensionData()
-
-        with(binding.sectionRecyclerView) {
-            layoutManager = LinearLayoutManager(context).apply {
-                orientation = if (isLandscape) VERTICAL else HORIZONTAL
-            }
-        }
 
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
@@ -274,42 +221,76 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             }
             setHasFixedSize(true)
             setItemViewCacheSize(9)
-            viewTreeObserver.addOnGlobalLayoutListener {
-                this@ChannelFragment.adapter.spanCount =
-                    3.coerceAtLeast((width / 170 / resources.displayMetrics.scaledDensity).toInt())
+            doOnPreDraw {
+                val spanCount = 3.coerceAtLeast((mainRecyclerView.measuredWidth / 220.dpToPx()))
+                this@ChannelFragment.adapter.spanCount = spanCount
             }
         }
 
         sectionRecyclerView.apply {
-            adapter = sectionAdapter
+            adapter = this@ChannelFragment.sectionAdapter
+            layoutManager = LinearLayoutManager(context).apply {
+                orientation = if (isLandscape) VERTICAL else HORIZONTAL
+            }
         }
         sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
+        _tvChannelData.value = emptyList()
+
+        skeletonScreen.run()
+        tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
     }
 
 
     override fun initAction(savedInstanceState: Bundle?) {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            tvChannelViewModel?.getListTVChannel(true)
+        with(binding.swipeRefreshLayout) {
+            setDistanceToTriggerSync(screenHeight / 3)
+            setOnRefreshListener {
+                _tvChannelData.value = emptyList()
+                skeletonScreen.run()
+                tvChannelViewModel?.getListTVChannel(true)
+            }
         }
         with(binding.mainChannelRecyclerView) {
             addOnScrollListener(_onScrollListener)
         }
 
-        lifecycleScope.launch {
-            _tvChannelData.collectLatest { tvChannel ->
-                reloadOriginalSource(tvChannel)
-            }
-        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    _tvChannelData.collectLatest { tvChannel ->
+                        delay(500)
+                        if (tvChannel.isNotEmpty())
+                            reloadOriginalSource(tvChannel)
+                    }
+                }
 
-        lifecycleScope.launchWhenStarted {
-            extensionsViewModel?.perExtensionChannelData?.collect {
-                appendExtensionSource(it)
-            }
-        }
+                if (isLandscape)
+                    launch {
+                        playbackViewModel?.state?.collectLatest {state ->
+                            with(mainRecyclerView) {
+                                when (state) {
+                                    PlaybackViewModel.State.IDLE -> setPadding(0, 0, 0, 0)
+                                    PlaybackViewModel.State.LOADING, PlaybackViewModel.State.LOADING -> {
+                                        setPadding(0,0,0,(screenHeight * 0.4).toInt())
+                                        clipToPadding = false
+                                    }
+                                    else -> { }
+                                }
+                            }
+                        }
+                    }
 
-        lifecycleScope.launchWhenStarted {
-            extensionsViewModel?.extensionsConfigs?.collectLatest {
-                reloadNavigationBar(it)
+                launch {
+                    extensionsViewModel?.perExtensionChannelData?.collect {
+                        appendExtensionSource(it)
+                    }
+                }
+
+                launch {
+                    extensionsViewModel?.extensionsConfigs?.collectLatest {
+                        reloadNavigationBar(it)
+                    }
+                }
             }
         }
     }
@@ -319,6 +300,10 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         mainRecyclerView.clearOnScrollListeners()
     }
 
+    override fun onStart() {
+        super.onStart()
+        mainRecyclerView.addOnScrollListener(_onScrollListener)
+    }
     private fun reloadOriginalSource(data: List<TVChannel>) {
         val grouped = groupAndSort(data).map {
             Pair(
@@ -327,6 +312,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
         swipeRefreshLayout.isRefreshing = false
         adapter.onRefresh(grouped)
+        extensionsViewModel?.perExtensionChannelData?.replayCache?.forEach {
+            appendExtensionSource(it)
+        }
+        sectionAdapter.onRefresh(defaultSection + addExtensionSection, notifyDataSetChange = true)
+        sectionRecyclerView.fastSmoothScrollToPosition(0)
         skeletonScreen.hide {
             scrollToPosition(0)
         }
@@ -351,8 +341,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
 
     private fun onChangeItem(item: SectionItem): Boolean {
-        val currentSelected = sectionAdapter.currentSelectedItem
-        if (item.id == currentSelected?.id) return false
 
         when (item.id) {
             R.id.radio -> scrollToPosition(8)
@@ -441,21 +429,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         )
     }
 
-    private inline fun <reified T> groupAndSort(list: List<T>): List<Pair<String, List<T>>> {
-        return when (T::class) {
-            TVChannel::class -> list.groupBy { (it as TVChannel).tvGroup }
-                .toList()
-                .sortedWith(Comparator { o1, o2 ->
-                    return@Comparator if (o2.first == TVChannelGroup.VOV.value || o2.first == TVChannelGroup.VOH.value)
-                        if (o1.first == TVChannelGroup.VOH.value) 0 else -1
-                    else 1
-                })
-            ExtensionsChannel::class -> list.groupBy { (it as ExtensionsChannel).tvGroup }
-                .toList()
-                .sortedWith(Comparator { o1, o2 ->
-                    return@Comparator o1.first.compareTo(o2.first)
-                })
-            else -> emptyList()
-        }
+    private fun onClickItemChannel(channel: TVChannel) {
+        tvChannelViewModel?.loadLinkStreamForChannel(channel)
     }
 }
