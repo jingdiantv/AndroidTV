@@ -78,10 +78,6 @@ class FragmentExtensions : BaseRowSupportFragment() {
         adapter = mRowsAdapter
         Logger.e(this, message = extensionsID)
         mRowsAdapter.applyLoading(R.layout.item_tv_loading_presenter)
-    }
-
-    override fun onStart() {
-        super.onStart()
         extensionsViewModel.loadChannelForConfig(extensionsID)
             .observe(viewLifecycleOwner) { dataState ->
                 when(dataState) {
@@ -117,6 +113,10 @@ class FragmentExtensions : BaseRowSupportFragment() {
                     }
                 }
             }
+    }
+
+    override fun onStart() {
+        super.onStart()
     }
 
     override fun onDetach() {
