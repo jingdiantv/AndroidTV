@@ -1,6 +1,5 @@
 package com.kt.apps.core.extensions
 
-import android.util.Log
 import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.di.NetworkModule
 import com.kt.apps.core.extensions.model.TVScheduler
@@ -37,10 +36,25 @@ class ParserExtensionsProgramSchedule @Inject constructor(
 ) {
     private val pool by lazy {
         Schedulers.io()
-
     }
+
     private val extensionsProgramDao by lazy {
         roomDataBase.extensionsTVChannelProgramDao()
+    }
+
+    private val pendingSource by lazy {
+        mutableMapOf<String, Completable>()
+    }
+
+    private val pendingSourceStatus by lazy {
+        mutableMapOf<String, PendingSourceStatus>()
+    }
+
+    private enum class PendingSourceStatus {
+        PENDING,
+        RUNNING,
+        DONE,
+        ERROR
     }
 
     fun getListProgramForExtensionsChannel(
@@ -155,19 +169,55 @@ class ParserExtensionsProgramSchedule @Inject constructor(
         )
     }
 
-    fun parseForConfig(config: ExtensionsConfig, programScheduleUrl: String) {
-        disposable.add(
-            parseForConfigRx(config, programScheduleUrl)
-                .subscribe({
-                    Logger.d(this@ParserExtensionsProgramSchedule, message = "Complete")
-                }, {
-                    Logger.e(this@ParserExtensionsProgramSchedule, exception = it)
-                })
-        )
+    private fun runPendingSource() {
+        if (pendingSource.isEmpty()) {
+            return
+        }
+        val sources = pendingSource.filter {
+            pendingSourceStatus[it.key] == PendingSourceStatus.PENDING
+        }.takeIf {
+            it.isNotEmpty()
+        } ?: return
+
+        synchronized(sources) {
+            var sourceCount = 0
+            for ((key, source) in sources.entries) {
+                disposable.add(
+                    source.subscribe({
+                        Logger.d(this@ParserExtensionsProgramSchedule, message = "Complete")
+                    }, {
+                        Logger.e(this@ParserExtensionsProgramSchedule, exception = it)
+                    })
+                )
+                pendingSourceStatus[key] = PendingSourceStatus.RUNNING
+                sourceCount++
+                if (sourceCount > 3) {
+                    break
+                }
+            }
+        }
     }
 
-    fun parseForConfigRx(config: ExtensionsConfig, programScheduleUrl: String): Completable {
-        return Observable.fromArray(programScheduleUrl.split(",")
+    fun parseForConfig(config: ExtensionsConfig, programScheduleUrl: String) {
+        programScheduleUrl.split(",")
+            .filter {
+                it.trim().isNotBlank()
+            }
+            .forEach { url ->
+                if (
+                    pendingSource[url] == null ||
+                    (pendingSourceStatus[url] != PendingSourceStatus.RUNNING &&
+                            pendingSourceStatus[url] != PendingSourceStatus.PENDING)
+                ) {
+                    pendingSource[url] = getListTvProgramRx(config, url)
+                    pendingSourceStatus[url] = PendingSourceStatus.PENDING
+                }
+            }
+        runPendingSource()
+    }
+
+    fun parseForConfigRx(config: ExtensionsConfig, tvgUrlList: String): Completable {
+        return Observable.fromArray(tvgUrlList.split(",")
             .filter {
                 it.trim().isNotBlank()
             })
@@ -189,10 +239,21 @@ class ParserExtensionsProgramSchedule @Inject constructor(
             }
             .doOnComplete {
                 Logger.e(this@ParserExtensionsProgramSchedule, message = "$programScheduleUrl - Complete insert")
+                removePendingSource(programScheduleUrl)
+                runPendingSource()
             }.doOnError {
                 Logger.e(this@ParserExtensionsProgramSchedule, message = "$programScheduleUrl - Error")
                 Logger.e(this@ParserExtensionsProgramSchedule, exception = it)
+                removePendingSource(programScheduleUrl)
+                runPendingSource()
             }
+
+    private fun removePendingSource(programScheduleUrl: String) {
+        synchronized(pendingSource) {
+            pendingSource.remove(programScheduleUrl)
+            pendingSourceStatus.remove(programScheduleUrl)
+        }
+    }
 
     private fun getListTvProgram(
         config: ExtensionsConfig,
@@ -314,7 +375,11 @@ class ParserExtensionsProgramSchedule @Inject constructor(
                             }
                         }
                         readNode = node.next
-                        nodeName = readNode.name?.trim() ?: ""
+                        nodeName = if (readNode != null) {
+                            readNode.name?.trim() ?: ""
+                        } else {
+                            ""
+                        }
                     }
                     listProgram.add(programme)
                     if (listProgram.size > 50) {
