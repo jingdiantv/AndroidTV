@@ -108,7 +108,9 @@ class MainTVDataSource @Inject constructor(
                     emitter.onComplete()
                 }
                 .addOnFailureListener {
-                    emitter.onError(it)
+                    if (!emitter.isDisposed) {
+                        emitter.onError(it)
+                    }
                 }
         }.retry { t1, t2 ->
             t1 < 3

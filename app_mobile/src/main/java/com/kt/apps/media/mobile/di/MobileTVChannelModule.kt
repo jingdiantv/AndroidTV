@@ -5,5 +5,5 @@ import com.kt.apps.core.tv.di.TVScope
 import dagger.Provides
 
 class MobileTVChannelModule: TVChannelModule() {
-    override fun providesTimeout(): Long? = 20
+    override fun providesTimeout(): Long? = 5
 }
