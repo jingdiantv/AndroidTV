@@ -80,7 +80,6 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
             when (it) {
                 is DataState.Success -> {
                     val listConfig = it.data
-                    pagerAdapter.onRefresh(listConfig)
                     if (listConfig.isNotEmpty()) {
                         viewPager.currentItem = 0
                         val constrainSet = ConstraintSet()
@@ -99,8 +98,11 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                         )
                         constrainSet.applyTo(view as ConstraintLayout)
                     }
-                    viewPager.adapter = pagerAdapter
-                    tabLayout.setupWithViewPager(viewPager, true)
+                    if (!pagerAdapter.areContentTheSame(listConfig)) {
+                        pagerAdapter.onRefresh(listConfig)
+                        viewPager.adapter = pagerAdapter
+                        tabLayout.setupWithViewPager(viewPager, true)
+                    }
                 }
 
                 is DataState.Loading -> {
@@ -186,26 +188,40 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
     }
 
     class ExtensionsChannelViewPager(fragmentManager: FragmentManager) : FragmentStatePagerAdapter(fragmentManager) {
-        private val totalList by lazy {
+        private val _totalList by lazy {
             mutableListOf<ExtensionsConfig>()
+        }
+        val totalList: List<ExtensionsConfig>
+            get() = _totalList
+
+        fun areContentTheSame(targetList: List<ExtensionsConfig>): Boolean {
+            return totalList.map {
+                it.sourceUrl
+            }.reduce { acc, s ->
+                "$acc$s"
+            } == targetList.map {
+                it.sourceUrl
+            }.reduce { acc, s ->
+                "$acc$s"
+            }
         }
 
         fun onRefresh(extensionsConfigs: List<ExtensionsConfig>) {
-            totalList.clear()
-            totalList.addAll(extensionsConfigs)
+            _totalList.clear()
+            _totalList.addAll(extensionsConfigs)
             notifyDataSetChanged()
         }
 
         override fun getCount(): Int {
-            return totalList.size
+            return _totalList.size
         }
 
         override fun getItem(position: Int): Fragment {
-            return FragmentExtensions.newInstance(totalList[position].sourceUrl)
+            return FragmentExtensions.newInstance(_totalList[position].sourceUrl)
         }
 
         override fun getPageTitle(position: Int): CharSequence {
-            return totalList[position].sourceName
+            return _totalList[position].sourceName
         }
     }
 
