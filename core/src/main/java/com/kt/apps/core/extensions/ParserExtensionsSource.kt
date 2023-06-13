@@ -5,8 +5,10 @@ import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.di.NetworkModule
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.IKeyValueStorage
+import com.kt.apps.core.storage.getLastRefreshExtensions
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.ExtensionChannelCategory
+import com.kt.apps.core.storage.saveLastRefreshExtensions
 import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Completable
@@ -38,13 +40,20 @@ class ParserExtensionsSource @Inject constructor(
         roomDataBase.extensionsConfig()
     }
 
-    private val _intervalRefreshData: Long by lazy {
-        storage.get(EXTRA_INTERVAL_REFRESH_DATA_KEY, Long::class.java)
+    fun getIntervalRefreshData(configType: ExtensionsConfig.Type): Long {
+        val key = EXTRA_INTERVAL_REFRESH_DATA_KEY + configType.name
+        val defaultValue = when (configType) {
+            ExtensionsConfig.Type.TV_CHANNEL -> INTERVAL_REFRESH_DATA_TV_CHANNEL
+            ExtensionsConfig.Type.FOOTBALL -> INTERVAL_REFRESH_DATA_FOOTBALL
+            ExtensionsConfig.Type.MOVIE -> INTERVAL_REFRESH_DATA_MOVIE
+        }
+
+        return storage.get(key, Long::class.java)
             .takeIf {
                 it > -1L
             }
-            ?: INTERVAL_REFRESH_DATA.also {
-                storage.save(EXTRA_EXTENSIONS_KEY, it)
+            ?: defaultValue.also {
+                storage.save(key, it)
             }
     }
 
@@ -94,7 +103,7 @@ class ParserExtensionsSource @Inject constructor(
                     extensionsChannelDao.insert(it)
                         .doOnComplete {
                             Logger.d(this@ParserExtensionsSource, "execute", "insert complete")
-                            saveLastTimeRefresh(extension)
+                            storage.saveLastRefreshExtensions(extension)
                         }
                         .subscribe({}, {}),
 
@@ -129,7 +138,7 @@ class ParserExtensionsSource @Inject constructor(
                 programScheduleParser.parseForConfig(extension)
             }
 
-        if (System.currentTimeMillis() - getLastTimeRefresh(extension) < _intervalRefreshData) {
+        if (System.currentTimeMillis() - storage.getLastRefreshExtensions(extension) < getIntervalRefreshData(extension.type)) {
             Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource")
             val source = offlineSource
                 .onErrorResumeNext {
@@ -144,18 +153,6 @@ class ParserExtensionsSource @Inject constructor(
         Logger.d(this@ParserExtensionsSource, "execute", "OnlineSource")
         pendingSource[extension.sourceUrl] = onlineSource
         return onlineSource
-    }
-
-    private fun saveLastTimeRefresh(config: ExtensionsConfig) {
-        storage.save("${config.sourceUrl}_last_refresh_data", System.currentTimeMillis())
-    }
-
-    private fun getLastTimeRefresh(config: ExtensionsConfig): Long {
-        return try {
-            storage.get("${config.sourceUrl}_last_refresh_data", Long::class.java)
-        } catch (e: Exception) {
-            0L
-        }
     }
 
     fun setIntervalRefreshData(time: Long) {
@@ -388,7 +385,9 @@ class ParserExtensionsSource @Inject constructor(
     companion object {
         private const val DEBUG = false
         private const val EXTRA_INTERVAL_REFRESH_DATA_KEY = "extra:interval_refresh_data"
-        private const val INTERVAL_REFRESH_DATA: Long = 60 * 60 * 1000
+        private const val INTERVAL_REFRESH_DATA_TV_CHANNEL: Long = 60 * 60 * 1000
+        private const val INTERVAL_REFRESH_DATA_MOVIE: Long = 24 * 60 * 60 * 1000
+        private const val INTERVAL_REFRESH_DATA_FOOTBALL: Long = 15 * 60 * 1000
         private const val OFFSET_TIME = 2 * 60 * 60 * 1000
         private const val EXTRA_EXTENSIONS_KEY = "extra:extensions_key"
         private const val TAG_START = "#EXTM3U"
