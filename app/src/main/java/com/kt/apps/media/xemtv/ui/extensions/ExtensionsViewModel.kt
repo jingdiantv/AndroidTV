@@ -38,6 +38,10 @@ class ExtensionsViewModel @Inject constructor(
         mutableMapOf<String, WeakReference<List<ExtensionsChannel>>>()
     }
 
+    init {
+        loadAllListExtensionsChannelConfig(true)
+    }
+
     val channelListCache: Map<String, WeakReference<List<ExtensionsChannel>>>
         get() = _extensionsChannelListCache
 
