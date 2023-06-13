@@ -26,6 +26,8 @@ interface ITVDataSource {
                 TVChannelGroup.HTVC.name.lowercase() -> 400
                 TVChannelGroup.SCTV.name.lowercase() -> 500
                 TVChannelGroup.THVL.name.lowercase() -> 600
+                TVChannelGroup.Intenational.name.lowercase() -> 700
+                TVChannelGroup.Kid.name.lowercase() -> 800
                 else -> 1000
             }
         }
