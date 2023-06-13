@@ -438,8 +438,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         title: String,
         subTitle: String?,
         isLive: Boolean,
+        showProgressManager: Boolean = true
     ) {
-        progressManager.show()
+        if (showProgressManager) {
+            progressManager.show()
+        }
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         setVideoInfo(title, subTitle, isLive)
 
