@@ -7,6 +7,7 @@ import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.tv.model.TVDataSourceFrom
 import com.kt.apps.core.tv.viewmodels.BaseTVChannelViewModel
 import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
 import com.kt.apps.core.utils.expandUrl
@@ -26,8 +27,11 @@ class TVChannelViewModel @Inject constructor(
     private val workManager: WorkManager
 ) : BaseTVChannelViewModel(interactors) {
 
-    override fun onFetchTVListSuccess(listChannel: List<TVChannel>) {
-        super.onFetchTVListSuccess(listChannel)
+    override fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom) {
+        if(app.isNetworkAvailable())
+            super.getListTVChannel(forceRefresh, sourceFrom)
+        else
+            _listTvChannelLiveData.postValue(DataState.Error(NoNetworkException()))
     }
 
     fun loadLinkStreamForChannel(tvDetail: TVChannel, isBackup: Boolean = false) {

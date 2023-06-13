@@ -186,9 +186,13 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private val tvChannelViewModel: TVChannelViewModel? by lazy {
         activity?.run {
-            ViewModelProvider(this, factory)[TVChannelViewModel::class.java].apply {
-                this.tvChannelLiveData.observe(this@ChannelFragment, listTVChannelObserver)
-            }
+            ViewModelProvider(this, factory)[TVChannelViewModel::class.java]
+        }
+    }
+
+    private val networkStateViewModel: NetworkStateViewModel? by lazy {
+        activity?.run {
+            ViewModelProvider(this, factory)[NetworkStateViewModel::class.java]
         }
     }
 
@@ -201,7 +205,8 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     private val listTVChannelObserver: Observer<DataState<List<TVChannel>>> by lazy {
         Observer { dataState ->
             when (dataState) {
-                is DataState.Success -> _tvChannelData.tryEmit(dataState.data)
+                is DataState.Success -> _tvChannelData.value = dataState.data
+                is DataState.Error -> swipeRefreshLayout.isRefreshing = false
                 else -> {}
             }
         }
@@ -209,9 +214,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
     private var _cacheMenuItem: MutableMap<String, Int> = mutableMapOf<String, Int>()
     override fun initView(savedInstanceState: Bundle?) {
-        tvChannelViewModel
-        playbackViewModel
-        extensionsViewModel?.loadExtensionData()
 
         with(binding.mainChannelRecyclerView) {
             adapter = this@ChannelFragment.adapter
@@ -237,11 +239,16 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         _tvChannelData.value = emptyList()
 
         skeletonScreen.run()
-        tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
     }
 
 
     override fun initAction(savedInstanceState: Bundle?) {
+        tvChannelViewModel?.apply {
+            tvChannelLiveData.observe(this@ChannelFragment, listTVChannelObserver)
+        }
+        playbackViewModel
+        extensionsViewModel?.loadExtensionData()
+
         with(binding.swipeRefreshLayout) {
             setDistanceToTriggerSync(screenHeight / 3)
             setOnRefreshListener {
@@ -291,8 +298,17 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                         reloadNavigationBar(it)
                     }
                 }
+
+                launch {
+                    networkStateViewModel?.networkStatus?.collectLatest {
+                        if (it == NetworkState.Connected && adapter.itemCount == 0)
+                            tvChannelViewModel?.getListTVChannel(forceRefresh = true)
+                    }
+                }
             }
         }
+
+        tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
     }
 
     override fun onStop() {

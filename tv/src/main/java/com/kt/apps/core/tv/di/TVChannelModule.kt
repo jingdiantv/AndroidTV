@@ -10,7 +10,7 @@ import dagger.multibindings.IntoMap
 import javax.inject.Singleton
 
 @Module
-class TVChannelModule {
+open class TVChannelModule {
 
 
 
@@ -63,6 +63,10 @@ class TVChannelModule {
     @TVDataSourceMapKey(TVDataSourceFrom.MAIN_SOURCE)
     @TVScope
     fun providesMainDataSourceDataSource(dataSourceImpl: MainTVDataSource): ITVDataSource = dataSourceImpl
+
+    @Provides
+    @TVScope
+    open fun providesTimeout(): Long? = null
 
     @Provides
     @Singleton

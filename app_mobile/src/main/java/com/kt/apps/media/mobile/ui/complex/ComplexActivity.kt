@@ -31,6 +31,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 
 enum class  PlaybackState {
@@ -64,14 +65,13 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
             when(dataState) {
                 is DataState.Loading ->
                     layoutHandler?.onStartLoading()
-                is DataState.Error -> handleStreamLinkError(dataState.throwable)
+                is DataState.Error -> handleError(dataState.throwable)
                 else -> return@Observer
             }
         }
     }
 
     override fun initView(savedInstanceState: Bundle?) {
-        tvChannelViewModel
 
         val metrics = resources.displayMetrics
         layoutHandler = if (metrics.widthPixels <= metrics.heightPixels) {
@@ -81,12 +81,22 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         }
 
         layoutHandler?.onPlaybackStateChange = {
-            binding.fragmentContainerPlayback.getFragment<PlaybackFragment>().displayState = it
+            playbackViewModel.changeDisplayState(it)
         }
 
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
+        tvChannelViewModel?.apply {
+            tvWithLinkStreamLiveData.observe(this@ComplexActivity, linkStreamDataObserver)
+            tvChannelLiveData.observe(this@ComplexActivity) {dataState ->
+                when(dataState) {
+                    is DataState.Error -> handleError(dataState.throwable)
+                    else -> { }
+                }
+            }
+        }
+
         binding.fragmentContainerPlayback.getFragment<PlaybackFragment>().apply {
             this.callback = object: IPlaybackAction {
                 override fun onLoadedSuccess(videoSize: VideoSize) {
@@ -121,12 +131,8 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                     playbackViewModel.state.collectLatest { state ->
                         when (state) {
                             is PlaybackViewModel.State.FINISHED ->
-                                if (state.error != null) {
-                                    val error = (state.error as PlaybackFailException).error
-                                    val channelName = (tvChannelViewModel?.lastWatchedChannel?.channel?.tvChannelName ?: "")
-                                    val message = "Kênh $channelName hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.errorCode} ${error.message}"
-                                    showErrorAlert(message)
-                                }
+                                if (state.error != null)
+                                    handleError(state.error as PlaybackFailException)
                             else -> { }
                         }
                     }
@@ -169,12 +175,21 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         }
     }
 
-    private fun handleStreamLinkError(throwable: Throwable) {
-        if (throwable is NoNetworkException) {
-            showNoNetworkAlert()
+    private fun handleError(throwable: Throwable) {
+        when (throwable) {
+            is NoNetworkException -> showNoNetworkAlert()
+            is TimeoutException -> showErrorAlert("Đã xảy ra lỗi, hãy kiểm tra kết nối mạng")
+            is PlaybackFailException -> {
+                val error = throwable.error
+                val channelName = (tvChannelViewModel?.lastWatchedChannel?.channel?.tvChannelName ?: "")
+                val message = "Kênh $channelName hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: ${error.errorCode} ${error.message}"
+                showErrorAlert(message)
+            }
+            else -> {
+                showErrorAlert("Lỗi")
+            }
         }
     }
-
     private fun showNoNetworkAlert(autoHide: Boolean = false) {
         val dialog = AlertDialog.Builder(this, R.style.WrapContentDialog).apply {
             setCancelable(true)

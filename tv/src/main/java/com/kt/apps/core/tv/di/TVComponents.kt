@@ -22,4 +22,5 @@ interface TVComponents {
     fun getChannelLinkStreamFrom(): GetTVChannelLinkStreamFrom
     fun getListTVChannel(): GetListTVChannel
     fun providesGetChannelLinkStreamById(): GetChannelLinkStreamById
+    fun providesTimeout(): Long?
 }

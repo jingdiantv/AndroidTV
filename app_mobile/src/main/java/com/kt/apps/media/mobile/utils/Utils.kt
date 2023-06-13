@@ -14,6 +14,7 @@ import android.widget.ImageButton
 import androidx.annotation.CheckResult
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
@@ -158,3 +159,4 @@ inline fun <reified T> groupAndSort(list: List<T>): List<Pair<String, List<T>>> 
         else -> emptyList()
     }
 }
+

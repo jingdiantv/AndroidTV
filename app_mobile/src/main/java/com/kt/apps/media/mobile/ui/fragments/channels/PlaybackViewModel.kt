@@ -11,6 +11,7 @@ import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
 import com.kt.apps.core.utils.TAG
 import com.kt.apps.media.mobile.models.PlaybackFailException
 import com.kt.apps.media.mobile.models.VideoDisplayAction
+import com.kt.apps.media.mobile.ui.complex.PlaybackState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -26,6 +27,10 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
 
     private val _state = MutableStateFlow<State>(State.IDLE)
     val state: StateFlow<State> = _state
+
+    private val _displayState = MutableStateFlow(PlaybackState.Fullscreen)
+    val displayState: StateFlow<PlaybackState> = _displayState
+
 
     val playerListener: Player.Listener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -48,5 +53,9 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
 
             _state.value  = State.FINISHED(PlaybackFailException(error))
         }
+    }
+
+    fun changeDisplayState(newMode: PlaybackState) {
+        _displayState.value = newMode
     }
 }

@@ -6,12 +6,14 @@ import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVDataSourceFrom
 import io.reactivex.rxjava3.core.Observable
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @TVScope
 class GetListTVChannel @Inject constructor(
     private val tvDataSources: Map<TVDataSourceFrom, @JvmSuppressWildcards ITVDataSource>,
+    private val timeout: Long?
 ) : BaseUseCase<List<TVChannel>>() {
     private val isLoadingData by lazy {
         AtomicBoolean()
@@ -67,6 +69,7 @@ class GetListTVChannel @Inject constructor(
     operator fun invoke(
         forceRefreshData: Boolean = false,
         sourceFrom: TVDataSourceFrom = TVDataSourceFrom.MAIN_SOURCE,
+        timeout: Long? = this.timeout,
     ): Observable<List<TVChannel>> {
         while (isLoadingData.get()) {
             if (cacheData != null) {
@@ -77,12 +80,15 @@ class GetListTVChannel @Inject constructor(
         }
         isLoadingData.compareAndSet(false, true)
         val listCacheData: MutableList<TVChannel> = mutableListOf()
-        return execute(
-            mapOf(
-                EXTRA_TV_SOURCE_FROM to sourceFrom,
-                EXTRA_REFRESH_DATA to forceRefreshData
-            )
-        ).doOnNext {
+        val params = mapOf(
+            EXTRA_TV_SOURCE_FROM to sourceFrom,
+            EXTRA_REFRESH_DATA to forceRefreshData
+        )
+        return (if (timeout == null)
+            execute(params)
+        else
+            execute(params).timeout(timeout, TimeUnit.SECONDS))
+            .doOnNext {
             synchronized(this) {
                 listCacheData.addAll(it)
             }

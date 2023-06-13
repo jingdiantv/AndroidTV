@@ -56,16 +56,6 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     var callback: IPlaybackAction? = null
     private var _cachePlayingState: Boolean = false
 
-    private var _displayState: PlaybackState = PlaybackState.Invisible
-    var displayState: PlaybackState
-        get() = _displayState
-        set(value) {
-            _displayState = value
-            if (value != PlaybackState.Fullscreen) {
-                showHideChannelList(false)
-            }
-        }
-
     private val progressHelper by lazy {
         ProgressHelper(this.context)
     }
@@ -125,6 +115,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                 is DataState.Success -> {
                     toggleProgressing(true)
                     playVideo(result.data)
+                    shouldShowChannelList = false
                 }
                 is DataState.Loading -> {
                     stopCurrentVideo()
@@ -167,6 +158,15 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                     showHideChannelList(isShow = false)
                     false
                 }
+            } ?: kotlin.run {
+                tvChannelViewModel?.tvWithLinkStreamLiveData?.value?.run {
+                    when(this) {
+                        is DataState.Success -> {
+                            playVideo(data)
+                        }
+                        else -> {}
+                    }
+                }
             }
         }
     }
@@ -205,6 +205,25 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
                                 }
                             }
                         }
+                }
+
+                launch {
+                    playbackViewModel?.displayState?.collectLatest {state ->
+                        if (state != PlaybackState.Fullscreen) {
+                            showHideChannelList(false)
+                        }
+                    }
+                }
+
+                launch {
+                    playbackViewModel?.displayState?.mapLatest {
+                        when(it) {
+                            PlaybackState.Fullscreen -> com.google.android.exoplayer2.R.drawable.exo_ic_fullscreen_exit
+                            else -> com.google.android.exoplayer2.R.drawable.exo_controls_fullscreen_enter
+                        }
+                    }?.collectLatest {
+                        fullScreenButton.setImageResource(it)
+                    }
                 }
             }
         }
@@ -259,6 +278,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     }
 
     private fun showHideChannelList(isShow: Boolean) {
+        val displayState  = playbackViewModel?.displayState?.value ?: PlaybackState.Invisible
         if (isShow && displayState == PlaybackState.Fullscreen) {
             channelFragmentContainer.fadeIn {  }
             return

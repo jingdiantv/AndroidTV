@@ -11,11 +11,13 @@ import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.DaggerCoreComponents
 import com.kt.apps.core.tv.di.DaggerTVComponents
+import com.kt.apps.core.tv.di.TVChannelModule
 import com.kt.apps.core.tv.di.TVComponents
 import com.kt.apps.football.di.DaggerFootballComponents
 import com.kt.apps.football.di.FootballComponents
 import com.kt.apps.media.mobile.di.AppComponents
 import com.kt.apps.media.mobile.di.DaggerAppComponents
+import com.kt.apps.media.mobile.di.MobileTVChannelModule
 import com.kt.apps.media.mobile.di.workers.PreloadDataWorker
 import dagger.android.AndroidInjector
 import dagger.android.DaggerApplication
@@ -32,6 +34,7 @@ class App : CoreApp(), Configuration.Provider {
 
     private val _tvComponents by lazy {
         DaggerTVComponents.builder()
+            .tVChannelModule(MobileTVChannelModule())
             .coreComponents(_coreComponents)
             .build()
     }

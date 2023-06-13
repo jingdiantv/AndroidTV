@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.media.mobile.App
+import com.kt.apps.media.mobile.isNetworkAvailable
 import com.kt.apps.media.mobile.models.NetworkState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +48,10 @@ class NetworkStateViewModel @Inject constructor(private val app: App) : BaseView
                 }.build(),
                 networkCallback
             )
+        _networkStatus.value = if (app.isNetworkAvailable())
+            NetworkState.Connected
+        else
+            NetworkState.Unavailable
     }
 
     override fun onCleared() {

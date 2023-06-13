@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.kt.apps.core.logging.ActionLoggerFactory
 import com.kt.apps.core.logging.IActionLogger
+import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.media.mobile.logger.MobileActionLoggerImpl
 import dagger.Module
 import dagger.Provides
@@ -22,4 +23,8 @@ class AppModule {
     fun providesAndroidTVLogger(factory: ActionLoggerFactory): IActionLogger {
         return factory.createLogger(MobileActionLoggerImpl::class.java)
     }
+
+    @Provides
+    @TVScope
+    fun providesTimeout(): Long? = 20
 }

@@ -29,7 +29,7 @@ open class BaseTVChannelViewModel constructor(
     val lastWatchedChannel: TVChannelLinkStream?
         get() = _lastWatchedChannel
 
-    private val _listTvChannelLiveData by lazy {
+    open val _listTvChannelLiveData by lazy {
         MutableLiveData<DataState<List<TVChannel>>>()
     }
 
@@ -41,7 +41,7 @@ open class BaseTVChannelViewModel constructor(
         mutableMapOf()
     }
 
-    fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.MAIN_SOURCE) {
+    open fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.MAIN_SOURCE) {
         if (!forceRefresh && interactors.getListChannel.cacheData != null) {
             Logger.d(this, "ListChannel", "Get from cache")
             _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
