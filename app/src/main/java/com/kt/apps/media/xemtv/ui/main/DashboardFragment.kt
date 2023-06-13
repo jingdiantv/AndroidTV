@@ -46,10 +46,6 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     @Inject
     lateinit var roomDataBase: RoomDataBase
 
-    private val disposable by lazy {
-        CompositeDisposable()
-    }
-
     private var currentPageIdSelected: Long = -1
 
     private val rowsAdapter by lazy {
@@ -220,6 +216,13 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     override fun onResume() {
         super.onResume()
+        if (mMainFragment?.isDetached == false) {
+            if (mMainFragment is BaseTabLayoutFragment) {
+                (mMainFragment as BaseTabLayoutFragment)
+                    .requestFocusChildContent()
+                    .requestFocus()
+            }
+        }
         mBackgroundManager.drawable = when (currentPageIdSelected) {
             DashboardPageRowFactory.ROW_FOOTBALL -> {
                 ContextCompat.getDrawable(requireContext(), R.drawable.main_background)
