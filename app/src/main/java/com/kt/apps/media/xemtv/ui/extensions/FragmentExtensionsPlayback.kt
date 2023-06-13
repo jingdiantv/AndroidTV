@@ -12,6 +12,7 @@ import com.google.gson.Gson
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logStreamingTV
 import com.kt.apps.core.utils.expandUrl
@@ -44,8 +45,8 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         ViewModelProvider(requireActivity(), factory)[ExtensionsViewModel::class.java]
     }
 
-    private val extensionID by lazy {
-        requireArguments().getString(EXTRA_EXTENSION_ID)
+    private val extension: ExtensionsConfig by lazy {
+        requireArguments().getParcelable(EXTRA_EXTENSION_ID)!!
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,8 +78,8 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             Logger.d(this, message = "$it")
             playVideo(it)
         }
-        Logger.e(this@FragmentExtensionsPlayback, message = "id = $extensionID")
-        extensionsViewModel.loadChannelForConfig(extensionID!!).observe(viewLifecycleOwner){
+        Logger.e(this@FragmentExtensionsPlayback, message = "id = $extension")
+        extensionsViewModel.loadChannelForConfig(extension.sourceUrl).observe(viewLifecycleOwner){
             if (it is DataState.Success) {
                 listCurrentItem.addAll(it.data)
                 setupRowAdapter(listCurrentItem, TVChannelPresenterSelector(requireActivity()))
@@ -192,7 +193,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                         tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(realUrl),
-                        false,
+                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
                         isHls = realUrl.contains("m3u8"),
                         headers = tvChannel.props
                     )
@@ -204,7 +205,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                         tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(linkToPlay),
-                        false,
+                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
                         isHls = linkToPlay.contains("m3u8"),
                         headers = tvChannel.props
                     )
@@ -217,7 +218,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 tvChannel.currentProgramme?.description,
                 referer = tvChannel.referer,
                 linkStream = listOf(linkToPlay),
-                false,
+                isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
                 isHls = linkToPlay.contains("m3u8"),
                 headers = tvChannel.props
             )
@@ -234,7 +235,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                         tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(realUrl),
-                        false,
+                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
                         isHls = realUrl.contains("m3u8"),
                         headers = tvChannel.props
                     )
@@ -245,7 +246,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                         tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(linkToPlay),
-                        false,
+                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
                         isHls = linkToPlay.contains("m3u8"),
                         headers = tvChannel.props
                     )
@@ -278,11 +279,11 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         private const val EXTRA_TV_CHANNEL_LIST = "extra:tv_channel_list"
         fun newInstance(
             tvChannel: ExtensionsChannel,
-            extensionID: String
+            extension: ExtensionsConfig
         ) = FragmentExtensionsPlayback().apply {
             arguments = bundleOf(
                 EXTRA_TV_CHANNEL to tvChannel,
-                EXTRA_EXTENSION_ID to extensionID
+                EXTRA_EXTENSION_ID to extension
 
             )
         }

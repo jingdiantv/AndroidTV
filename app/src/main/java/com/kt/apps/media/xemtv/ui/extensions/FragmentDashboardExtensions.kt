@@ -223,7 +223,7 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
         }
 
         override fun getItem(position: Int): Fragment {
-            return FragmentExtensions.newInstance(_totalList[position].sourceUrl)
+            return FragmentExtensions.newInstance(_totalList[position])
         }
 
         override fun getPageTitle(position: Int): CharSequence {

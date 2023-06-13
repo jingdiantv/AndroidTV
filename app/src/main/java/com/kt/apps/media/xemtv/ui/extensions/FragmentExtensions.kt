@@ -11,6 +11,7 @@ import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
@@ -36,8 +37,8 @@ class FragmentExtensions : BaseRowSupportFragment() {
         })
     }
 
-    private val extensionsID by lazy {
-        requireArguments().getString(EXTRA_EXTENSIONS_ID)!!
+    private val extensions : ExtensionsConfig by lazy {
+        requireArguments().getParcelable(EXTRA_EXTENSIONS_ID)!!
     }
 
     @Inject
@@ -67,7 +68,7 @@ class FragmentExtensions : BaseRowSupportFragment() {
                         )
                         putExtra(
                             PlaybackActivity.EXTRA_EXTENSIONS_ID,
-                            extensionsID
+                            extensions
                         )
                     }
                 )
@@ -76,9 +77,9 @@ class FragmentExtensions : BaseRowSupportFragment() {
 
     override fun initAction(rootView: View) {
         adapter = mRowsAdapter
-        Logger.e(this, message = extensionsID)
+        Logger.e(this, message = "$extensions")
         mRowsAdapter.applyLoading(R.layout.item_tv_loading_presenter)
-        extensionsViewModel.loadChannelForConfig(extensionsID)
+        extensionsViewModel.loadChannelForConfig(extensions.sourceUrl)
             .observe(viewLifecycleOwner) { dataState ->
                 when(dataState) {
                     is DataState.Success -> {
@@ -129,9 +130,9 @@ class FragmentExtensions : BaseRowSupportFragment() {
 
     companion object {
         private const val EXTRA_EXTENSIONS_ID = "extra:extensions_id"
-        fun newInstance(id: String) = FragmentExtensions().apply {
+        fun newInstance(extensionConfig: ExtensionsConfig) = FragmentExtensions().apply {
             this.arguments = bundleOf(
-                EXTRA_EXTENSIONS_ID to id
+                EXTRA_EXTENSIONS_ID to extensionConfig
             )
         }
     }

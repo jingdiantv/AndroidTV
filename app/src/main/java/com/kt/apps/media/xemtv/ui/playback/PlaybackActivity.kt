@@ -207,7 +207,7 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>(), HasAndroidInje
             .replace(
                 android.R.id.content, FragmentExtensionsPlayback.newInstance(
                     intent.extras!!.getParcelable(EXTRA_ITEM_TO_PLAY)!!,
-                    intent.extras!!.getString(EXTRA_EXTENSIONS_ID)!!
+                    intent.extras!!.getParcelable(EXTRA_EXTENSIONS_ID)!!
                 )
             )
             .commit()
