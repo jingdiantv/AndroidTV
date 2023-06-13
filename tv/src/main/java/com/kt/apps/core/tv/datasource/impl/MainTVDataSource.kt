@@ -1,7 +1,9 @@
 package com.kt.apps.core.tv.datasource.impl
 
+import android.content.Context
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.getValue
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.kt.apps.core.Constants
@@ -9,6 +11,7 @@ import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.TVChannelDTO
 import com.kt.apps.core.tv.datasource.ITVDataSource
+import com.kt.apps.core.tv.datasource.needRefreshData
 import com.kt.apps.core.tv.di.TVScope
 import com.kt.apps.core.tv.model.*
 import com.kt.apps.core.tv.storage.TVStorage
@@ -16,6 +19,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.regex.Pattern
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -25,15 +29,17 @@ class MainTVDataSource @Inject constructor(
     private val vDataSourceImpl: VDataSourceImpl,
     private val firebaseDatabase: FirebaseDatabase,
     private val firebaseRemoteConfig: FirebaseRemoteConfig,
+    private val fireStoreDataBase: FirebaseFirestore,
     private val tvStorage: Provider<TVStorage>,
-    private val roomDataBase: RoomDataBase
+    private val roomDataBase: RoomDataBase,
+    private val context: Context
 ) : ITVDataSource {
     private val compositeDisposable by lazy {
         CompositeDisposable()
     }
 
     private val needRefresh: Boolean
-        get() = true
+        get() = this.needRefreshData(firebaseRemoteConfig, tvStorage.get())
 
     private val versionNeedRefresh: Long
         get() = firebaseRemoteConfig.getLong(Constants.EXTRA_KEY_VERSION_NEED_REFRESH)
@@ -43,11 +49,17 @@ class MainTVDataSource @Inject constructor(
 
 
     override fun getTvList(): Observable<List<TVChannel>> {
+        val onlineSource = if (context.packageName.contains("mobile")) {
+            getFireStoreSource()
+        } else {
+            getFirebaseSource()
+        }
+
         val dataBaseSource = roomDataBase.tvChannelDao()
             .getListChannelWithUrl()
             .flatMapObservable {
                 if (it.isEmpty()) {
-                    getFirebaseSource()
+                    onlineSource
                 } else {
                     Logger.d(this@MainTVDataSource, message = "Offline source: ${Gson().toJson(it)}")
                     Observable.just(
@@ -74,7 +86,6 @@ class MainTVDataSource @Inject constructor(
                 }
             }
 
-        val onlineSource = getFirebaseSource()
         if (!needRefresh) {
             return dataBaseSource
                 .onErrorResumeNext {
@@ -88,6 +99,56 @@ class MainTVDataSource @Inject constructor(
         }
 
         return onlineSource
+    }
+
+    private fun getPriority(group: String): Int {
+        return when (group.lowercase()) {
+            TVChannelGroup.VTV.name.lowercase() -> 100
+            TVChannelGroup.VTC.name.lowercase() -> 200
+            TVChannelGroup.HTV.name.lowercase() -> 300
+            TVChannelGroup.HTVC.name.lowercase() -> 400
+            TVChannelGroup.SCTV.name.lowercase() -> 500
+            TVChannelGroup.THVL.name.lowercase() -> 600
+            else -> 1000
+        }
+    }
+
+    private fun getFireStoreSource(): Observable<List<TVChannel>> {
+        return Observable.create<List<TVChannel>> { emitter ->
+            fireStoreDataBase.collection("tv_channels")
+                .get()
+                .addOnSuccessListener {
+                    val list = it.toObjects(TVChannelFromDB::class.java)
+                        .filterNotNull()
+                        .mapToListChannel()
+                        .sortedBy(sortTVChannel())
+                    it.toObjects(TVChannelFromDB::class.java)
+                    saveToRoomDB(list)
+                    emitter.onNext(list)
+                    emitter.onComplete()
+                }
+                .addOnFailureListener {
+                    emitter.onError(it)
+                }
+        }.retry { t1, t2 ->
+            t1 < 3
+        }
+    }
+
+    private fun sortTVChannel(): (TVChannel) -> Int = {
+        val priority = getPriority(it.tvGroup)
+        if (priority < 1000) {
+            val matcher = Pattern.compile("[0-9]+")
+                .matcher(it.tvChannelName)
+            var num = 99
+            while (matcher.find()) {
+                num = matcher.group(0)?.toInt() ?: 99
+            }
+
+            priority + num
+        } else {
+            priority
+        }
     }
 
     private fun getFirebaseSource(): Observable<List<TVChannel>> =
@@ -112,27 +173,7 @@ class MainTVDataSource @Inject constructor(
                         totalCount++
                         val value = it.getValue<List<TVChannelFromDB?>>() ?: return@addOnSuccessListener
                         val tvList = value.filterNotNull()
-                            .map { tvChannelFromDB ->
-                                val totalUrls = tvChannelFromDB.urls.filterNotNull()
-                                TVChannel(
-                                    tvGroup = tvChannelFromDB.group,
-                                    tvChannelName = tvChannelFromDB.name,
-                                    tvChannelWebDetailPage = totalUrls.firstOrNull {
-                                        it.type == TVChannelUrlType.WEB_PAGE.value
-                                    }?.url ?: totalUrls[0].url,
-                                    urls = totalUrls
-                                        .map { url ->
-                                            TVChannel.Url(
-                                                dataSource = url.src,
-                                                url = url.url,
-                                                type = url.type
-                                            )
-                                        },
-                                    sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
-                                    logoChannel = tvChannelFromDB.thumb,
-                                    channelId = tvChannelFromDB.id
-                                )
-                            }
+                            .mapToListChannel()
 
                         totalList.addAll(tvList)
                         emitter.onNext(tvList)
@@ -158,7 +199,37 @@ class MainTVDataSource @Inject constructor(
                     }
 
             }
+        }.retry { t1, t2 ->
+            t1 < 3
         }
+
+    private fun TVChannelFromDB.mapToTVChannel(): TVChannel {
+        val totalUrls = this.urls.filterNotNull()
+        return TVChannel(
+            tvGroup = this.group,
+            tvChannelName = this.name,
+            tvChannelWebDetailPage = totalUrls.firstOrNull {
+                it.type == TVChannelUrlType.WEB_PAGE.value
+            }?.url ?: totalUrls[0].url,
+            urls = totalUrls
+                .map { url ->
+                    TVChannel.Url(
+                        dataSource = url.src,
+                        url = url.url,
+                        type = url.type
+                    )
+                },
+            sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
+            logoChannel = this.thumb,
+            channelId = this.id
+        )
+    }
+
+    private fun List<TVChannelFromDB>.mapToListChannel(): List<TVChannel> {
+        return this.map {
+            it.mapToTVChannel()
+        }
+    }
 
     private fun saveToRoomDB(tvDetails: List<TVChannel>) {
         val tvUrl = mutableListOf<TVChannelDTO.TVChannelUrl>()

@@ -2,6 +2,7 @@ package com.kt.apps.core.base
 
 import android.content.Context
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -14,37 +15,48 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
 import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.media.SurfaceHolderGlueHost
 import androidx.leanback.widget.*
+import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.SeekParameters
+import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
+import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy
-import com.google.android.exoplayer2.upstream.HttpDataSource
+import com.google.android.exoplayer2.util.Util
 import com.kt.apps.core.R
-import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.logging.IActionLogger
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.*
 import com.kt.skeleton.makeGone
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
+import java.util.Formatter
+import java.util.Locale
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.math.max
 
+
+private const val MIN_SEEK_DURATION = 5_000
+
 abstract class BasePlaybackFragment : PlaybackSupportFragment(),
-    HasAndroidInjector, IKeyCodeHandler {
+    HasAndroidInjector, IMediaKeycodeHandler {
     private val progressManager by lazy {
         ProgressBarManager()
     }
@@ -77,6 +89,10 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     private var mPlaybackInfoView: TextView? = null
     private var mPlaybackInfoLiveView: TextView? = null
     private var mBrowseDummyView: FrameLayout? = null
+    private var progressBar: ProgressBar? = null
+    private var progressBarContainer: ViewGroup? = null
+    private var contentPositionView: TextView? = null
+    private var contentDurationView: TextView? = null
     protected var onItemClickedListener: OnItemViewClickedListener? = null
     private val mChildLaidOutListener = OnChildLaidOutListener { _, _, _, _ ->
     }
@@ -84,8 +100,25 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         BasePlaybackSupportFragmentGlueHost(this@BasePlaybackFragment)
     }
     abstract val numOfRowColumns: Int
+    private var durationSet = false
     private val mPlayerListener by lazy {
         object : Player.Listener {
+            override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                super.onTimelineChanged(timeline, reason)
+            }
+
+            override fun onSeekBackIncrementChanged(seekBackIncrementMs: Long) {
+                super.onSeekBackIncrementChanged(seekBackIncrementMs)
+            }
+
+            override fun onSeekForwardIncrementChanged(seekForwardIncrementMs: Long) {
+                super.onSeekForwardIncrementChanged(seekForwardIncrementMs)
+            }
+
+            override fun onMetadata(metadata: Metadata) {
+                super.onMetadata(metadata)
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 super.onPlayerError(error)
                 onHandlePlayerError(error)
@@ -117,8 +150,64 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
                 onPlayerPlaybackStateChanged(playbackState)
+                if (playbackState == ExoPlayer.STATE_READY) {
+                    progressManager.hide()
+                    val player = exoPlayerManager.exoPlayer ?: return
+                    durationSet = true
+                    updateProgress(player)
+                    exoPlayerManager.exoPlayer?.setSeekParameters(SeekParameters(10_000L, 10_000L))
+                }
             }
         }
+    }
+
+    val mainLooper by lazy {
+        Handler(Looper.getMainLooper())
+    }
+
+    private val timerTask by lazy {
+        object : TimerTask() {
+            override fun run() {
+                mainLooper.post {
+                    if (exoPlayerManager.exoPlayer?.isPlaying == true) {
+                        val player = exoPlayerManager.exoPlayer ?: return@post
+                        updateProgress(player)
+                    }
+                }
+            }
+
+        }
+    }
+
+    private var timer: Timer? = null
+
+    private fun updateTimeline(player: Player) {
+        updateProgress(player)
+    }
+
+    private val formatBuilder = StringBuilder()
+    private val formatter = Formatter(formatBuilder, Locale.getDefault())
+    private var contentPosition = 0L
+
+    private fun updateProgress(player: Player) {
+        val realDurationMillis: Long = player.duration
+        if (progressBarContainer?.isVisible == false) {
+            return
+        }
+        if (progressBarContainer?.isVisible == true &&
+            realDurationMillis < 10_000
+        ) {
+            progressBarContainer?.gone()
+            return
+        }
+        progressBar?.max = realDurationMillis.toInt()
+        contentPosition = player.contentPosition
+        progressBar?.secondaryProgress = player.bufferedPosition.toInt()
+        player.contentBufferedPosition
+        progressBar?.progress = player.contentPosition.toInt()
+        contentDurationView?.text = " ${Util.getStringForTime(formatBuilder, formatter, player.contentDuration)}"
+        contentPositionView?.text = "${Util.getStringForTime(formatBuilder, formatter, player.contentPosition)} /"
+        exoPlayerManager.exoPlayer?.setSeekParameters(SeekParameters(10_000L, 10_000L))
     }
 
     open fun onPlayerPlaybackStateChanged(playbackState: Int) {
@@ -141,7 +230,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     private val autoHideOverlayRunnable by lazy {
         Runnable {
             isAnimationHideGridMenuShowVideoInfoRunning.set(false)
-            mBrowseDummyView?.fadeOut{
+            mBrowseDummyView?.fadeOut {
                 mGridViewOverlays?.translationY = mGridViewPickHeight
                 mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
                 mSelectedPosition = 0
@@ -211,7 +300,10 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mPlaybackInfoContainerView = root.findViewById(R.id.info_container)
         mBrowseDummyView = root.findViewById(R.id.browse_dummy)
         mPlayPauseIcon = root.findViewById(R.id.ic_play_pause)
-
+        progressBar = root.findViewById(R.id.video_progress_bar)
+        progressBarContainer = root.findViewById(R.id.progress_bar_container)
+        contentPositionView = root.findViewById(R.id.content_position)
+        contentDurationView = root.findViewById(R.id.content_duration)
         hideControlsOverlay(false)
         val controlBackground = root.findViewById<View>(androidx.leanback.R.id.playback_controls_dock)
         controlBackground.makeGone()
@@ -235,8 +327,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         hideControlsOverlay(false)
         val controlBackground = view?.findViewById<View>(androidx.leanback.R.id.playback_controls_dock)
         controlBackground?.makeGone()
+        if (timer == null) {
+            timer = Timer()
+            timer?.schedule(timerTask, 1_000, 1_000)
+        }
     }
-
 
 
     private fun onPlayPauseIconClicked() {
@@ -301,6 +396,30 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mGridViewHolder?.gridView?.setSelectedPositionSmooth(position)
     }
 
+    private fun changeNextFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            progressBar?.focusable = if (progressBarContainer?.visibility == View.VISIBLE) {
+                View.FOCUSABLE
+            } else {
+                View.NOT_FOCUSABLE
+            }
+        }
+
+        mGridViewOverlays?.nextFocusUpId = if (progressBarContainer?.visibility == View.VISIBLE) {
+            R.id.progress_bar_container
+        } else {
+            R.id.ic_play_pause
+        }
+
+        mPlayPauseIcon?.nextFocusDownId = if (progressBarContainer?.visibility == View.VISIBLE) {
+            R.id.progress_bar_container
+        } else {
+            R.id.browse_grid_dock
+        }
+
+
+    }
+
     fun playVideo(
         title: String,
         subTitle: String?,
@@ -315,6 +434,29 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }, mPlayerListener, isLive, isHls, headers)
     }
 
+    fun prepare(
+        title: String,
+        subTitle: String?,
+        isLive: Boolean,
+    ) {
+        progressManager.show()
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        setVideoInfo(title, subTitle, isLive)
+
+        mPlaybackOverlaysContainerView?.fadeIn()
+        mPlaybackInfoContainerView?.fadeIn()
+        if (mGridViewPickHeight > 0) {
+            mGridViewOverlays?.translationY = mGridViewPickHeight
+        }
+        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+        mPlayPauseIcon?.requestFocus()
+        if (isLive) {
+            progressBarContainer?.gone()
+        } else {
+            progressBarContainer?.visible()
+        }
+    }
+
     fun playVideo(
         title: String, subTitle: String?,
         linkStreams: List<LinkStream>,
@@ -323,6 +465,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         isHls: Boolean,
         headers: Map<String, String> = mapOf()
     ) {
+        progressManager.hide()
         mGlueHost.setSurfaceHolderCallback(null)
         exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener, headers)
         mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
@@ -343,17 +486,12 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
         mPlayPauseIcon?.requestFocus()
         setSelectedPosition(0)
-    }
-
-    private fun buildMediaSource(referer: String): DefaultMediaSourceFactory {
-        val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
-        dfSource.setDefaultRequestProperties(
-            getHeaderFromLinkStream(referer, "")
-        )
-        return DefaultMediaSourceFactory(dfSource)
-            .setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
-            })
-
+        if (isLive) {
+            progressBarContainer?.gone()
+        } else {
+            progressBarContainer?.visible()
+        }
+        changeNextFocus()
     }
 
     fun getBackgroundView(): View? {
@@ -383,8 +521,12 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
-        mPlaybackTitleView?.text = title
-        mPlaybackInfoView?.text = info
+        if (!mPlaybackTitleView?.text.toString().equals(title, ignoreCase = true)) {
+            mPlaybackTitleView?.text = title
+        }
+        if (!mPlaybackInfoView?.text.toString().equals(info, ignoreCase = true)) {
+            mPlaybackInfoView?.text = info?.trim()
+        }
         if (mPlaybackTitleView?.isSelected != true) {
             mPlaybackTitleView?.isSelected = true
         }
@@ -488,10 +630,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     override fun onDpadDown() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
 
-        val visible = mPlaybackInfoContainerView?.visibility == View.VISIBLE
-        if (isMenuShowed()) {
+        if ((mPlayPauseIcon?.isFocused == true) && (progressBarContainer?.visibility == View.VISIBLE)) {
+            progressBar?.requestFocus()
+        } else if (isMenuShowed()) {
             Logger.d(this, message = "y = ${mGridViewOverlays?.translationY} - $mGridViewPickHeight")
-            mPlaybackInfoContainerView?.fadeOut{
+            mPlaybackInfoContainerView?.fadeOut {
                 isAnimationHideGridMenuShowVideoInfoRunning.set(false)
             }
             if (mGridViewOverlays!!.translationY == mGridViewPickHeight) {
@@ -505,11 +648,15 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         } else {
             showGridMenu()
         }
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+
     }
 
     private val isAnimationHideGridMenuShowVideoInfoRunning by lazy {
         AtomicBoolean()
     }
+
     override fun onDpadUp() {
         if (isAnimationHideGridMenuShowVideoInfoRunning.get()) {
             return
@@ -518,26 +665,32 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             !isMenuShowed() -> {
                 showGridMenu()
             }
+
+            progressBarContainer?.visibility == View.VISIBLE && progressBar?.isFocused == true -> {
+                isAnimationHideGridMenuShowVideoInfoRunning.set(false)
+            }
+
             mPlayPauseIcon?.isFocused == true -> {
                 autoHideOverlayRunnable.run()
                 isAnimationHideGridMenuShowVideoInfoRunning.set(false)
             }
+
             mGridViewHolder!!.gridView.selectedPosition in 0..4 -> {
                 isAnimationHideGridMenuShowVideoInfoRunning.set(true)
                 mGridViewHolder?.gridView?.clearFocus()
                 mPlaybackInfoContainerView?.fadeIn {
-                    mPlayPauseIcon?.requestFocus()
+                    focusOnDpadUp()
                     isAnimationHideGridMenuShowVideoInfoRunning.set(false)
                 }
                 mGridViewOverlays?.translateY(mGridViewPickHeight, onAnimationEnd = {
                     mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
                     mPlaybackInfoContainerView?.alpha = 1f
-                    mPlayPauseIcon?.requestFocus()
+                    focusOnDpadUp()
                     isAnimationHideGridMenuShowVideoInfoRunning.set(false)
                 }, onAnimationCancel = {
                     isAnimationHideGridMenuShowVideoInfoRunning.set(false)
                     mPlaybackInfoContainerView?.alpha = 1f
-                    mPlayPauseIcon?.requestFocus()
+                    focusOnDpadUp()
                     mGridViewOverlays?.translationY = mGridViewPickHeight
                 })
             }
@@ -545,20 +698,46 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
+    private fun focusOnDpadUp() {
+        if (progressBarContainer?.isVisible == true) {
+            progressBar?.requestFocus()
+        } else {
+            mPlayPauseIcon?.requestFocus()
+        }
+    }
+
     override fun onDpadLeft() {
+        if (progressBar?.isFocused == true) {
+            exoPlayerManager.exoPlayer?.seekTo(contentPosition - MIN_SEEK_DURATION)
+        }
         mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+    }
+
+    override fun onKeyCodeForward() {
+        exoPlayerManager.exoPlayer?.seekTo(contentPosition + MIN_SEEK_DURATION)
+    }
+
+    override fun onKeyCodeRewind() {
+        exoPlayerManager.exoPlayer?.seekTo(contentPosition - MIN_SEEK_DURATION)
     }
 
     override fun onDpadRight() {
+        if (progressBar?.isFocused == true) {
+            exoPlayerManager.exoPlayer?.seekTo(contentPosition + MIN_SEEK_DURATION)
+        }
         mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
     }
 
     override fun onKeyCodeChannelUp() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
     }
 
     override fun onKeyCodeChannelDown() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
     }
 
     override fun onKeyCodeMediaNext() {
@@ -625,6 +804,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     override fun onStop() {
+        timer?.cancel()
+        timer = null
         super.onStop()
     }
 

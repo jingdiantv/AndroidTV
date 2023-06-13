@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv.contentprovider
 
+import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -51,12 +52,13 @@ class TVChannelRecommendation @Inject constructor(
         providerChannelId: Long,
         channel: TVChannel
     ) {
-        storage.save(channel.channelId, providerChannelId, Long::class.java)
+        storage.save(channel.channelId, providerChannelId)
         GlideApp.with(context)
             .asBitmap()
             .load(channel.logoChannel)
             .override(80.dpToPx(), 80.dpToPx())
             .into(object : SimpleTarget<Bitmap>() {
+                @SuppressLint("RestrictedApi")
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     ChannelLogoUtils.storeChannelLogo(
                         context,

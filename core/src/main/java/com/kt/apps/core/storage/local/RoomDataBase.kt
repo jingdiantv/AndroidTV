@@ -7,8 +7,9 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.kt.apps.core.BuildConfig
+import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.storage.local.converters.RoomDBTypeConverters
 import com.kt.apps.core.storage.local.dao.*
 import com.kt.apps.core.storage.local.dto.*
@@ -24,9 +25,14 @@ import com.kt.apps.core.storage.local.dto.*
         FootballTeamEntity::class,
         ExtensionsConfig::class,
         TVChannelDTO::class,
-        TVChannelDTO.TVChannelUrl::class
+        TVChannelDTO.TVChannelUrl::class,
+        ExtensionsChannel::class,
+        ExtensionChannelCategory::class,
+        TVScheduler.Programme::class,
+        TVScheduler::class
     ],
-    version = 4
+    version = 8,
+    exportSchema = true,
 )
 abstract class RoomDataBase : RoomDatabase() {
     abstract fun mapChannelDao(): MapChannelDao
@@ -36,6 +42,10 @@ abstract class RoomDataBase : RoomDatabase() {
     abstract fun extensionsConfig(): ExtensionsConfigDAO
     abstract fun tvChannelDao(): TVChannelListDAO
     abstract fun tvChannelUrlDao(): TVChannelUrlDAO
+    abstract fun extensionsChannelDao(): ExtensionsChannelDAO
+    abstract fun extensionsChannelCategoryDao(): ExtensionsChannelCategoryDao
+    abstract fun extensionsTVChannelProgramDao(): TVProgramScheduleDao
+    abstract fun tvSchedulerDao(): TVSchedulerDAO
 
     companion object {
         private val MIGRATE_1_2 by lazy {
@@ -63,6 +73,43 @@ abstract class RoomDataBase : RoomDatabase() {
                 }
             }
         }
+        private val MIGRATE_4_5 by lazy {
+            object : Migration(4, 5) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `ExtensionsChannel` (`tvGroup` TEXT NOT NULL, `logoChannel` TEXT NOT NULL, `tvChannelName` TEXT NOT NULL, `tvStreamLink` TEXT NOT NULL, `sourceFrom` TEXT NOT NULL, `channelId` TEXT NOT NULL, `channelPreviewProviderId` INTEGER NOT NULL, `isHls` INTEGER NOT NULL, `catchupSource` TEXT NOT NULL, `userAgent` TEXT NOT NULL, `referer` TEXT NOT NULL, `props` TEXT NOT NULL, `extensionSourceId` TEXT NOT NULL, PRIMARY KEY(`channelId`))")
+                }
+            }
+        }
+
+        private val MIGRATE_5_6 by lazy {
+            object : Migration(5, 6) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `ExtensionsChannel_New` (`tvGroup` TEXT NOT NULL, `logoChannel` TEXT NOT NULL, `tvChannelName` TEXT NOT NULL, `tvStreamLink` TEXT NOT NULL, `sourceFrom` TEXT NOT NULL, `channelId` TEXT NOT NULL, `channelPreviewProviderId` INTEGER NOT NULL, `isHls` INTEGER NOT NULL, `catchupSource` TEXT NOT NULL, `userAgent` TEXT NOT NULL, `referer` TEXT NOT NULL, `props` TEXT NOT NULL, `extensionSourceId` TEXT NOT NULL, PRIMARY KEY(`channelId`, `tvStreamLink`))")
+                    database.execSQL("INSERT INTO `ExtensionsChannel_New` (`tvGroup`, `logoChannel`, `tvChannelName`, `tvStreamLink`, `sourceFrom`, `channelId`, `channelPreviewProviderId`, `isHls`, `catchupSource`, `userAgent`, `referer`, `props`, `extensionSourceId`) SELECT `tvGroup`, `logoChannel`, `tvChannelName`, `tvStreamLink`, `sourceFrom`, `channelId`, `channelPreviewProviderId`, `isHls`, `catchupSource`, `userAgent`, `referer`, `props`, `extensionSourceId` FROM ExtensionsChannel")
+                    database.execSQL("DROP TABLE ExtensionsChannel")
+                    database.execSQL("ALTER TABLE ExtensionsChannel_New RENAME TO ExtensionsChannel")
+                }
+            }
+        }
+
+        private val MIGRATE_6_7 by lazy {
+            object : Migration(6, 7) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `ExtensionChannelCategory` (`configSourceUrl` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`configSourceUrl`, `name`))")
+                }
+            }
+        }
+
+        private val MIGRATE_7_8 by lazy {
+            object : Migration(7, 8) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `Programme` (`channel` TEXT NOT NULL, `channelNumber` TEXT NOT NULL, `start` TEXT NOT NULL, `stop` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `extensionsConfigId` TEXT NOT NULL, `extensionEpgUrl` TEXT NOT NULL, PRIMARY KEY(`channel`, `title`, `start`))")
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `TVScheduler` (`date` TEXT NOT NULL, `sourceInfoName` TEXT NOT NULL, `generatorInfoName` TEXT NOT NULL, `generatorInfoUrl` TEXT NOT NULL, `extensionsConfigId` TEXT NOT NULL, `epgUrl` TEXT NOT NULL, PRIMARY KEY(`epgUrl`))")
+
+                }
+            }
+        }
+
         @Volatile
         var INSTANCE: RoomDataBase? = null
         fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
@@ -70,6 +117,10 @@ abstract class RoomDataBase : RoomDatabase() {
                 .addMigrations(MIGRATE_1_2)
                 .addMigrations(MIGRATE_2_3)
                 .addMigrations(MIGRATE_3_4)
+                .addMigrations(MIGRATE_4_5)
+                .addMigrations(MIGRATE_5_6)
+                .addMigrations(MIGRATE_6_7)
+                .addMigrations(MIGRATE_7_8)
                 .build()
                 .also {
                     INSTANCE = it

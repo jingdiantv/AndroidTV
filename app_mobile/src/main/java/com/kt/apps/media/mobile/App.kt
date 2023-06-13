@@ -45,7 +45,7 @@ class App : CoreApp(), Configuration.Provider {
     val appComponents: AppComponents
         get() = applicationInjector() as AppComponents
 
-    val coreComponents: CoreComponents
+    override val coreComponents: CoreComponents
         get() = _coreComponents
 
     val tvComponents: TVComponents

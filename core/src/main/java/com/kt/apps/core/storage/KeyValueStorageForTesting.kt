@@ -12,7 +12,7 @@ class KeyValueStorageForTesting : IKeyValueStorage {
        return mapOf()
     }
 
-    override fun <T> save(key: String, value: T, clazz: Class<T>) {
+    override fun <T: Any> save(key: String, value: T) {
         println(key)
     }
 

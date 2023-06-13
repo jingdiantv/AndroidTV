@@ -14,12 +14,15 @@ open class KeyValueStorageImpl @Inject constructor(
             String::class.java -> {
                 sharedPreferences.getString(key, "") as T
             }
+
             Boolean::class.java -> {
                 sharedPreferences.getBoolean(key, false) as T
             }
+
             Int::class.java -> {
                 sharedPreferences.getInt(key, -1) as T
             }
+
             Float::class.java -> sharedPreferences.getFloat(key, -1f) as T
 
             Long::class.java -> sharedPreferences.getLong(key, -1) as T
@@ -30,22 +33,45 @@ open class KeyValueStorageImpl @Inject constructor(
         }
     }
 
-    override fun <T> save(key: String, value: T, clazz: Class<T>) {
-        when (clazz) {
-            String::class.java -> sharedPreferences.edit().putString(key, value as String).apply()
+    override fun <T : Any> save(key: String, value: T) {
+        when (value::class.java) {
+            String::class.javaObjectType,
+            String::class.javaPrimitiveType -> {
+                sharedPreferences.edit()
+                    .putString(key, value as String)
+                    .apply()
+            }
 
-            Boolean::class.java -> sharedPreferences.edit().putBoolean(key, value as Boolean)
-                .apply()
+            Boolean::class.javaObjectType,
+            Boolean::class.javaPrimitiveType -> {
+                sharedPreferences.edit()
+                    .putBoolean(key, value as Boolean)
+                    .apply()
+            }
 
-            Int::class.java -> sharedPreferences.edit().putInt(key, value as Int).apply()
-
-            Float::class.java -> sharedPreferences.edit().putFloat(key, value as Float).apply()
-
-            Long::class.java -> sharedPreferences.edit().putLong(key, value as Long).apply()
+            Int::class.javaObjectType,
+            Int::class.javaPrimitiveType -> {
+                sharedPreferences.edit()
+                    .putInt(key, value as Int)
+                    .apply()
+            }
+            Float::class.javaObjectType,
+            Float::class.javaPrimitiveType -> {
+                sharedPreferences.edit()
+                    .putFloat(key, value as Float)
+                    .apply()
+            }
+            Long::class.javaObjectType, Long::class.javaPrimitiveType -> {
+                sharedPreferences.edit()
+                    .putLong(key, value as Long)
+                    .apply()
+            }
 
             else -> {
                 val strValue = Gson().toJson(value)
-                sharedPreferences.edit().putString(key, strValue).apply()
+                sharedPreferences.edit()
+                    .putString(key, strValue)
+                    .apply()
             }
         }
     }

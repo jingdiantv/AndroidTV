@@ -8,6 +8,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.extensions.ParserExtensionsSource
@@ -16,8 +17,6 @@ import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.xemtv.R
-import com.kt.apps.media.xemtv.services.TVControllerServer
-import com.kt.apps.media.xemtv.ui.main.DashboardFragment
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
@@ -63,10 +62,25 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Logger.e(this, message = "onViewCreated")
-        if (mainFragmentAdapter != null) {
-            mainFragmentAdapter.fragmentHost.notifyViewCreated(mainFragmentAdapter)
-        }
         initAction(view)
+        view.findViewById<TextInputEditText>(R.id.textInputEditText).setupFocusChangeShowKeyboard()
+        view.findViewById<TextInputEditText>(R.id.textInputEditText_2).setupFocusChangeShowKeyboard()
+        view.findViewById<TextInputEditText>(R.id.textInputEditText).requestFocus()
+    }
+
+    private fun TextInputEditText.setupFocusChangeShowKeyboard() {
+        val oldFocusChange = onFocusChangeListener
+        setOnFocusChangeListener { v, hasFocus ->
+            if (hasFocus) {
+                val imm: InputMethodManager = requireContext().getSystemService(
+                    InputMethodManager::class.java
+                )
+                if (imm.isActive(v)) {
+                    imm.showSoftInput(v, 0)
+                }
+            }
+            oldFocusChange?.onFocusChange(v, hasFocus)
+        }
     }
 
     override fun initAction(rootView: View) {
@@ -114,13 +128,15 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             showErrorDialog(content = "Tên nguồn không được bỏ trống")
             return
         }
-        if (!view?.findViewById<TextInputEditText>(R.id.textInputEditText_2)?.text.toString().startsWith("http")) {
+        val sourceUrl = view?.findViewById<TextInputLayout>(R.id.textInputLayout_2)?.prefixText.toString() +
+                view?.findViewById<TextInputEditText>(R.id.textInputEditText_2)?.text.toString()
+        if (!sourceUrl.startsWith("http")) {
             showErrorDialog(content = "Đường dẫn không hợp lệ! Đường dẫn phải phải bắt đầu bằng: \"http\"")
             return
         }
         val extensionsConfig = ExtensionsConfig(
             view?.findViewById<TextInputEditText>(R.id.textInputEditText)?.text.toString(),
-            view?.findViewById<TextInputEditText>(R.id.textInputEditText_2)?.text.toString(),
+            sourceUrl,
         )
         progressManager.show()
         val disposable = parserExtensionsSource.parseFromRemoteMaybe(extensionsConfig)
@@ -141,18 +157,16 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
                 progressManager.hide()
                 showSuccessDialog(
                     content = "Thêm nguồn kênh thành công!" +
-                            "\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh"
+                            "\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh",
+                    onSuccessListener = {
+                        if (!this.isDetached) {
+                            requireActivity().supportFragmentManager
+                                .popBackStack()
+                        }
+                    }
                 )
                 Logger.d(this@FragmentAddExtensions, message = "Save link success")
-                requireActivity().supportFragmentManager
-                    .findFragmentById(R.id.main_browse_fragment)
-                    .takeIf {
-                        it is DashboardFragment
-                    }
-                    ?.let {
-                        it as DashboardFragment
-                    }
-                    ?.onAddExtensionsPage(extensionsConfig)
+                extensionsViewModel.loadAllListExtensionsChannelConfig(true)
             }, {
                 if (this.isHidden || this.isDetached) {
                     return@subscribe

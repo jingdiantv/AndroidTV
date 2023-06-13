@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.leanback.app.ProgressBarManager
-import androidx.leanback.app.RowsSupportFragment
+import com.kt.apps.core.base.leanback.RowsSupportFragment
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector

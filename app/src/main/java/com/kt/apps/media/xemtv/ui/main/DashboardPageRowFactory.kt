@@ -3,22 +3,19 @@ package com.kt.apps.media.xemtv.ui.main
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.leanback.app.BackgroundManager
-import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.Row
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.R
-import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.base.leanback.BrowseSupportFragment
 import com.kt.apps.core.logging.Logger
-import com.kt.apps.media.xemtv.ui.extensions.FragmentAddExtensions
-import com.kt.apps.media.xemtv.ui.extensions.FragmentExtensions
+import com.kt.apps.media.xemtv.ui.extensions.FragmentDashboardExtensions
 import com.kt.apps.media.xemtv.ui.football.FootballFragment
-import com.kt.apps.media.xemtv.ui.radio.RadioFragment
-import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
+import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
+import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboardNew
 
 typealias OnFragmentChange = (pageID: Long) -> Unit
 class DashboardPageRowFactory(
     private val backgroundManager: BackgroundManager,
-    var listExtensions: List<ExtensionsConfig>
 ) : BrowseSupportFragment.FragmentFactory<Fragment>() {
     var onFragmentChangeListener: OnFragmentChange? = null
     override fun createFragment(row: Any?): Fragment {
@@ -28,24 +25,34 @@ class DashboardPageRowFactory(
         onFragmentChangeListener?.invoke(rowId)
         return when (rowId) {
             ROW_TV -> {
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.bg_football)
                 backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
-                FragmentTVDashboard()
+                FragmentTVDashboardNew.newInstance(PlaybackActivity.Type.TV)
             }
+
             ROW_FOOTBALL -> {
                 backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.bg_football)
                 FootballFragment()
             }
+
             ROW_RADIO -> {
                 backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
-                RadioFragment()
+                FragmentTVDashboardNew.newInstance(PlaybackActivity.Type.RADIO)
             }
+
+            ROW_IPTV -> {
+                backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.bg_football)
+                FragmentDashboardExtensions()
+            }
+
             ROW_ADD_EXTENSION -> {
-                return FragmentAddExtensions()
+                return FragmentDashboardExtensions()
             }
+
             else -> {
                 try {
                     backgroundManager.drawable = ContextCompat.getDrawable(CoreApp.getInstance(), R.drawable.tv_bg)
-                    FragmentExtensions.newInstance(listExtensions[rowId.toInt()].sourceUrl)
+                    throw IllegalStateException("Not support row")
                 } catch (e: Exception) {
                     throw IllegalStateException("Not support row")
                 }
@@ -58,5 +65,6 @@ class DashboardPageRowFactory(
         const val ROW_FOOTBALL = 10998L
         const val ROW_RADIO = 10997L
         const val ROW_ADD_EXTENSION = 10996L
+        const val ROW_IPTV = 10995L
     }
 }

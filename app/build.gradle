@@ -52,6 +52,8 @@ android {
 dependencies {
     implementation 'androidx.leanback:leanback:1.0.0'
     implementation appDependencies.values()
+    implementation "androidx.leanback:leanback-paging:1.1.0-alpha07"
+    implementation "androidx.leanback:leanback-tab:1.1.0-beta01"
     implementation 'androidx.work:work-runtime-ktx:2.7.1'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'

@@ -2,6 +2,7 @@ package com.kt.apps.media.xemtv.ui.tv
 
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
@@ -34,6 +35,8 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
+    private var filterGroup = FILTER_TOTAL
+    private var filterType = PlaybackActivity.Type.TV
 
     private val tvChannelViewModel by lazy {
         ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
@@ -46,6 +49,12 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
     private var selectedView: ImageCardView? = null
     private var mBackgroundUri: String? = null
     private var mBackgroundTimer: Timer? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        filterGroup = requireArguments().getString(EXTRA_FILTER_GROUP) ?: FILTER_TOTAL
+        filterType = requireArguments().getParcelable(EXTRA_FILTER_TYPE) ?: PlaybackActivity.Type.TV
+    }
 
     override fun initView(rootView: View) {
 
@@ -71,7 +80,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 showErrorDialog(content = "Đây là nội dung tính phí\r\nLiên hệ đội phát triển để có thêm thông tin")
                 return@OnItemViewClickedListener
             }
-            tvChannelViewModel.getLinkStreamForChannel(tvDetail = item as TVChannel)
+            tvChannelViewModel.getLinkStreamForChannel(tvDetail = item)
             selectedView = itemViewHolder.view as ImageCardView
         }
 
@@ -80,8 +89,12 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 is DataState.Success -> {
                     mRowsAdapter.clear()
                     val channelWithCategory = it.data
-                        .filter {
-                            !it.isRadio
+                        .filter { channel ->
+                            if (filterGroup == FILTER_TOTAL) {
+                                filterTvOrRadio(channel)
+                            } else {
+                                channel.tvGroup == filterGroup && filterTvOrRadio(channel)
+                            }
                         }
                         .groupBy {
                             it.tvGroup
@@ -102,10 +115,12 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     }
                     mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
                 }
+
                 is DataState.Loading -> {
                     mRowsAdapter.applyLoading(R.layout.item_tv_loading_presenter)
                     mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
                 }
+
                 else -> {
                 }
             }
@@ -117,14 +132,21 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
             }
     }
 
+    private fun filterTvOrRadio(channel: TVChannel) = if (filterType == PlaybackActivity.Type.TV) {
+        !channel.isRadio
+    } else {
+        channel.isRadio
+    }
+
     private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {
         when (it) {
             is DataState.Loading -> {
             }
+
             is DataState.Success -> {
                 val intent = Intent(requireActivity(), PlaybackActivity::class.java)
                 intent.putExtra(PlaybackActivity.EXTRA_TV_CHANNEL, it.data)
-                intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, PlaybackActivity.Type.TV as Parcelable)
+                intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, filterType as Parcelable)
                 val bundle = try {
                     ActivityOptionsCompat.makeSceneTransitionAnimation(
                         requireActivity(),
@@ -135,7 +157,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                     bundleOf()
                 }
 
-                startActivity(intent)
+                startActivity(intent, bundle)
             }
             is DataState.Error -> {
                 showErrorDialog(content = it.throwable.message)
@@ -184,6 +206,18 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         mBackgroundTimer?.cancel()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putAll(arguments)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        savedInstanceState ?: return
+        filterGroup = savedInstanceState.getString(EXTRA_FILTER_GROUP) ?: FILTER_TOTAL
+        filterType = savedInstanceState.getParcelable(EXTRA_FILTER_TYPE) ?: PlaybackActivity.Type.TV
+    }
+
     override fun onDestroyView() {
         progressManager.disableProgressBar()
         progressManager.setRootView(null)
@@ -194,6 +228,25 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
         override fun run() {
             mHandler.post { updateBackground(mBackgroundUri) }
         }
+    }
+
+    companion object {
+        const val FILTER_TOTAL = "Tất cả"
+        const val EXTRA_FILTER_GROUP = "extra:filter_group"
+        const val EXTRA_FILTER_TYPE = "extra:filter_type"
+
+        fun newInstance(filterGroup: String, type: PlaybackActivity.Type) = FragmentTVDashboard().apply {
+            this.arguments = bundleOf(
+                EXTRA_FILTER_GROUP to filterGroup,
+                EXTRA_FILTER_TYPE to type
+            )
+        }
+
+        fun newInstance(filterGroup: String, type: PlaybackActivity.Type, mMainAdapter: MainFragmentAdapter) =
+            newInstance(filterGroup, type).apply {
+                this.mMainFragmentAdapter = mMainAdapter
+            }
+
     }
 
 }

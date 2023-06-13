@@ -5,22 +5,37 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.kt.apps.core.extensions.ExtensionsConfig
+import com.kt.apps.core.extensions.ExtensionsConfigWithLoadedListChannel
+import com.kt.apps.core.storage.local.dto.ExtensionsConfigWithListCategory
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 
 @Dao
 abstract class ExtensionsConfigDAO {
 
     @Query("SELECT * FROM ExtensionsConfig")
+    @Transaction
     abstract fun getAll(): Observable<List<ExtensionsConfig>>
 
 
     @Query("SELECT * FROM ExtensionsConfig WHERE sourceName = :name")
+    @Transaction
     abstract fun getExtensions(name: String): Observable<ExtensionsConfig>
 
     @Query("SELECT * FROM ExtensionsConfig WHERE sourceUrl = :id")
+    @Transaction
     abstract fun getExtensionById(id: String): Observable<ExtensionsConfig>
+
+    @Query("SELECT * FROM ExtensionsConfig WHERE sourceUrl = :id")
+    @Transaction
+    abstract fun getExtensionChannelList(id: String): Single<ExtensionsConfigWithLoadedListChannel>
+
+    @Query("SELECT * FROM ExtensionsConfig WHERE sourceUrl = :id limit 1")
+    @Transaction
+    abstract fun getExtensionChannelWithCategory(id: String): Single<ExtensionsConfigWithListCategory>
 
     @Delete
     abstract fun delete(config: ExtensionsConfig): Completable
@@ -33,4 +48,7 @@ abstract class ExtensionsConfigDAO {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun insert(config: ExtensionsConfig): Completable
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract fun insertAll(vararg config: ExtensionsConfig): Completable
 }

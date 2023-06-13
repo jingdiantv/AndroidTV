@@ -1,9 +1,12 @@
 package com.kt.apps.core.tv.model
 
 import android.os.Parcelable
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.storage.local.dto.TVChannelEntity
+import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -19,6 +22,10 @@ class TVChannel(
     var isFreeContent: Boolean = true,
     var referer: String = ""
 ) : Parcelable {
+
+    @Ignore
+    @IgnoredOnParcel
+    var currentProgramme: TVScheduler.Programme? = null
 
     @Parcelize
     data class Url(

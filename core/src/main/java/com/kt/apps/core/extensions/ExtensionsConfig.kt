@@ -3,19 +3,20 @@ package com.kt.apps.core.extensions
 import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 import kotlinx.parcelize.Parcelize
 
 @Entity
 @Parcelize
-data class ExtensionsConfig(
-    val sourceName: String,
+open class ExtensionsConfig @JvmOverloads constructor(
+    var sourceName: String,
     @PrimaryKey
     val sourceUrl: String,
-    val type: Type = Type.TV_CHANNEL
+    var type: Type = Type.TV_CHANNEL
 ) : Parcelable {
 
     enum class Type {
-        TV_CHANNEL, FOOTBALL
+        TV_CHANNEL, FOOTBALL, MOVIE
     }
 
     companion object {
@@ -32,4 +33,34 @@ data class ExtensionsConfig(
             )
         }
     }
+
+    override fun toString(): String {
+        return "{" +
+                "sourceName: $sourceName,\n" +
+                "sourceUrl: $sourceUrl,\n" +
+                "type: $type\n" +
+                "}"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other is ExtensionsConfig) {
+            return sourceName == other.sourceName && sourceUrl == other.sourceName
+        }
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        var result = sourceName.hashCode()
+        result = 31 * result + sourceUrl.hashCode()
+        result = 31 * result + type.hashCode()
+        return result
+    }
+}
+
+class ExtensionsConfigWithLoadedListChannel(
+    sourceName: String,
+    sourceUrl: String
+) : ExtensionsConfig(sourceName, sourceUrl) {
+    @Relation(parentColumn = "sourceUrl", entityColumn = "extensionSourceId")
+    var extensionsChannelList: List<ExtensionsChannel>? = null
 }

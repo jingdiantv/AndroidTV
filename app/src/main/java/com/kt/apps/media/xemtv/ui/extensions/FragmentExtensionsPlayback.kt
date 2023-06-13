@@ -5,10 +5,12 @@ import android.view.View
 import androidx.core.os.bundleOf
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.observe
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.gson.Gson
 import com.kt.apps.core.base.BasePlaybackFragment
+import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logStreamingTV
@@ -76,15 +78,26 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             playVideo(it)
         }
         Logger.e(this@FragmentExtensionsPlayback, message = "id = $extensionID")
-        extensionsViewModel.channelListCache[extensionID]!!.let {
-            listCurrentItem.addAll(it)
-            setupRowAdapter(listCurrentItem, TVChannelPresenterSelector(requireActivity()))
-            onItemClickedListener = OnItemViewClickedListener { _, item, rowViewHolder, row ->
-                itemToPlay?.let {
-                    retryTimes[it.channelId] = 0
+        extensionsViewModel.loadChannelForConfig(extensionID!!).observe(viewLifecycleOwner){
+            if (it is DataState.Success) {
+                listCurrentItem.addAll(it.data)
+                setupRowAdapter(listCurrentItem, TVChannelPresenterSelector(requireActivity()))
+                onItemClickedListener = OnItemViewClickedListener { _, item, rowViewHolder, row ->
+                    itemToPlay?.let {
+                        retryTimes[it.channelId] = 0
+                    }
+                    itemToPlay = item as? ExtensionsChannel
+                    itemToPlay?.let { it1 -> playVideo(it1) }
                 }
-                itemToPlay = item as? ExtensionsChannel
-                itemToPlay?.let { it1 -> playVideo(it1) }
+            }
+        }
+
+        extensionsViewModel.programmeForChannelLiveData.observe(viewLifecycleOwner) {
+            if (it is DataState.Success) {
+                if (itemToPlay?.channelId == it.data.channel) {
+                    itemToPlay?.currentProgramme = it.data
+                    itemToPlay?.let { it1 -> showInfo(it1) }
+                }
             }
         }
 
@@ -139,7 +152,9 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         tvChannel: ExtensionsChannel,
         useCatchup: Boolean = false
     ) {
+        extensionsViewModel.loadProgramForChannel(tvChannel)
         lastExpandUrlTask?.let { disposable.remove(it) }
+        disposable.clear()
         val linkToPlay = if (!useCatchup) {
             tvChannel.tvStreamLink
         } else {
@@ -159,48 +174,102 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         Logger.d(
             this,
             "LinkPlayVideo",
-            Gson().toJson(linkToPlay)
+            linkToPlay
         )
 
+        showInfo(tvChannel)
+
         if (linkToPlay.isShortLink()) {
-            lastExpandUrlTask = Observable.just(linkToPlay.expandUrl())
-                .observeOn(Schedulers.io())
+            lastExpandUrlTask = Observable.fromCallable {
+                linkToPlay.expandUrl()
+            }
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
+                    if (isDetached) return@subscribe
                     playVideo(
                         tvChannel.tvChannelName,
-                        null,
+                        tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(realUrl),
-                        true,
+                        false,
                         isHls = realUrl.contains("m3u8"),
                         headers = tvChannel.props
                     )
                 }, {
+                    if (isDetached) return@subscribe
+                    lifecycle.currentState
                     playVideo(
                         tvChannel.tvChannelName,
-                        null,
+                        tvChannel.currentProgramme?.description,
                         referer = tvChannel.referer,
                         linkStream = listOf(linkToPlay),
-                        true,
+                        false,
                         isHls = linkToPlay.contains("m3u8"),
                         headers = tvChannel.props
                     )
                 })
             disposable.add(lastExpandUrlTask!!)
 
-        } else {
+        } else if (linkToPlay.contains(".m3u8")) {
             playVideo(
                 tvChannel.tvChannelName,
-                null,
+                tvChannel.currentProgramme?.description,
                 referer = tvChannel.referer,
                 linkStream = listOf(linkToPlay),
-                true,
+                false,
                 isHls = linkToPlay.contains("m3u8"),
                 headers = tvChannel.props
             )
-        }
+        } else {
+            disposable.add(Observable.fromCallable {
+                linkToPlay.expandUrl()
+            }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ realUrl ->
+                    if (isDetached) return@subscribe
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        tvChannel.currentProgramme?.description,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(realUrl),
+                        false,
+                        isHls = realUrl.contains("m3u8"),
+                        headers = tvChannel.props
+                    )
+                }, {
+                    if (isDetached) return@subscribe
+                    playVideo(
+                        tvChannel.tvChannelName,
+                        tvChannel.currentProgramme?.description,
+                        referer = tvChannel.referer,
+                        linkStream = listOf(linkToPlay),
+                        false,
+                        isHls = linkToPlay.contains("m3u8"),
+                        headers = tvChannel.props
+                    )
+                }))
 
+        }
+    }
+
+    private fun showInfo(tvChannel: ExtensionsChannel) {
+        Logger.d(this@FragmentExtensionsPlayback,"ChannelInfo", message = "$tvChannel")
+        prepare(
+            tvChannel.currentProgramme?.title?.takeIf {
+                it.trim().isNotBlank()
+            }?.trim() ?: tvChannel.tvChannelName,
+            tvChannel.currentProgramme?.description?.takeIf {
+                it.isNotBlank()
+            }?.trim(),
+            false
+        )
+    }
+
+    override fun onDestroyView() {
+        disposable.clear()
+        super.onDestroyView()
     }
 
     companion object {
