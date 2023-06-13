@@ -55,7 +55,7 @@ class AutoRefreshExtensionsChannelWorker(
                     .filter {
                         System.currentTimeMillis() - keyValueStorage.getLastRefreshExtensions(it) > 0.5 * HOUR
                     }
-                    .flatMap {
+                    .concatMapCompletable {
                         if (it.type == ExtensionsConfig.Type.FOOTBALL) {
                             roomDatabase.extensionsChannelDao()
                                 .deleteBySourceId(it.sourceUrl)
@@ -64,9 +64,17 @@ class AutoRefreshExtensionsChannelWorker(
                                         .doOnComplete {
                                             keyValueStorage.saveLastRefreshExtensions(it)
                                         }
+                                        .flatMapCompletable {
+                                            roomDatabase.extensionsChannelDao()
+                                                .insert(it)
+                                        }
                                 )
                         } else {
                             parserExtensionsSource.parseFromRemoteRx(it)
+                                .flatMapCompletable {
+                                    roomDatabase.extensionsChannelDao()
+                                        .insert(it)
+                                }
                                 .doOnComplete {
                                     keyValueStorage.saveLastRefreshExtensions(it)
                                 }
@@ -76,7 +84,6 @@ class AutoRefreshExtensionsChannelWorker(
                         Log.e("TAG", "Refresh success")
                     }, {
                         Log.e("TAG", "Refresh error: ${it.message}", it)
-                    }, {
                     })
 
             )

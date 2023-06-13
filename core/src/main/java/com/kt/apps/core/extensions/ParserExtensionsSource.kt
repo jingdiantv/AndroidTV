@@ -48,6 +48,10 @@ class ParserExtensionsSource @Inject constructor(
             }
     }
 
+    private val pendingSource: MutableMap<String, Observable<List<ExtensionsChannel>>> by lazy {
+        mutableMapOf()
+    }
+
 
     fun parseFromRemoteMaybe(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
         return Maybe.fromCallable {
@@ -56,14 +60,20 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     fun parseFromRemoteRx(extension: ExtensionsConfig): Observable<List<ExtensionsChannel>> {
+        if (pendingSource.contains(extension.sourceUrl)) {
+            return pendingSource[extension.sourceUrl]!!
+        }
         val onlineSource = Observable.create<List<ExtensionsChannel>> {
             try {
+                while (pendingSource.size > 5) {
+                    Thread.sleep(100)
+                }
                 val totalList = parseFromRemote(extension)
                 if (totalList.isEmpty()) {
-                    extensionsConfigDao.delete(extension).subscribe()
+                    extensionsConfigDao.delete(extension).subscribe({},{})
                     it.onComplete()
                 } else {
-                    it.onNext(parseFromRemote(extension))
+                    it.onNext(totalList)
                     it.onComplete()
                 }
             } catch (e: Exception) {
@@ -103,7 +113,7 @@ class ParserExtensionsSource @Inject constructor(
                 )
             }
             .doOnComplete {
-
+                pendingSource.remove(extension.sourceUrl)
             }
 
         val offlineSource = extensionsChannelDao.getAllBySourceId(extension.sourceUrl)
@@ -121,12 +131,18 @@ class ParserExtensionsSource @Inject constructor(
 
         if (System.currentTimeMillis() - getLastTimeRefresh(extension) < _intervalRefreshData) {
             Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource")
-            return offlineSource
+            val source = offlineSource
                 .onErrorResumeNext {
                     onlineSource
                 }
+                .doOnComplete {
+                    pendingSource.remove(extension.sourceUrl)
+                }
+            pendingSource[extension.sourceUrl] = source
+            return source
         }
         Logger.d(this@ParserExtensionsSource, "execute", "OnlineSource")
+        pendingSource[extension.sourceUrl] = onlineSource
         return onlineSource
     }
 
@@ -166,6 +182,10 @@ class ParserExtensionsSource @Inject constructor(
 
         if (response.code in 200..299) {
             val bodyStr = response.body.string()
+            Logger.d(
+                this@ParserExtensionsSource,
+                message = "${extension.sourceUrl} - Content Length: $${bodyStr.length}"
+            )
             response.body.close()
             val index = bodyStr.indexOf(TAG_EXT_INFO)
             programScheduleParser.parseForConfig(extension, getByRegex(REGEX_PROGRAM_SCHEDULE_URL, bodyStr))
