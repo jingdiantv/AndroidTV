@@ -299,7 +299,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
                 launch {
                     networkStateViewModel?.networkStatus?.collectLatest {
-                        Toast.makeText(this@ChannelFragment.context, "$it", Toast.LENGTH_LONG).show()
+//                        Toast.makeText(this@ChannelFragment.context, "$it", Toast.LENGTH_LONG).show()
                         if (it == NetworkState.Connected) {
                             if (adapter.itemCount == 0) {
                                 tvChannelViewModel?.getListTVChannel(forceRefresh = true)
