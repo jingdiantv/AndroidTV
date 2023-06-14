@@ -2,9 +2,11 @@ package com.kt.apps.media.mobile.ui.fragments.channels
 
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import cn.pedant.SweetAlert.ProgressHelper
@@ -174,6 +176,19 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
 
+        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            launch {
+                playbackViewModel?.keyEvent?.collectLatest {
+                    if (it.first == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                        exoPlayerManager.exoPlayer?.pause()
+                    }
+                    if (it.first == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                        exoPlayerManager.exoPlayer?.play()
+                    }
+                }
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -229,8 +244,10 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         }
     }
 
+
     override fun onStop() {
         super.onStop()
+        Log.d(TAG, "onStop: ")
         _cachePlayingState = exoPlayerManager.exoPlayer?.isPlaying ?: false
         exoPlayerManager.pause()
         shouldShowChannelList = false
@@ -238,6 +255,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
 
     override fun onResume() {
         super.onResume()
+        Log.d(TAG, "onResume: ")
         shouldShowChannelList = false
         _cachePlayingState = if (_cachePlayingState) {
             exoPlayerManager.exoPlayer?.play()
@@ -289,4 +307,5 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         }
         channelFragmentContainer.visibility = View.INVISIBLE
     }
+
 }

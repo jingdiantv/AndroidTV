@@ -3,6 +3,7 @@ package com.kt.apps.media.mobile.ui.complex
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.Window
@@ -154,6 +155,11 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
         //Deeplink handle
         handleIntent(intent)
     }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        playbackViewModel.onReceivedKey(Pair(keyCode, event))
+        return super.onKeyDown(keyCode, event)
+    }
     override fun onBackPressed() {
         if (layoutHandler?.onBackEvent() == true) {
             return
@@ -176,10 +182,8 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
 
         if (deeplink.host?.equals(Constants.HOST_TV) == true || deeplink.host?.equals(Constants.HOST_RADIO) == true) {
             if(deeplink.path?.contains("channel") == true) {
-                runOnUiThread {
-                    tvChannelViewModel?.playMobileTvByDeepLinks(uri = deeplink)
-                    intent.data = null
-                }
+                tvChannelViewModel?.playMobileTvByDeepLinks(uri = deeplink)
+                intent.data = null
             } else {
                 intent.data = null
             }

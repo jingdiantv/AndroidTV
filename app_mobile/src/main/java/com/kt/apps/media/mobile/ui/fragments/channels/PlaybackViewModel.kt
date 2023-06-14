@@ -1,6 +1,7 @@
 package com.kt.apps.media.mobile.ui.fragments.channels
 
 import android.util.Log
+import android.view.KeyEvent
 import androidx.lifecycle.MutableLiveData
 import androidx.work.WorkManager
 import com.google.android.exoplayer2.PlaybackException
@@ -15,8 +16,7 @@ import com.kt.apps.core.utils.TAG
 import com.kt.apps.media.mobile.models.PlaybackFailException
 import com.kt.apps.media.mobile.models.VideoDisplayAction
 import com.kt.apps.media.mobile.ui.complex.PlaybackState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 class PlaybackViewModel @Inject constructor(): BaseViewModel() {
@@ -37,6 +37,9 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
 
     private val _displayState = MutableStateFlow(PlaybackState.Fullscreen)
     val displayState: StateFlow<PlaybackState> = _displayState
+
+    private val _keyEvent = MutableSharedFlow<Pair<Int, KeyEvent?>>()
+    val keyEvent: SharedFlow<Pair<Int, KeyEvent?>> = _keyEvent.asSharedFlow()
 
 
     val playerListener: Player.Listener = object : Player.Listener {
@@ -63,5 +66,9 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
 
     fun changeDisplayState(newMode: PlaybackState) {
         _displayState.value = newMode
+    }
+
+    fun onReceivedKey(event: Pair<Int, KeyEvent?>) {
+        _keyEvent.tryEmit(event)
     }
 }
