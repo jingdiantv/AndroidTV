@@ -29,3 +29,10 @@ local.properties
 /app/debug
 /app/release
 /icon
+
+# generated
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+output.json

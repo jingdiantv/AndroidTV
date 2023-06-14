@@ -261,8 +261,11 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
             addOnScrollListener(_onScrollListener)
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+
+        }
+
+        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
                 launch {
                     _tvChannelData.collectLatest { tvChannel ->
                         delay(500)
@@ -270,7 +273,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                             reloadOriginalSource(tvChannel)
                     }
                 }
-
                 if (isLandscape)
                     launch {
                         playbackViewModel?.state?.collectLatest {state ->
@@ -305,7 +307,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                             tvChannelViewModel?.getListTVChannel(forceRefresh = true)
                     }
                 }
-            }
         }
 
         tvChannelViewModel?.getListTVChannel(savedInstanceState != null)
