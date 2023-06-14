@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="NavDrawerView">
+        <attr name="navMenu" format="reference" />
+        <attr name="childSpacingBetween" format="dimension" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nav_drawer"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_slide_nav_2"
+    android:elevation="20dp"
+    android:gravity="center_vertical"
+    android:minWidth="86dp"
+    android:orientation="vertical"
+    android:transitionGroup="true">
+
+</LinearLayout>
