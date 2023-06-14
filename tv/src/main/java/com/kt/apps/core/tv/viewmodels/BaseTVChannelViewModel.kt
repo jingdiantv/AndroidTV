@@ -43,12 +43,11 @@ open class BaseTVChannelViewModel constructor(
 
     open fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom = TVDataSourceFrom.MAIN_SOURCE) {
         //Todo: Remove this
-//        val forceRefresh = true
-//        if (!forceRefresh && interactors.getListChannel.cacheData != null) {
-//            Logger.d(this, "ListChannel", "Get from cache")
-//            _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
-//            return
-//        }
+        if (!forceRefresh && interactors.getListChannel.cacheData != null) {
+            Logger.d(this, "ListChannel", "Get from cache")
+            _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
+            return
+        }
         val finalList = mutableListOf<TVChannel>()
         _listTvChannelLiveData.postValue(DataState.Loading())
 
