@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.tv.model.TVDataSourceFrom
@@ -22,7 +23,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TVChannelViewModel @Inject constructor(
-    interactors: TVChannelInteractors,
+    private val interactors: TVChannelInteractors,
     private val app: App,
     private val workManager: WorkManager
 ) : BaseTVChannelViewModel(interactors) {
@@ -30,8 +31,14 @@ class TVChannelViewModel @Inject constructor(
     override fun getListTVChannel(forceRefresh: Boolean, sourceFrom: TVDataSourceFrom) {
         if(app.isNetworkAvailable())
             super.getListTVChannel(forceRefresh, sourceFrom)
-        else
-            _listTvChannelLiveData.postValue(DataState.Error(NoNetworkException()))
+        else {
+            if (interactors.getListChannel.cacheData != null) {
+                Logger.d(this, "ListChannel", "Get from cache")
+                _listTvChannelLiveData.postValue(DataState.Success(interactors.getListChannel.cacheData!!))
+            } else {
+                _listTvChannelLiveData.postValue(DataState.Error(NoNetworkException()))
+            }
+        }
     }
 
     fun loadLinkStreamForChannel(tvDetail: TVChannel, isBackup: Boolean = false) {

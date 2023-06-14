@@ -262,10 +262,6 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
         }
 
         viewLifecycleOwner.lifecycleScope.launchWhenStarted {
-
-        }
-
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
                 launch {
                     _tvChannelData.collectLatest { tvChannel ->
                         delay(500)
@@ -303,6 +299,14 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
 
                 launch {
                     networkStateViewModel?.networkStatus?.collectLatest {
+                        Toast.makeText(this@ChannelFragment.context, "$it", Toast.LENGTH_LONG).show()
+                        if (it == NetworkState.Connected) {
+                            if (adapter.itemCount == 0) {
+                                tvChannelViewModel?.getListTVChannel(forceRefresh = true)
+                            } else if (skeletonScreen.isRunning) {
+                                skeletonScreen.hide()
+                            }
+                        }
                         if (it == NetworkState.Connected && adapter.itemCount == 0)
                             tvChannelViewModel?.getListTVChannel(forceRefresh = true)
                     }
@@ -360,7 +364,14 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
     private fun onChangeItem(item: SectionItem): Boolean {
 
         when (item.id) {
-            R.id.radio -> scrollToPosition(8)
+            R.id.radio -> {
+                adapter.listItem.indexOfFirst {
+                    val channel = it.first
+                    (channel == TVChannelGroup.VOV.value || channel == TVChannelGroup.VOH.value)
+                }.takeIf { it != -1 }?.run {
+                    scrollToPosition(this)
+                }
+            }
             R.id.tv -> scrollToPosition(0)
             R.id.add_extension -> {
                 val dialog = AddExtensionFragment()
@@ -376,7 +387,7 @@ class ChannelFragment : BaseFragment<ActivityMainBinding>() {
                 return (extensionsViewModel?.extensionsConfigs?.value ?: emptyList()).findLast {
                     it.sourceName == title
                 }?.run {
-                    val index = adapter.listItem.indexOfFirst {
+                    adapter.listItem.indexOfFirst {
                         val channel = it.second.firstOrNull()
                         (channel as? ChannelElement.ExtensionChannelElement)?.model?.sourceFrom?.equals(
                             title

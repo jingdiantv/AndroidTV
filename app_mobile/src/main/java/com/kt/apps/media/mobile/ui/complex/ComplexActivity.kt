@@ -9,6 +9,7 @@ import android.view.Window
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.lifecycle.*
+import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.video.VideoSize
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.dialog.MaterialDialogs
@@ -16,6 +17,8 @@ import com.google.android.material.textview.MaterialTextView
 import com.kt.apps.core.Constants
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.logging.IActionLogger
+import com.kt.apps.core.logging.logPlaybackShowError
 import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.media.mobile.R
 import com.kt.apps.media.mobile.databinding.ActivityComplexBinding
@@ -40,6 +43,9 @@ enum class  PlaybackState {
 class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     @Inject
     lateinit var factory: ViewModelProvider.Factory
+
+    @Inject
+    lateinit var logger: IActionLogger
 
     override val layoutRes: Int
         get() = R.layout.activity_complex
@@ -131,8 +137,13 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
                     playbackViewModel.state.collectLatest { state ->
                         when (state) {
                             is PlaybackViewModel.State.FINISHED ->
-                                if (state.error != null)
-                                    handleError(state.error as PlaybackFailException)
+                                if (state.error != null && state.error is PlaybackFailException) {
+                                    logger.logPlaybackShowError(
+                                        state.error.error,
+                                        tvChannelViewModel?.lastWatchedChannel?.channel?.tvChannelName ?: ""
+                                    )
+                                    handleError(state.error)
+                                }
                             else -> { }
                         }
                     }

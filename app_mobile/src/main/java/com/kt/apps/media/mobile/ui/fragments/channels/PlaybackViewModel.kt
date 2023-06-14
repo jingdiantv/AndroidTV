@@ -7,6 +7,9 @@ import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.video.VideoSize
 import com.kt.apps.core.base.BaseViewModel
+import com.kt.apps.core.logging.IActionLogger
+import com.kt.apps.core.logging.logPlaybackError
+import com.kt.apps.core.logging.logPlaybackShowError
 import com.kt.apps.core.tv.viewmodels.TVChannelInteractors
 import com.kt.apps.core.utils.TAG
 import com.kt.apps.media.mobile.models.PlaybackFailException
@@ -23,6 +26,10 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
         object  PLAYING: State()
         data class FINISHED(val error: Throwable?): State()
     }
+
+    @Inject
+    lateinit var actionLogger: IActionLogger
+
     val videoSizeStateLiveData: MutableLiveData<VideoSize?> = MutableLiveData(null)
 
     private val _state = MutableStateFlow<State>(State.IDLE)
@@ -50,7 +57,6 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
         }
         override fun onPlayerError(error: PlaybackException) {
             super.onPlayerError(error)
-
             _state.value  = State.FINISHED(PlaybackFailException(error))
         }
     }
