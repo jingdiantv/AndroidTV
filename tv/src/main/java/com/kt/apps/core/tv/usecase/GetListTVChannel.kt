@@ -75,7 +75,7 @@ class GetListTVChannel @Inject constructor(
         while (isLoadingData.get()) {
             return if (cacheData != null) {
                 Observable.just(cacheData!!)
-            } else if (_pendingSource!= null) {
+            } else if (_pendingSource != null) {
                 _pendingSource!!
             } else {
                 Observable.empty()
@@ -87,21 +87,28 @@ class GetListTVChannel @Inject constructor(
             EXTRA_TV_SOURCE_FROM to sourceFrom,
             EXTRA_REFRESH_DATA to forceRefreshData
         )
-        return (if (timeout == null)
+        return if (timeout == null) {
             execute(params)
-        else
-            execute(params).timeout(timeout, TimeUnit.SECONDS))
-            .doOnNext {
-            synchronized(this) {
-                listCacheData.addAll(it)
-            }
-        }.doOnComplete {
-            cacheData = listCacheData
-            isLoadingData.compareAndSet(true, false)
-        }.doOnError {
-            isLoadingData.compareAndSet(true, false)
-            cacheData = null
+        } else {
+            execute(params).timeout(timeout, TimeUnit.SECONDS)
         }
+            .doOnNext {
+                synchronized(this) {
+                    listCacheData.addAll(it)
+                }
+            }
+            .also {
+                _pendingSource = it
+            }
+            .doOnComplete {
+                _pendingSource = null
+                cacheData = listCacheData
+                isLoadingData.compareAndSet(true, false)
+            }.doOnError {
+                _pendingSource = null
+                isLoadingData.compareAndSet(true, false)
+                cacheData = null
+            }
     }
 
     companion object {
