@@ -18,6 +18,7 @@ class GetListTVChannel @Inject constructor(
     private val isLoadingData by lazy {
         AtomicBoolean()
     }
+    private var _pendingSource: Observable<List<TVChannel>>? = null
 
     override fun prepareExecute(params: Map<String, Any>): Observable<List<TVChannel>> {
         if (cacheData != null && !(params[EXTRA_REFRESH_DATA] as Boolean)) {
@@ -72,10 +73,12 @@ class GetListTVChannel @Inject constructor(
         timeout: Long? = this.timeout,
     ): Observable<List<TVChannel>> {
         while (isLoadingData.get()) {
-            if (cacheData != null) {
-                return Observable.just(cacheData!!)
+            return if (cacheData != null) {
+                Observable.just(cacheData!!)
+            } else if (_pendingSource!= null) {
+                _pendingSource!!
             } else {
-                return  Observable.empty()
+                Observable.empty()
             }
         }
         isLoadingData.compareAndSet(false, true)
