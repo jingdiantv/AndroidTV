@@ -102,6 +102,14 @@ class MainTVDataSource @Inject constructor(
                             totalList.addAll(
                                 list.mapToListChannel()
                                     .sortedBy(ITVDataSource.sortTVChannel())
+                                    .filter {
+                                        if (!allowInternational) {
+                                            it.tvGroup != TVChannelGroup.Intenational.name &&
+                                                    (it.tvGroup != TVChannelGroup.Kid.name)
+                                        } else {
+                                            true
+                                        }
+                                    }
                             )
                         }
                     }
