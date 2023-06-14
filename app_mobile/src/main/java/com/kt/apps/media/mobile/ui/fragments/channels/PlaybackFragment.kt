@@ -173,21 +173,20 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
         }
     }
 
+    fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+            exoPlayerManager.exoPlayer?.pause()
+            return true
+        }
+        if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+            exoPlayerManager.exoPlayer?.play()
+            return true
+        }
+        return false
+    }
+
     override fun initAction(savedInstanceState: Bundle?) {
         tvChannelViewModel
-
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
-            launch {
-                playbackViewModel?.keyEvent?.collectLatest {
-                    if (it.first == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-                        exoPlayerManager.exoPlayer?.pause()
-                    }
-                    if (it.first == KeyEvent.KEYCODE_MEDIA_PLAY) {
-                        exoPlayerManager.exoPlayer?.play()
-                    }
-                }
-            }
-        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

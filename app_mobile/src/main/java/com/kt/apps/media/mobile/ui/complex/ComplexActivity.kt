@@ -157,7 +157,9 @@ class ComplexActivity : BaseActivity<ActivityComplexBinding>() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        playbackViewModel.onReceivedKey(Pair(keyCode, event))
+        if (binding.fragmentContainerPlayback.getFragment<PlaybackFragment>().onKeyDown(keyCode, event)) {
+            return true
+        }
         return super.onKeyDown(keyCode, event)
     }
     override fun onBackPressed() {

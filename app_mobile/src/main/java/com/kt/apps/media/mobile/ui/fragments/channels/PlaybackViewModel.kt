@@ -38,9 +38,6 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
     private val _displayState = MutableStateFlow(PlaybackState.Fullscreen)
     val displayState: StateFlow<PlaybackState> = _displayState
 
-    private val _keyEvent = MutableSharedFlow<Pair<Int, KeyEvent?>>()
-    val keyEvent: SharedFlow<Pair<Int, KeyEvent?>> = _keyEvent.asSharedFlow()
-
 
     val playerListener: Player.Listener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -66,9 +63,5 @@ class PlaybackViewModel @Inject constructor(): BaseViewModel() {
 
     fun changeDisplayState(newMode: PlaybackState) {
         _displayState.value = newMode
-    }
-
-    fun onReceivedKey(event: Pair<Int, KeyEvent?>) {
-        _keyEvent.tryEmit(event)
     }
 }
