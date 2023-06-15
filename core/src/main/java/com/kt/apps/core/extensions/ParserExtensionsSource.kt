@@ -1,5 +1,6 @@
 package com.kt.apps.core.extensions
 
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.di.NetworkModule
@@ -17,6 +18,7 @@ import io.reactivex.rxjava3.disposables.DisposableContainer
 import io.reactivex.rxjava3.schedulers.Schedulers
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
 import java.lang.NullPointerException
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
@@ -30,7 +32,8 @@ class ParserExtensionsSource @Inject constructor(
     private val roomDataBase: RoomDataBase,
     private val programScheduleParser: ParserExtensionsProgramSchedule,
     @Named(NetworkModule.EXTRA_NETWORK_DISPOSABLE)
-    private val disposable: DisposableContainer
+    private val disposable: DisposableContainer,
+    private val remoteConfig: FirebaseRemoteConfig
 ) {
     private val extensionsChannelDao by lazy {
         roomDataBase.extensionsChannelDao()
@@ -360,18 +363,46 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     fun insertAll(): Completable {
+        val defaultIptvVersion = remoteConfig.getLong("default_iptv_version")
+        val localIptvVersion = storage.get("default_iptv_version", Long::class.java)
+        if (defaultIptvVersion > localIptvVersion) {
+            storage.save("beta_insert_default_source", false)
+        }
         if (!storage.get("beta_insert_default_source", Boolean::class.java)) {
-            val defaultList = mapBongDa.mapToListExConfig(ExtensionsConfig.Type.FOOTBALL)
-                .toMutableList().apply {
-                    addAll(filmData.mapToListExConfig(ExtensionsConfig.Type.MOVIE))
-                    addAll(tvChannel.mapToListExConfig(ExtensionsConfig.Type.TV_CHANNEL))
+            val jsonArray: JSONArray = try {
+                JSONArray(remoteConfig.getString("default_iptv_channel"))
+            } catch (e: Exception) {
+                return Completable.complete()
+            }
+
+            val defaultList = mutableListOf<ExtensionsConfig>()
+
+            if (jsonArray.length() > 0) {
+                for (i in 0 until jsonArray.length()) {
+                    val jsonObject = jsonArray.optJSONObject(i)
+                    val sourceName = jsonObject.optString("sourceName")
+                    val sourceUrl = jsonObject.optString("sourceUrl")
+                    val type = try {
+                        ExtensionsConfig.Type.valueOf(jsonObject.optString("type"))
+                    } catch (e: Exception) {
+                        ExtensionsConfig.Type.TV_CHANNEL
+                    }
+                    defaultList.add(
+                        ExtensionsConfig(
+                            sourceUrl = sourceUrl,
+                            sourceName = sourceName,
+                            type = type
+                        )
+                    )
                 }
-            return roomDataBase.extensionsConfig()
-                .insertAll(*defaultList.toTypedArray())
-                .subscribeOn(Schedulers.io())
-                .doOnComplete {
-                    storage.save("beta_insert_default_source", true)
-                }
+                return roomDataBase.extensionsConfig()
+                    .insertAll(*defaultList.toTypedArray())
+                    .subscribeOn(Schedulers.io())
+                    .doOnComplete {
+                        storage.save("beta_insert_default_source", true)
+                        storage.save("default_iptv_version", defaultIptvVersion)
+                    }
+            }
         }
         return Completable.complete()
     }
