@@ -274,7 +274,7 @@ abstract class BaseRowSupportFragmentLeanback extends Fragment {
     public void onTransitionStart() {
         if (mVerticalGridView != null) {
             mVerticalGridView.setPruneChild(false);
-            mVerticalGridView.setLayoutFrozen(true);
+//            mVerticalGridView.setLayoutFrozen(true);
             mVerticalGridView.setFocusSearchDisabled(true);
         }
     }
