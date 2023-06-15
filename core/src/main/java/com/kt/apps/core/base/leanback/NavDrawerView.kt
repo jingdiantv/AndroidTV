@@ -5,9 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Rect
 import android.util.AttributeSet
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -107,10 +105,15 @@ class NavDrawerView @JvmOverloads constructor(
                 childItemView.tag = menuItem.itemId
                 childItemView.layoutParams = marginLayoutParams
                 childItemView.isPressed = i == 0
-                childItemView.isSelected = i == 0
+                childItemView.isSelected = false
                 childItemView.setOnFocusChangeListener { v, hasFocus ->
+                    Logger.d(this@NavDrawerView, message = "OnFocusChange: $i, $hasFocus")
+                    if (!isOpen) {
+                        childItemView.isPressed = childItemView.tag == selectedItem
+                        icon.isSelected = false
+                        title.isSelected = false
+                    }
                     if (hasFocus) {
-                        Logger.d(this@NavDrawerView, message = "OnFocusChange: $i, $hasFocus")
                         onNavDrawerItemSelected?.onSelected(i)
                     }
                 }
@@ -146,10 +149,18 @@ class NavDrawerView @JvmOverloads constructor(
         val itemId = menu.getItem(position).itemId
         selectedItem = itemId
         if (invalidate) {
+            var isFocused = false
             for (i in 0 until childCount) {
                 getChildAt(i).isSelected = false
+                if (getChildAt(i).isFocused) {
+                    isFocused = true
+                }
             }
-            findViewWithTag<LinearLayout>(itemId).isSelected = true
+            if (isFocused) {
+                findViewWithTag<LinearLayout>(itemId).isSelected = true
+            } else {
+                findViewWithTag<LinearLayout>(itemId).isPressed = true
+            }
         }
     }
 
@@ -180,11 +191,6 @@ class NavDrawerView @JvmOverloads constructor(
             }
             closeAnimator.start()
         }
-    }
-
-    override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
-        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
-        Log.e("TAG", "onFocusChanged: $gainFocus. $direction, $previouslyFocusedRect")
     }
 
     override fun focusSearch(focused: View?, direction: Int): View {
