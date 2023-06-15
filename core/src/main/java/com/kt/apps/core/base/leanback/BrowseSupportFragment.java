@@ -732,7 +732,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     BrowseTransitionListener mBrowseTransitionListener;
 
     private static final String ARG_TITLE = BrowseSupportFragment.class.getCanonicalName() + ".title";
-    private static final String ARG_HEADERS_STATE =
+    public static final String ARG_HEADERS_STATE =
             BrowseSupportFragment.class.getCanonicalName() + ".headersState";
 
     /**
@@ -1364,7 +1364,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         return true;
     }
 
-    void showHeaders(boolean show) {
+    public void showHeaders(boolean show) {
         if (DEBUG) Log.v(TAG, "showHeaders " + show);
         if (navDrawerView == null) {
             return;

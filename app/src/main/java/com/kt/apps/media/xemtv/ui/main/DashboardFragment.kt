@@ -21,6 +21,8 @@ import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.base.leanback.DashboardIconHeaderPresenterSelector
 import com.kt.apps.core.utils.leanback.findCurrentFocusedPosition
+import com.kt.apps.core.utils.leanback.findCurrentFocusedView
+import com.kt.apps.core.utils.leanback.findCurrentSelectedPosition
 import com.kt.apps.media.xemtv.BuildConfig
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.extensions.FragmentAddExtensions
@@ -151,6 +153,8 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     private fun initView() {
         headersState = HEADERS_ENABLED
+        arguments = arguments ?: bundleOf()
+        requireArguments().putInt(ARG_HEADERS_STATE, HEADERS_ENABLED)
         isHeadersTransitionOnBackEnabled = true
         prepareEntranceTransition()
         adapter = rowsAdapter
@@ -228,6 +232,10 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
             }
         }
     }
+    override fun onDestroyView() {
+        firstInit = true
+        super.onDestroyView()
+    }
 
     override fun onDpadCenter() {
 
@@ -293,10 +301,28 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     }
 
     fun onBackPressed() {
-        if (mShowingHeaders) {
-            startHeadersTransition(false)
+        if (mMainFragment is BaseTabLayoutFragment) {
+            with(mMainFragment as BaseTabLayoutFragment) {
+                if (isShowingHeaders) {
+                    requireActivity().finish()
+                } else {
+                    val currentTabFocused = this.tabLayout.findCurrentFocusedView()
+                    if (currentTabFocused == null) {
+                        val currentTabSelected = this.tabLayout.findCurrentSelectedPosition()
+                        if (currentTabSelected >= 0) {
+                            this.tabLayout.getTabAt(currentTabSelected)?.view?.requestFocus()
+                        } else {
+                            this.tabLayout.getTabAt(0)?.view?.requestFocus()
+                        }
+                    } else {
+                        navDrawerView.requestFocus()
+                    }
+                }
+            }
+        } else if (isShowingHeaders) {
+            requireActivity().finish()
         } else {
-            startHeadersTransition(true)
+            navDrawerView.requestFocus()
         }
     }
 

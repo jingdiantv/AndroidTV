@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -146,6 +147,7 @@ class NavDrawerView @JvmOverloads constructor(
     var onNavDrawerItemSelected: INavDrawerItemSelected? = null
 
     fun setItemSelected(position: Int, invalidate: Boolean) {
+        Logger.d(this, message = "setItemSelected: $position")
         val itemId = menu.getItem(position).itemId
         selectedItem = itemId
         if (invalidate) {
@@ -166,8 +168,9 @@ class NavDrawerView @JvmOverloads constructor(
 
     fun openNav() {
         Logger.d(this@NavDrawerView, message = "openNav")
-        if (_isAnimating.compareAndSet(false, true) && !_isOpen) {
+        if (!_isOpen && !isAnimating) {
             _isOpen = true
+            _isAnimating.set(true)
             for (i in 0 until childCount) {
                 val headerTitle = getChildAt(i).findViewById<TextView>(R.id.row_header)
                 headerTitle?.visibility = VISIBLE
@@ -179,10 +182,20 @@ class NavDrawerView @JvmOverloads constructor(
 
     }
 
+    override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
+        forEachIndexed { _, view ->
+            if (view.tag == selectedItem) {
+                return view.requestFocus(direction, previouslyFocusedRect)
+            }
+        }
+        return super.requestFocus(direction, previouslyFocusedRect)
+    }
+
     fun closeNav() {
         Logger.d(this@NavDrawerView, message = "closeNav")
-        if (_isOpen && _isAnimating.compareAndSet(false, true)) {
+        if (_isOpen && !isAnimating) {
             _isOpen = false
+            _isAnimating.set(true)
             openNavigator.cancel()
             for (i in 0 until childCount) {
                 val headerTitle = getChildAt(i).findViewWithTag<TextView>(R.id.row_header)

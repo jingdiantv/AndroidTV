@@ -60,4 +60,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
         }
     }
+
+    override fun onBackPressed() {
+        supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
+            ?.takeIf {
+                it is DashboardFragment
+            }?.let {
+                (it as DashboardFragment).apply {
+                    this.onBackPressed()
+                }
+            }
+            ?: super.onBackPressed()
+
+    }
 }
