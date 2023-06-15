@@ -14,6 +14,8 @@
      limitations under the License.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/browse_dummy"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -35,17 +37,24 @@
 
             <com.kt.apps.core.base.leanback.ScaleFrameLayout
                 android:id="@+id/scale_frame"
+                android:focusedByDefault="true"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:paddingStart="75dp" />
 
         </com.kt.apps.core.base.leanback.BrowseRowsFrameLayout>
 
-        <!-- Padding needed for shadow -->
-        <FrameLayout
-            android:id="@+id/browse_headers_dock"
+        <com.kt.apps.core.base.leanback.NavDrawerView
+            android:id="@+id/nav_drawer"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingEnd="50dp" />
+            android:paddingStart="10dp"
+            android:focusable="false"
+            android:background="@drawable/bg_slide_nav_2"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            app:childSpacingBetween="10dp"
+            app:navMenu="?navMenu" />
+
     </com.kt.apps.core.base.leanback.BrowseFrameLayout>
 </FrameLayout>

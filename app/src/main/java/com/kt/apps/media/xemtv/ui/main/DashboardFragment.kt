@@ -19,6 +19,7 @@ import com.kt.apps.core.base.leanback.BrowseSupportFragment
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.base.leanback.DashboardIconHeaderPresenterSelector
 import com.kt.apps.core.utils.leanback.findCurrentFocusedPosition
 import com.kt.apps.media.xemtv.BuildConfig
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
@@ -29,7 +30,6 @@ import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
-import io.reactivex.rxjava3.disposables.CompositeDisposable
 import java.lang.StringBuilder
 import javax.inject.Inject
 
@@ -178,13 +178,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
             val pageRow = PageRow(header)
             rowsAdapter.add(pageRow)
         }
-        setHeaderPresenterSelector(DashboardIconHeaderPresenterSelector())
-        headersSupportFragment?.setAppVersion(displayVersionName)
         startEntranceTransition()
-    }
-
-    fun onAddExtensionsPage(extensions: ExtensionsConfig) {
-
     }
 
     fun selectPageRowByUri(uri: Uri) {
@@ -221,6 +215,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                 (mMainFragment as BaseTabLayoutFragment)
                     .requestFocusChildContent()
                     .requestFocus()
+                navDrawerView.setItemSelected(selectedPosition, true)
             }
         }
         mBackgroundManager.drawable = when (currentPageIdSelected) {
@@ -297,7 +292,16 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     }
 
+    fun onBackPressed() {
+        if (mShowingHeaders) {
+            startHeadersTransition(false)
+        } else {
+            startHeadersTransition(true)
+        }
+    }
+
     companion object {
+        var firstInit = true
         private const val EXTRA_EXTERNAL_EXTENSIONS = "extra:external"
         val defaultPages by lazy {
             if (BuildConfig.isBeta) {

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="leanback_dashboard_padding_top">40dp</dimen>
+    <dimen name="nav_spacing_between">20dp</dimen>
 </resources>

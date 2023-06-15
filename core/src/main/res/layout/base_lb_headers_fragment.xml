@@ -2,9 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/browse_headers_root"
-    android:layout_width="@dimen/lb_browse_headers_width"
+    android:layout_width="0dp"
     android:layout_height="match_parent"
-    android:background="@color/black"
+    android:background="@color/white"
+    android:visibility="invisible"
     android:elevation="@dimen/lb_browse_headers_z"
     android:paddingEnd="@dimen/lb_browse_header_padding_end"
     android:transitionGroup="true">
@@ -14,7 +15,7 @@
         style="?attr/headersVerticalGridStyle"
         android:layout_width="@dimen/lb_browse_headers_width"
         android:layout_height="match_parent"
-        android:background="@color/black" />
+        android:background="@color/white" />
 
     <View
         android:id="@id/fade_out_edge"

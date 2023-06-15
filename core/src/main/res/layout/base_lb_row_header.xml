@@ -14,9 +14,25 @@
      limitations under the License.
 -->
 
-<com.kt.apps.core.base.leanback.RowHeaderView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/row_header"
-    style="?sectionHeaderStyle"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:focusable="false" />
+    android:orientation="vertical"
+    tools:ignore="MissingDefaultResource">
+
+    <com.kt.apps.core.base.leanback.RowHeaderView
+        android:id="@+id/row_header"
+        style="?rowHeaderStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/row_header_description"
+        style="?rowHeaderDescriptionStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:importantForAccessibility="no" />
+
+</LinearLayout>

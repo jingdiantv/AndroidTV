@@ -1,7 +1,5 @@
 package com.kt.apps.core.base.leanback;
 
-import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
-
 import android.graphics.Paint;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -9,12 +7,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.RestrictTo;
-import androidx.leanback.R;
 import androidx.leanback.widget.HeaderItem;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
-import androidx.leanback.widget.RowHeaderView;
+import com.kt.apps.core.R;
 
 /**
  * RowHeaderPresenter provides a default presentation for {@link HeaderItem} using a
@@ -30,7 +26,7 @@ public class RowHeaderPresenter extends Presenter {
     private final boolean mAnimateSelect;
 
     public RowHeaderPresenter() {
-        this(R.layout.lb_row_header);
+        this(R.layout.base_lb_row_header);
     }
 
     public RowHeaderPresenter(int layoutResourceId) {
@@ -75,8 +71,8 @@ public class RowHeaderPresenter extends Presenter {
          */
         public ViewHolder(View view) {
             super(view);
-            mTitleView = (RowHeaderView)view.findViewById(R.id.row_header);
-            mDescriptionView = (TextView)view.findViewById(R.id.row_header_description);
+            mTitleView = (RowHeaderView) view.findViewById(R.id.row_header);
+            mDescriptionView = (TextView) view.findViewById(R.id.row_header_description);
             initColors();
         }
 
@@ -97,7 +93,7 @@ public class RowHeaderPresenter extends Presenter {
             }
 
             mUnselectAlpha = view.getResources().getFraction(
-                    R.fraction.lb_browse_header_unselect_alpha, 1, 1);
+                    androidx.leanback.R.fraction.lb_browse_header_unselect_alpha, 1, 1);
         }
 
         public final float getSelectLevel() {
@@ -120,7 +116,7 @@ public class RowHeaderPresenter extends Presenter {
     @Override
     public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object item) {
         HeaderItem headerItem = item == null ? null : ((Row) item).getHeaderItem();
-        ViewHolder vh = (ViewHolder)viewHolder;
+        ViewHolder vh = (ViewHolder) viewHolder;
         if (headerItem == null) {
             if (vh.mTitleView != null) {
                 vh.mTitleView.setText(null);
@@ -152,7 +148,7 @@ public class RowHeaderPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
-        ViewHolder vh = (ViewHolder)viewHolder;
+        ViewHolder vh = (ViewHolder) viewHolder;
         if (vh.mTitleView != null) {
             vh.mTitleView.setText(null);
         }

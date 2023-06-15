@@ -1,5 +1,6 @@
-package com.kt.apps.media.xemtv.ui.main
+package com.kt.apps.core.base.leanback
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,16 +9,15 @@ import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.Presenter
 import androidx.leanback.widget.PresenterSelector
 import androidx.leanback.widget.Row
-import androidx.leanback.widget.RowHeaderView
 import com.kt.apps.core.GlideApp
-import com.kt.apps.core.base.leanback.RowHeaderPresenter
+import com.kt.apps.core.R
 import com.kt.apps.core.logging.Logger
-import com.kt.apps.media.xemtv.R
 
 typealias HeaderItemLongClickListener = ((headerId: Long) -> Unit)
 
 class DashboardIconHeaderPresenterSelector : PresenterSelector() {
     var onHeaderLongClickedListener: HeaderItemLongClickListener? = null
+
     override fun getPresenter(item: Any?): Presenter {
         return HeaderIconPresenter(onHeaderLongClickedListener)
     }
@@ -29,7 +29,7 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
             val view = LayoutInflater.from(parent!!.context)
                 .inflate(R.layout.header_dashboard, parent, false)
             val viewHolder = HeaderIconViewHolder(view)
-            setSelectLevel(viewHolder, 0f)
+            setSelectLevel(viewHolder, 1f)
             return viewHolder
         }
 
@@ -53,7 +53,7 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
                     }
                 }
             }
-            Logger.d(this, message = "Bind header");
+            Logger.d(this, message = "Bind header")
         }
 
         class HeaderIconViewHolder(view: View) : ViewHolder(view) {
