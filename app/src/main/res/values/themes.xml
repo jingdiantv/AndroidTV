@@ -1,6 +1,8 @@
 <resources>
 
-    <style name="Theme.XemTv" parent="@style/Theme.Leanback" />
+    <style name="Theme.XemTv" parent="@style/Theme.Leanback">
+        <item name="navMenu">@menu/dashboard_menu</item>
+    </style>
 
     <style name="ImageCardViewStyleTitle" parent="Widget.Leanback.ImageCardViewStyle">
         <item name="lbImageCardViewType">Title</item>

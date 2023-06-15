@@ -3,9 +3,6 @@ package com.kt.apps.media.xemtv.ui.football
 import android.content.Intent
 import android.os.Bundle
 import android.os.Parcelable
-import android.transition.Scene
-import android.transition.TransitionInflater
-import android.transition.TransitionManager
 import android.view.View
 import androidx.leanback.widget.*
 import androidx.lifecycle.ViewModelProvider
@@ -102,13 +99,6 @@ class FootballFragment : BaseRowSupportFragment() {
                         mRowsAdapter.add(ListRow(headerItem, adapter))
                     }
                     mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
-
-                    val scene = Scene(verticalGridView)
-                    val transition = TransitionInflater.from(context).inflateTransition(
-                        androidx.leanback.R.transition.lb_browse_entrance_transition
-                    )
-                    transition.addTarget(verticalGridView)
-                    TransitionManager.go(scene, transition)
                 }
 
                 is DataState.Loading -> {
