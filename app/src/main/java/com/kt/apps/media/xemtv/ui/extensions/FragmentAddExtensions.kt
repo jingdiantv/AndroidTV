@@ -139,7 +139,7 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             sourceUrl,
         )
         progressManager.show()
-        val disposable = parserExtensionsSource.parseFromRemoteMaybe(extensionsConfig)
+        val disposable = parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
             .subscribeOn(Schedulers.io())
             .flatMapCompletable {
                 if (it.isNotEmpty()) {
