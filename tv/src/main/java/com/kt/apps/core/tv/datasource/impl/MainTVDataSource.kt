@@ -93,14 +93,17 @@ class MainTVDataSource @Inject constructor(
                     val jsonObject = JSONObject(it.data!!["alls"]!!.toString())
                     val totalList = mutableListOf<TVChannel>()
                     supportGroups.forEach {
-                        val listJsonArr = jsonObject.getJSONArray(it.name)
-                        val list = Gson().fromJson<List<TVChannelFromDB?>>(
-                            listJsonArr.toString(),
-                            TypeToken.getParameterized(List::class.java, TVChannelFromDB::class.java).type
-                        ).filterNotNull()
-                        totalList.addAll(list.mapToListChannel()
-                            .sortedBy(ITVDataSource.sortTVChannel())
-                        )
+                        val listJsonArr = jsonObject.optJSONArray(it.name)
+                        if (listJsonArr != null && listJsonArr.length() > 0) {
+                            val list = Gson().fromJson<List<TVChannelFromDB?>>(
+                                listJsonArr.toString(),
+                                TypeToken.getParameterized(List::class.java, TVChannelFromDB::class.java).type
+                            ).filterNotNull()
+                            totalList.addAll(
+                                list.mapToListChannel()
+                                    .sortedBy(ITVDataSource.sortTVChannel())
+                            )
+                        }
                     }
                     saveToRoomDB(totalList)
                     fireStoreDataBase.clearPersistence()
