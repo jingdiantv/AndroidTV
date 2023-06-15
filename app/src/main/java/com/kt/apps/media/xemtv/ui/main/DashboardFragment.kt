@@ -4,8 +4,11 @@ import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.leanback.app.*
@@ -302,11 +305,13 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     }
 
+    private var _allowFinish = false
+
     fun onBackPressed() {
         if (mMainFragment is BaseTabLayoutFragment) {
             with(mMainFragment as BaseTabLayoutFragment) {
                 if (isShowingHeaders) {
-                    requireActivity().finish()
+                    finishActivityIfNeeded()
                 } else {
                     val currentTabFocused = this.tabLayout.findCurrentFocusedView()
                     if (currentTabFocused == null) {
@@ -322,9 +327,22 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                 }
             }
         } else if (isShowingHeaders) {
-            requireActivity().finish()
+            finishActivityIfNeeded()
         } else {
             navDrawerView.requestFocus()
+        }
+    }
+
+    private fun finishActivityIfNeeded() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            _allowFinish = false
+        }, 3000)
+        if (_allowFinish) {
+            requireActivity().finish()
+        } else {
+            Toast.makeText(requireContext(), "Nhấn back lần nữa để thoát ứng dụng", Toast.LENGTH_SHORT)
+                .show()
+            _allowFinish = true
         }
     }
 
