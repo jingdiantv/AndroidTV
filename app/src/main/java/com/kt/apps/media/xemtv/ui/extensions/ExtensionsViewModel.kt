@@ -140,6 +140,7 @@ class ExtensionsViewModel @Inject constructor(
         add(
             parserExtensionsSource.insertAll()
                 .subscribe({
+                    loadAllListExtensionsChannelConfig(true)
                     Logger.d(this@ExtensionsViewModel, message = "insertDefaultSourceSuccess")
                 }, {
                     Logger.e(this@ExtensionsViewModel, exception = it)

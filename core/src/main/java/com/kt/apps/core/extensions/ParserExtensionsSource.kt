@@ -82,7 +82,7 @@ class ParserExtensionsSource @Inject constructor(
                 }
                 val totalList = parseFromRemote(extension)
                 if (totalList.isEmpty()) {
-                    extensionsConfigDao.delete(extension).subscribe({},{})
+                    disposable.add(extensionsConfigDao.delete(extension).subscribe({}, {}))
                     it.onComplete()
                 } else {
                     it.onNext(totalList)
@@ -363,48 +363,83 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     fun insertAll(): Completable {
-        val defaultIptvVersion = remoteConfig.getLong("default_iptv_version")
-        val localIptvVersion = storage.get("default_iptv_version", Long::class.java)
-        if (defaultIptvVersion > localIptvVersion) {
-            storage.save("beta_insert_default_source", false)
-        }
-        if (!storage.get("beta_insert_default_source", Boolean::class.java)) {
-            val jsonArray: JSONArray = try {
-                JSONArray(remoteConfig.getString("default_iptv_channel"))
-            } catch (e: Exception) {
-                return Completable.complete()
-            }
-
-            val defaultList = mutableListOf<ExtensionsConfig>()
-
-            if (jsonArray.length() > 0) {
-                for (i in 0 until jsonArray.length()) {
-                    val jsonObject = jsonArray.optJSONObject(i)
-                    val sourceName = jsonObject.optString("sourceName")
-                    val sourceUrl = jsonObject.optString("sourceUrl")
-                    val type = try {
-                        ExtensionsConfig.Type.valueOf(jsonObject.optString("type"))
-                    } catch (e: Exception) {
-                        ExtensionsConfig.Type.TV_CHANNEL
-                    }
-                    defaultList.add(
-                        ExtensionsConfig(
-                            sourceUrl = sourceUrl,
-                            sourceName = sourceName,
-                            type = type
+        return Observable.create<List<ExtensionsConfig>> { emitter ->
+            remoteConfig.fetchAndActivate()
+                .addOnSuccessListener { success ->
+                    if (success) {
+                        Logger.d(
+                            this@ParserExtensionsSource,
+                            message = "${remoteConfig.getLong("default_iptv_version")}"
                         )
-                    )
+                        Logger.d(
+                            this@ParserExtensionsSource,
+                            message = "${storage.get("default_iptv_version", Long::class.java)}"
+                        )
+                        Logger.d(
+                            this@ParserExtensionsSource,
+                            message = remoteConfig.getString("default_iptv_channel")
+                        )
+                        val defaultIptvVersion = remoteConfig.getLong("default_iptv_version")
+                        val localIptvVersion = storage.get("default_iptv_version", Long::class.java)
+                        if (defaultIptvVersion > localIptvVersion) {
+                            storage.save("beta_insert_default_source", false)
+                        }
+                        if (!storage.get("beta_insert_default_source", Boolean::class.java)) {
+                            val jsonArray: JSONArray = try {
+                                JSONArray(remoteConfig.getString("default_iptv_channel"))
+                            } catch (e: Exception) {
+                                emitter.onError(e)
+                                return@addOnSuccessListener
+                            }
+
+                            val defaultList = mutableListOf<ExtensionsConfig>()
+
+                            if (jsonArray.length() > 0) {
+                                for (i in 0 until jsonArray.length()) {
+                                    val jsonObject = jsonArray.optJSONObject(i)
+                                    val sourceName = jsonObject.optString("sourceName")
+                                    val sourceUrl = jsonObject.optString("sourceUrl")
+                                    val type = try {
+                                        ExtensionsConfig.Type.valueOf(jsonObject.optString("type"))
+                                    } catch (e: Exception) {
+                                        ExtensionsConfig.Type.TV_CHANNEL
+                                    }
+                                    defaultList.add(
+                                        ExtensionsConfig(
+                                            sourceUrl = sourceUrl,
+                                            sourceName = sourceName,
+                                            type = type
+                                        )
+                                    )
+                                }
+                                if (!emitter.isDisposed) {
+                                    emitter.onNext(defaultList)
+                                    storage.save("default_iptv_version", defaultIptvVersion)
+                                    emitter.onComplete()
+                                }
+                            }
+                        }
+                    } else {
+                        if (!emitter.isDisposed) {
+                            emitter.onError(Throwable("Remote config fetch and activate not success"))
+                        }
+                    }
                 }
-                return roomDataBase.extensionsConfig()
-                    .insertAll(*defaultList.toTypedArray())
+                .addOnFailureListener {
+                    if (!emitter.isDisposed) {
+                        emitter.onError(it)
+                    }
+                }
+        }
+            .retry(3)
+            .concatMapCompletable {
+                roomDataBase.extensionsConfig()
+                    .insertAll(*it.toTypedArray())
                     .subscribeOn(Schedulers.io())
                     .doOnComplete {
                         storage.save("beta_insert_default_source", true)
-                        storage.save("default_iptv_version", defaultIptvVersion)
                     }
             }
-        }
-        return Completable.complete()
     }
 
 
@@ -472,16 +507,17 @@ class ParserExtensionsSource @Inject constructor(
             "Film" to "https://gg.gg/films24",
         )
 
-        val mapBongDa : Map<String, String> = mapOf(
+        val mapBongDa: Map<String, String> = mapOf(
             "Bóng đá" to "http://gg.gg/SN-90phut",
         )
 
-        val tvChannel : Map<String, String> by lazy {
+        val tvChannel: Map<String, String> by lazy {
             mapOf(
                 "K+" to "https://s.id/nhamng",
                 "VThanhTV" to "http://vthanhtivi.pw",
             )
         }
+
         private fun Map<String, String>.mapToListExConfig(type: ExtensionsConfig.Type) = map {
             ExtensionsConfig(
                 sourceName = it.key,
