@@ -132,6 +132,17 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
             })
         }
 
+        fun areContentTheSame(targetList: List<String>): Boolean {
+            if (totalList.isEmpty()) {
+                return false
+            }
+            return totalList.reduce { acc, s ->
+                "$acc$s"
+            } == targetList.reduce { acc, s ->
+                "$acc$s"
+            }
+        }
+
         override fun getFragment(position: Int): Fragment {
             return FragmentTVDashboard.newInstance(totalList[position], type, mMainFragmentAdapter)
         }
@@ -178,8 +189,13 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
             when (it) {
                 is DataState.Success -> {
                     val totalList = it.data.filter(filterByType())
-                    pagerAdapter.refreshPage(totalList)
-                    tabLayout.setupWithViewPager(viewPager, true)
+                    if (!pagerAdapter.areContentTheSame(totalList.groupBy {
+                            it.tvGroup
+                        }.keys.toList())
+                    ) {
+                        pagerAdapter.refreshPage(totalList)
+                        tabLayout.setupWithViewPager(viewPager, true)
+                    }
                     if (DashboardFragment.firstInit) {
                         tabLayout.getTabAt(0)?.view?.requestFocus()
                         DashboardFragment.firstInit = false
