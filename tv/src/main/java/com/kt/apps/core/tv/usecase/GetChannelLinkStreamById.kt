@@ -16,7 +16,9 @@ class GetChannelLinkStreamById @Inject constructor(
             this, message = "{" +
                     "channelId: $channelId}"
         )
-        return getTvLinks().flatMap { totalChannel ->
+        return getTvLinks()
+            .retry(2)
+            .flatMap { totalChannel ->
             try {
                 Logger.d(
                     this, message = "{" +
@@ -27,6 +29,7 @@ class GetChannelLinkStreamById @Inject constructor(
                     channelId == it.channelId
                 }
                 getStreamLinkStreamFrom(chanel)
+                    .retry(2)
             } catch (e: Exception) {
                 Logger.e(this, exception = e)
                 Observable.empty()
