@@ -329,7 +329,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         controlBackground?.makeGone()
         if (timer == null) {
             timer = Timer()
-            timer?.schedule(timerTask, 1_000, 1_000)
+            try {
+                timer?.schedule(timerTask, 1_000, 1_000)
+            } catch (_: Exception) {
+                timer = null
+            }
         }
     }
 
