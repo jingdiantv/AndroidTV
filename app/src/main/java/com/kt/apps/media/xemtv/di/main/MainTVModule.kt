@@ -15,6 +15,7 @@ import com.kt.apps.media.xemtv.ui.main.MainActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.ui.playback.TVPlaybackVideoFragment
 import com.kt.apps.media.xemtv.ui.radio.RadioFragment
+import com.kt.apps.media.xemtv.ui.tv.BaseTabLayoutFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboardNew
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVGrid
@@ -75,5 +76,8 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun fragmentTVGrid(): FragmentTVGrid
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun fragmentLoading(): BaseTabLayoutFragment.LoadingFragment
 
 }

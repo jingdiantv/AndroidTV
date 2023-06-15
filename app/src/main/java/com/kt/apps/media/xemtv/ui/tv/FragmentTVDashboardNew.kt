@@ -8,14 +8,18 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.leanback.tab.LeanbackTabLayout
 import androidx.leanback.tab.LeanbackViewPager
+import androidx.leanback.widget.ArrayObjectAdapter
+import androidx.leanback.widget.ListRowPresenter
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.main.DashboardFragment
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import javax.inject.Inject
 
@@ -23,6 +27,69 @@ abstract class BaseTabLayoutFragment : BaseRowSupportFragment() {
     abstract val currentPage: Int
     abstract val tabLayout: LeanbackTabLayout
     abstract fun requestFocusChildContent(): View
+
+    class LoadingFragment : BaseRowSupportFragment() {
+        override fun initView(rootView: View) {
+        }
+
+        override fun initAction(rootView: View) {
+            adapter = ArrayObjectAdapter(ListRowPresenter().apply {
+                shadowEnabled = false
+            })
+            (adapter as ArrayObjectAdapter).applyLoading(R.layout.item_tv_loading_presenter)
+        }
+    }
+
+    abstract inner class BasePagerAdapter<T: Any>(fragmentManager: FragmentManager) : FragmentStatePagerAdapter(fragmentManager) {
+        protected val totalList by lazy {
+            mutableListOf<T>()
+        }
+
+        abstract fun getFragment(position: Int): Fragment
+        abstract fun getTabTitle(position: Int): CharSequence
+        abstract fun getLoadingTabTitle(position: Int): CharSequence
+
+        fun onRefresh(listItem: List<T>) {
+            isLoading = false
+            totalList.clear()
+            totalList.addAll(listItem)
+            notifyDataSetChanged()
+        }
+
+        var isLoading = false
+        fun onLoading(listItem: List<T>) {
+            if (totalList.isEmpty()) {
+                isLoading = true
+                totalList.addAll(listItem)
+                notifyDataSetChanged()
+            }
+        }
+
+        override fun getItemPosition(`object`: Any): Int {
+            if (`object`::class.java.name == LoadingFragment::class.java.name) {
+                return POSITION_NONE
+            }
+            return super.getItemPosition(`object`)
+        }
+
+        override fun getCount(): Int {
+            return totalList.size
+        }
+
+        override fun getItem(position: Int): Fragment {
+            if (isLoading) {
+                return LoadingFragment()
+            }
+            return getFragment(position)
+        }
+
+        override fun getPageTitle(position: Int): CharSequence {
+            if (isLoading) {
+                return getLoadingTabTitle(position)
+            }
+            return getTabTitle(position)
+        }
+    }
 }
 
 class FragmentTVDashboardNew : BaseTabLayoutFragment() {
@@ -46,12 +113,9 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
     override val tabLayout: LeanbackTabLayout
         get() = requireView().findViewById(R.id.tab_layout)
 
-    inner class TVViewPager(fragmentManager: FragmentManager) : FragmentStatePagerAdapter(fragmentManager) {
-        private val totalList by lazy {
-            mutableListOf<String>()
-        }
-
-        fun onRefresh(listTvChannel: List<TVChannel>) {
+    inner class TVViewPager(fragmentManager: FragmentManager) : BasePagerAdapter<String>(fragmentManager) {
+        fun refreshPage(listTvChannel: List<TVChannel>) {
+            isLoading = false
             totalList.clear()
             totalList.add(FragmentTVDashboard.FILTER_TOTAL)
             totalList.addAll(
@@ -62,20 +126,26 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
             notifyDataSetChanged()
         }
 
-        override fun getCount(): Int {
-            return totalList.size
+        fun onLoading() {
+            onLoading(TVChannelGroup.values().map {
+                it.value
+            })
         }
 
-        override fun getItem(position: Int): Fragment {
+        override fun getFragment(position: Int): Fragment {
             return FragmentTVDashboard.newInstance(totalList[position], type, mMainFragmentAdapter)
         }
 
-        override fun getPageTitle(position: Int): CharSequence {
+        override fun getTabTitle(position: Int): CharSequence {
             return if (position == 0) {
                 totalList[position]
             } else {
                 TVChannelGroup.valueOf(totalList[position]).value
             }
+        }
+
+        override fun getLoadingTabTitle(position: Int): CharSequence {
+            return totalList[position]
         }
     }
 
@@ -93,7 +163,6 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewPager.adapter = pagerAdapter
         setAlignment(mAlignedTop)
     }
 
@@ -104,13 +173,26 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
     override fun initAction(rootView: View) {
         tvChannelViewModel.getListTVChannel(false)
         mainFragmentAdapter.fragmentHost!!.notifyViewCreated(mainFragmentAdapter)
+        viewPager.adapter = pagerAdapter
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner, Observer {
             when (it) {
                 is DataState.Success -> {
                     val totalList = it.data.filter(filterByType())
-                    pagerAdapter.onRefresh(totalList)
+                    pagerAdapter.refreshPage(totalList)
                     tabLayout.setupWithViewPager(viewPager, true)
+                    if (DashboardFragment.firstInit) {
+                        tabLayout.getTabAt(0)?.view?.requestFocus()
+                        DashboardFragment.firstInit = false
+                    }
                 }
+
+                is DataState.Loading -> {
+                    pagerAdapter.onLoading()
+                    if (DashboardFragment.firstInit) {
+                        tabLayout.getTabAt(0)?.view?.requestFocus()
+                    }
+                }
+
 
                 else -> {
 
