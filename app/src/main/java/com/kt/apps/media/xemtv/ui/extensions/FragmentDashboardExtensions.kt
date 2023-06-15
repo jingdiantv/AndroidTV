@@ -198,7 +198,7 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
             get() = _totalList
 
         fun areContentTheSame(targetList: List<ExtensionsConfig>): Boolean {
-            if (totalList.isEmpty()) {
+            if (totalList.isEmpty() || targetList.isEmpty()) {
                 return false
             }
             return totalList.map {
