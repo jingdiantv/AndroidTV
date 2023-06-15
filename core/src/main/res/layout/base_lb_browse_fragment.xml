@@ -56,5 +56,19 @@
             app:childSpacingBetween="10dp"
             app:navMenu="?navMenu" />
 
+        <TextView
+            android:id="@+id/app_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:alpha="0.4"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="16dp"
+            tools:text="iMedia.Beta.230613"
+            android:gravity="center"
+            android:layout_gravity="start|bottom"
+            android:textAppearance="@style/TextAppearance.Leanback.DetailsDescriptionBody"
+            android:textSize="12sp" />
+
     </com.kt.apps.core.base.leanback.BrowseFrameLayout>
 </FrameLayout>

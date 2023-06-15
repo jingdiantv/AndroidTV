@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.leanback.app.*
@@ -162,6 +163,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     private fun initAction() {
         Logger.e(this, message = "initAction")
+        requireView().findViewById<TextView>(R.id.app_version).text = displayVersionName
         activity?.intent?.data?.let {
             selectPageRowByUri(it)
         }
