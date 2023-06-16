@@ -10,6 +10,21 @@ interface IActionLogger {
     fun log(event: String, extras: Bundle)
 }
 
+fun IActionLogger.logAddIPTVSource(
+    configUrl: String,
+    configName: String,
+    vararg extras: Pair<String, Any?>
+) {
+    this.log(
+        "AddIPTV",
+        bundleOf(
+            "iptv_url" to configUrl,
+            "iptv_name" to configName,
+            *extras
+        )
+    )
+}
+
 fun IActionLogger.logStreamingTV(
     channelName: String,
     vararg extras: Pair<String, Any?>

@@ -6,39 +6,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.kt.apps.core.base.BaseRowSupportFragment
+import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsConfig
-import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.logging.Logger
-import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.media.xemtv.R
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Completable
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.schedulers.Schedulers
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.PrintWriter
-import java.net.ServerSocket
 import javax.inject.Inject
 
 
 class FragmentAddExtensions : BaseRowSupportFragment() {
-
-    @Inject
-    lateinit var parserExtensionsSource: ParserExtensionsSource
-
-    @Inject
-    lateinit var roomDataBase: RoomDataBase
-    private val disposablecontainer by lazy {
-        CompositeDisposable()
-    }
 
     @Inject
     lateinit var factory: ViewModelProvider.Factory
@@ -138,73 +120,43 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             view?.findViewById<TextInputEditText>(R.id.textInputEditText)?.text.toString(),
             sourceUrl,
         )
-        progressManager.show()
-        val disposable = parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
-            .subscribeOn(Schedulers.io())
-            .flatMapCompletable {
-                if (it.isNotEmpty()) {
-                    roomDataBase.extensionsConfig()
-                        .insert(extensionsConfig)
-                } else {
-                    Completable.error(Throwable("Data empty"))
-                }
-            }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                if (this.isHidden || this.isDetached) {
-                    return@subscribe
-                }
-                progressManager.hide()
-                showSuccessDialog(
-                    content = "Thêm nguồn kênh thành công!" +
-                            "\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh",
-                    onSuccessListener = {
-                        if (!this.isDetached) {
-                            requireActivity().supportFragmentManager
-                                .popBackStack()
+        extensionsViewModel.addIPTVSource(extensionsConfig)
+        extensionsViewModel.addExtensionConfigLiveData.observe(viewLifecycleOwner,
+            object : Observer<DataState<ExtensionsConfig>> {
+                override fun onChanged(t: DataState<ExtensionsConfig>?) {
+                    when (t) {
+                        is DataState.Success -> {
+                            progressManager.hide()
+                            showSuccessDialog(
+                                content = "Thêm nguồn kênh thành công!" +
+                                        "\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh",
+                                onSuccessListener = {
+                                    if (!this@FragmentAddExtensions.isDetached) {
+                                        requireActivity().supportFragmentManager
+                                            .popBackStack()
+                                    }
+                                }
+                            )
+                            extensionsViewModel.addExtensionConfigLiveData.removeObserver(this)
+                            Logger.d(this@FragmentAddExtensions, message = "Save link success")
+                        }
+
+                        is DataState.Loading -> {
+                            progressManager.show()
+                        }
+
+                        is DataState.Error -> {
+                            progressManager.hide()
+                            showErrorDialog(content = "Định dạng nguồn kênh chưa được hỗ trợ!")
+                            Logger.e(this@FragmentAddExtensions, exception = t.throwable)
+                        }
+
+                        else -> {
+
                         }
                     }
-                )
-                Logger.d(this@FragmentAddExtensions, message = "Save link success")
-                extensionsViewModel.loadAllListExtensionsChannelConfig(true)
-            }, {
-                if (this.isHidden || this.isDetached) {
-                    return@subscribe
                 }
-                progressManager.hide()
-                showErrorDialog(content = "Định dạng nguồn kênh chưa được hỗ trợ!")
-                Logger.e(this@FragmentAddExtensions, exception = it)
             })
-        disposablecontainer.add(disposable)
-    }
-
-    private fun startServer() {
-        disposablecontainer.add(
-            Observable.create<Any> {
-                val serverSocket = ServerSocket(4444)
-                val clientSocket = serverSocket.accept()
-                val outputStream = PrintWriter(clientSocket.getOutputStream(), true)
-                val inputStream = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
-                var inputLine: String
-                var outputLine: String
-
-                while (true) {
-
-                    Thread.sleep(1000)
-
-                }
-
-            }
-                .observeOn(Schedulers.io())
-                .subscribeOn(Schedulers.io())
-                .subscribe({
-
-                }, {
-
-                }, {
-
-                })
-        )
     }
 
 }
