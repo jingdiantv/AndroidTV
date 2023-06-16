@@ -364,9 +364,8 @@ class ParserExtensionsSource @Inject constructor(
 
     fun insertAll(): Completable {
         return Observable.create<List<ExtensionsConfig>> { emitter ->
-            remoteConfig.fetchAndActivate()
+            remoteConfig.fetch()
                 .addOnSuccessListener { success ->
-                    if (success) {
                         Logger.d(
                             this@ParserExtensionsSource,
                             message = "${remoteConfig.getLong("default_iptv_version")}"
@@ -419,11 +418,6 @@ class ParserExtensionsSource @Inject constructor(
                                 }
                             }
                         }
-                    } else {
-                        if (!emitter.isDisposed) {
-                            emitter.onError(Throwable("Remote config fetch and activate not success"))
-                        }
-                    }
                 }
                 .addOnFailureListener {
                     if (!emitter.isDisposed) {
@@ -431,7 +425,9 @@ class ParserExtensionsSource @Inject constructor(
                     }
                 }
         }
-            .retry(3)
+            .retry { t1, _ ->
+                return@retry t1 < 3
+            }
             .concatMapCompletable {
                 roomDataBase.extensionsConfig()
                     .insertAll(*it.toTypedArray())
