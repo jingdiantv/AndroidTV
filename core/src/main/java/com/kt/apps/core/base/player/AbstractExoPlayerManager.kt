@@ -117,25 +117,6 @@ abstract class AbstractExoPlayerManager(
         mExoPlayer?.pause()
     }
 
-    fun getMediaSource(
-        data: List<LinkStream>,
-    ): List<MediaSource> {
-        return data.map {
-            val dfSource: DefaultHttpDataSource.Factory = DefaultHttpDataSource.Factory()
-            dfSource.setKeepPostFor302Redirects(true)
-            dfSource.setAllowCrossProtocolRedirects(true)
-            dfSource.setUserAgent(_application.getString(R.string.user_agent))
-            if (it.isHls) {
-                DefaultMediaSourceFactory(dfSource)
-                    .setServerSideAdInsertionMediaSourceFactory(DefaultMediaSourceFactory(dfSource))
-                    .createMediaSource(MediaItem.fromUri(it.m3u8Link.trim()))
-            } else {
-                ProgressiveMediaSource.Factory(dfSource)
-                    .createMediaSource(MediaItem.fromUri(it.m3u8Link.trim()))
-            }
-        }
-    }
-
     open fun getMediaSource(
         data: List<LinkStream>,
         isHls: Boolean,
@@ -160,14 +141,6 @@ abstract class AbstractExoPlayerManager(
                     .createMediaSource(MediaItem.fromUri(it.trim()))
             } else if (it.contains(".mpd")) {
                 Logger.d(this,"MediaSource", "DashMediaSource: $it")
-                val mapK = mutableMapOf<String, String>()
-                headers?.get("inputstream.adaptive.license_key")?.let { otherProps ->
-                    val jsonObject = JSONObject(otherProps)
-                    val keys = jsonObject.optJSONArray("keys") ?: JSONArray()
-                    mapK["keys"] = keys.toString()
-                    mapK["type"] = jsonObject.optString("type")
-                }
-                val uriBuilder = Uri.parse(it.trim()).buildUpon()
                 DashMediaSource.Factory(dfSource)
                     .createMediaSource(
                         MediaItem.Builder()
@@ -176,10 +149,10 @@ abstract class AbstractExoPlayerManager(
                                     .setLicenseUri(headers?.get("referer")?.ifEmpty {
                                         it
                                     } ?: it)
-                                    .setLicenseRequestHeaders(mapK)
+                                    .setLicenseRequestHeaders(headers ?: mapOf())
                                     .build()
                             )
-                            .setUri(uriBuilder.build())
+                            .setUri(it)
                             .build()
                     )
             } else {
