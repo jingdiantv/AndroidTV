@@ -68,24 +68,10 @@
 
         </provider>
 
-        <meta-data
-            android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc" />
-
         <service
             android:name=".services.TVService"
             android:exported="true"
             android:process=":remote" />
-        <service
-            android:name=".services.media.IMediaSessionService"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:roundIcon="@mipmap/ic_launcher_round">
-            <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService" />
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>
