@@ -99,18 +99,20 @@ class MainTVDataSource @Inject constructor(
                                 listJsonArr.toString(),
                                 TypeToken.getParameterized(List::class.java, TVChannelFromDB::class.java).type
                             ).filterNotNull()
-                            totalList.addAll(
-                                list.mapToListChannel()
-                                    .sortedBy(ITVDataSource.sortTVChannel())
-                                    .filter {
-                                        if (!allowInternational) {
-                                            it.tvGroup != TVChannelGroup.Intenational.name &&
-                                                    (it.tvGroup != TVChannelGroup.Kid.name)
-                                        } else {
-                                            true
+                            if (list.isNotEmpty()) {
+                                totalList.addAll(
+                                    list.mapToListChannel()
+                                        .sortedBy(ITVDataSource.sortTVChannel())
+                                        .filter {
+                                            if (!allowInternational) {
+                                                it.tvGroup != TVChannelGroup.Intenational.name &&
+                                                        (it.tvGroup != TVChannelGroup.Kid.name)
+                                            } else {
+                                                true
+                                            }
                                         }
-                                    }
-                            )
+                                )
+                            }
                         }
                     }
                     saveToRoomDB(totalList)
