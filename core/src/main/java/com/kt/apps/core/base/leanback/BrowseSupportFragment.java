@@ -89,6 +89,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     static final String HEADER_SHOW = "headerShow";
     private static final String IS_PAGE_ROW = "isPageRow";
     private static final String CURRENT_SELECTED_POSITION = "currentSelectedPosition";
+    private static final float DIM_BACKGROUND = 0.85f;
 
     /**
      * State to hide headers fragment.
@@ -730,6 +731,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     Object mHeadersTransition;
     BackStackListener mBackStackChangedListener;
     BrowseTransitionListener mBrowseTransitionListener;
+    private View dimBackground;
 
     private static final String ARG_TITLE = BrowseSupportFragment.class.getCanonicalName() + ".title";
     public static final String ARG_HEADERS_STATE =
@@ -1266,6 +1268,10 @@ public class BrowseSupportFragment extends BaseSupportFragment {
                 setEntranceTransitionEndState();
             }
         });
+        dimBackground = root.findViewById(R.id.dim_background);
+        navDrawerView.setOnAnimatedFraction(progress -> dimBackground.setAlpha(
+                DIM_BACKGROUND * progress)
+        );
         return root;
     }
 

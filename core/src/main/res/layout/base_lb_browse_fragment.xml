@@ -44,6 +44,13 @@
 
         </com.kt.apps.core.base.leanback.BrowseRowsFrameLayout>
 
+        <View
+            android:id="@+id/dim_background"
+            android:background="#000000"
+            android:alpha="0"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
         <com.kt.apps.core.base.leanback.NavDrawerView
             android:id="@+id/nav_drawer"
             android:layout_width="wrap_content"
@@ -71,4 +78,6 @@
             android:textSize="12sp" />
 
     </com.kt.apps.core.base.leanback.BrowseFrameLayout>
+
+
 </FrameLayout>

@@ -27,10 +27,22 @@ class NavDrawerView @JvmOverloads constructor(
     attr: AttributeSet? = null,
     defStyle: Int = 0
 ) : LinearLayout(context, attr, defStyle) {
+    @FunctionalInterface
+    interface AnimateFractionChange {
+        fun onProgress(progress: Float)
+    }
     private var menu = NavigationMenu(context)
+    private var _onAnimatedFraction: AnimateFractionChange? = null
+    var onAnimatedFraction: AnimateFractionChange?
+        get() = _onAnimatedFraction
+        set(value) {
+            _onAnimatedFraction = value
+        }
+
     private val openNavigator by lazy {
         ValueAnimator.ofInt(0.dpToPx(context), 150.dpToPx(context)).apply {
             this.addUpdateListener {
+                _onAnimatedFraction?.onProgress(it.animatedFraction)
                 for (i in 0 until childCount) {
                     val headerTitle = getChildAt(i).findViewById<TextView>(R.id.row_header)
                     val layoutParams = headerTitle?.layoutParams
@@ -55,6 +67,7 @@ class NavDrawerView @JvmOverloads constructor(
     private val closeAnimator by lazy {
         ValueAnimator.ofInt(150.dpToPx(context), 0.dpToPx(context)).apply {
             this.addUpdateListener {
+                _onAnimatedFraction?.onProgress(1 - it.animatedFraction)
                 for (i in 0 until childCount) {
                     val headerTitle = getChildAt(i).findViewById<TextView>(R.id.row_header)
                     val layoutParams = headerTitle?.layoutParams
