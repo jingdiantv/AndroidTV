@@ -18,7 +18,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.leanback.app.PlaybackSupportFragment
 import androidx.leanback.app.PlaybackSupportFragmentGlueHost
-import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.media.SurfaceHolderGlueHost
 import androidx.leanback.widget.*
@@ -29,11 +28,9 @@ import com.google.android.exoplayer2.SeekParameters
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.metadata.Metadata
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy
 import com.google.android.exoplayer2.util.Util
 import com.kt.apps.core.R
+import com.kt.apps.core.base.leanback.ProgressBarManager
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.logging.IActionLogger
@@ -156,6 +153,11 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                     durationSet = true
                     updateProgress(player)
                     exoPlayerManager.exoPlayer?.setSeekParameters(SeekParameters(10_000L, 10_000L))
+                }
+                if (playbackState == ExoPlayer.STATE_BUFFERING) {
+                    if (progressManager.isShowing) {
+                        progressManager.hide()
+                    }
                 }
             }
         }
