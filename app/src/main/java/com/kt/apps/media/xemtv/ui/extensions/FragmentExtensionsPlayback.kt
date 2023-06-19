@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.observe
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
-import com.google.gson.Gson
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.extensions.ExtensionsChannel
@@ -167,8 +166,10 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             "PlayVideo",
             "$tvChannel,\t" +
                     "useCatchup: $useCatchup," +
-                    "isHls: ${linkToPlay.contains("m3u8") ||
-                            linkToPlay.isShortLink()}" +
+                    "isHls: ${
+                        linkToPlay.contains("m3u8") ||
+                                linkToPlay.isShortLink()
+                    }" +
                     ""
         )
 
@@ -188,40 +189,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     if (isDetached) return@subscribe
-                    playVideo(
-                        tvChannel.tvChannelName,
-                        tvChannel.currentProgramme?.description,
-                        referer = tvChannel.referer,
-                        linkStream = listOf(realUrl),
-                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
-                        isHls = realUrl.contains("m3u8"),
-                        headers = tvChannel.props
-                    )
+                    playWhenReady(tvChannel, realUrl)
                 }, {
                     if (isDetached) return@subscribe
-                    lifecycle.currentState
-                    playVideo(
-                        tvChannel.tvChannelName,
-                        tvChannel.currentProgramme?.description,
-                        referer = tvChannel.referer,
-                        linkStream = listOf(linkToPlay),
-                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
-                        isHls = linkToPlay.contains("m3u8"),
-                        headers = tvChannel.props
-                    )
+                    playWhenReady(tvChannel, linkToPlay)
                 })
             disposable.add(lastExpandUrlTask!!)
 
         } else if (linkToPlay.contains(".m3u8")) {
-            playVideo(
-                tvChannel.tvChannelName,
-                tvChannel.currentProgramme?.description,
-                referer = tvChannel.referer,
-                linkStream = listOf(linkToPlay),
-                isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
-                isHls = linkToPlay.contains("m3u8"),
-                headers = tvChannel.props
-            )
+            playWhenReady(tvChannel, linkToPlay)
         } else {
             disposable.add(Observable.fromCallable {
                 linkToPlay.expandUrl()
@@ -230,29 +206,32 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     if (isDetached) return@subscribe
-                    playVideo(
-                        tvChannel.tvChannelName,
-                        tvChannel.currentProgramme?.description,
-                        referer = tvChannel.referer,
-                        linkStream = listOf(realUrl),
-                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
-                        isHls = realUrl.contains("m3u8"),
-                        headers = tvChannel.props
-                    )
+                    playWhenReady(tvChannel, realUrl)
                 }, {
                     if (isDetached) return@subscribe
-                    playVideo(
-                        tvChannel.tvChannelName,
-                        tvChannel.currentProgramme?.description,
-                        referer = tvChannel.referer,
-                        linkStream = listOf(linkToPlay),
-                        isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
-                        isHls = linkToPlay.contains("m3u8"),
-                        headers = tvChannel.props
-                    )
+                    playWhenReady(tvChannel, linkToPlay)
                 }))
 
         }
+    }
+
+    private fun FragmentExtensionsPlayback.playWhenReady(
+        tvChannel: ExtensionsChannel,
+        linkToPlay: String
+    ) {
+        playVideo(
+            tvChannel.currentProgramme?.title?.takeIf {
+                it.trim().isNotBlank()
+            }?.trim() ?: tvChannel.tvChannelName,
+            tvChannel.currentProgramme?.description?.takeIf {
+                it.isNotBlank()
+            }?.trim(),
+            referer = tvChannel.referer,
+            linkStream = listOf(linkToPlay),
+            isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
+            isHls = linkToPlay.contains("m3u8"),
+            headers = tvChannel.props
+        )
     }
 
     private fun showInfo(tvChannel: ExtensionsChannel) {
