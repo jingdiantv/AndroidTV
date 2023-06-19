@@ -6,10 +6,13 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Rect
+import android.os.SystemClock
 import android.util.AttributeSet
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.BaseInputConnection
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -130,6 +133,12 @@ class NavDrawerView @JvmOverloads constructor(
                     if (hasFocus) {
                         onNavDrawerItemSelected?.onSelected(i)
                     }
+                }
+                childItemView.setOnClickListener {
+                    val now: Long = SystemClock.uptimeMillis()
+                    val mInputConnection = BaseInputConnection(this, true)
+                    val down = KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                    mInputConnection.sendKeyEvent(down)
                 }
                 title.text = null
                 title.visibility = INVISIBLE
