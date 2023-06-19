@@ -160,6 +160,7 @@ open class BaseExtensionsViewModel @Inject constructor(
             return
         }
         _addExtensionConfigLiveData.postValue(DataState.Loading())
+        pendingIptvSource = extensionsConfig
 
         add(
             parserExtensionsSource.parseFromRemoteRx(extensionsConfig)

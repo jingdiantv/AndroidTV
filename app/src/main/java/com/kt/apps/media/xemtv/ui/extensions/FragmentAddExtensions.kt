@@ -1,6 +1,7 @@
 package com.kt.apps.media.xemtv.ui.extensions
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.kt.apps.core.base.BaseRowSupportFragment
@@ -76,6 +78,14 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
                         imm.hideSoftInputFromWindow(v.windowToken, 0)
                     }
                     addExtensionsSource()
+                } else if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    val imm: InputMethodManager = requireContext().getSystemService(
+                        InputMethodManager::class.java
+                    )
+                    if (imm.isActive(v)) {
+                        imm.hideSoftInputFromWindow(v.windowToken, 0)
+                    }
+                    rootView.findViewById<ChipGroup>(R.id.type_group).requestFocus()
                 }
                 return@setOnEditorActionListener true
             }
@@ -116,9 +126,16 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             showErrorDialog(content = "Đường dẫn không hợp lệ! Đường dẫn phải phải bắt đầu bằng: \"http\"")
             return
         }
+        val type = when (view?.findViewById<ChipGroup>(R.id.type_group)
+            ?.checkedChipId) {
+            R.id.type_football -> ExtensionsConfig.Type.FOOTBALL
+            R.id.type_movie -> ExtensionsConfig.Type.MOVIE
+            else -> ExtensionsConfig.Type.TV_CHANNEL
+        }
         val extensionsConfig = ExtensionsConfig(
             view?.findViewById<TextInputEditText>(R.id.textInputEditText)?.text.toString(),
             sourceUrl,
+            type
         )
         extensionsViewModel.addIPTVSource(extensionsConfig)
         extensionsViewModel.addExtensionConfigLiveData.observe(viewLifecycleOwner,
