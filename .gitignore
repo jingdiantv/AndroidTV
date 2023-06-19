@@ -36,3 +36,7 @@ captures/
 .cxx/
 *.apk
 output.json
+/app/playStore/release/
+/app/modBeta/release/
+/app_mobile/playStore/release/
+/app_mobile/modBeta/release/
