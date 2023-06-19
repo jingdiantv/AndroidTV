@@ -117,8 +117,6 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 }
 
                 is DataState.Loading -> {
-                    mRowsAdapter.applyLoading(R.layout.item_tv_loading_presenter)
-                    mainFragmentAdapter.fragmentHost.notifyDataReady(mainFragmentAdapter)
                 }
 
                 else -> {
