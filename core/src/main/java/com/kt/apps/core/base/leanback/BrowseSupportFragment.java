@@ -1442,7 +1442,12 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         Fragment currentFragment = fm.findFragmentById(R.id.scale_frame);
         if (currentFragment != mMainFragment) {
             fm.beginTransaction()
-                    .replace(R.id.scale_frame, mMainFragment).commit();
+                    .setCustomAnimations(com.kt.skeleton.R.anim.fade_in,
+                            com.kt.skeleton.R.anim.fade_out,
+                            com.kt.skeleton.R.anim.fade_in,
+                            com.kt.skeleton.R.anim.fade_out)
+                    .replace(R.id.scale_frame, mMainFragment)
+                    .commit();
         }
     }
 
