@@ -1,5 +1,7 @@
 package com.kt.apps.core.base
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -10,9 +12,13 @@ import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
 import android.view.KeyEvent
+import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
@@ -25,8 +31,12 @@ import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.kt.apps.core.BuildConfig
 import com.kt.apps.core.R
+import com.kt.apps.core.base.receiver.NetworkChangeReceiver
+import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.registerNetworkChangeReceiver
+import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.unregisterNetworkChangeReceiver
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.showSuccessDialog
+import com.kt.apps.core.utils.translateY
 import com.kt.apps.core.utils.updateLocale
 import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
@@ -68,6 +78,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
         return androidInjector
     }
 
+    private var networkChangeReceiver: NetworkChangeReceiver? = NetworkChangeReceiver.getInstance()
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(
@@ -86,6 +97,36 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
                     .penaltyDeath()
                     .build()
             )
+        }
+        networkChangeReceiver?.let {
+            registerNetworkChangeReceiver(it, object : NetworkChangeReceiver.OnNetworkChangeListener {
+                override fun onChange(isOnline: Boolean) {
+                    val viewGroup = findViewById<ViewGroup>(android.R.id.content)
+                    if (isOnline) {
+                        viewGroup.findViewById<TextView?>(R.id.no_network_title_view)?.let {
+                            it.setBackgroundColor(Color.GREEN)
+                            it.text = "Kết nối internet đã sẵn sàng"
+                            it.animate()
+                                .setStartDelay(300L)
+                                .translationY(it.measuredHeight.toFloat())
+                                .setListener(object : AnimatorListenerAdapter() {
+                                    override fun onAnimationEnd(animation: Animator?) {
+                                        super.onAnimationEnd(animation)
+                                        viewGroup.findViewById<LinearLayout?>(R.id.no_network_view)?.let {
+                                            viewGroup.removeView(it)
+                                        }
+                                    }
+                                })
+                        }
+                    } else {
+                        viewGroup.findViewById<LinearLayout?>(R.id.no_network_view)?.let {
+                        } ?: viewGroup.addView(
+                            LayoutInflater.from(this@BaseActivity)
+                                .inflate(R.layout.base_no_network_view, null, false)
+                        )
+                    }
+                }
+            })
         }
         AndroidInjection.inject(this)
         window.decorView.setBackgroundColor(Color.WHITE)
@@ -301,6 +342,14 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
         } else {
             fragment.hideOverlay()
         }
+    }
+
+    override fun onDestroy() {
+        networkChangeReceiver?.let {
+            unregisterNetworkChangeReceiver(it)
+            networkChangeReceiver = null
+        }
+        super.onDestroy()
     }
 
     companion object {

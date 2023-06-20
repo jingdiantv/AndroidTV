@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:gravity="bottom"
+    android:id="@+id/no_network_view"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/no_network_title_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#3C3C3C"
+        android:fontFamily="@font/roboto_regular"
+        android:gravity="center"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="Không có kết nối internet!"
+        android:textColor="@color/white"
+        android:textSize="15sp" />
+
+</LinearLayout>
