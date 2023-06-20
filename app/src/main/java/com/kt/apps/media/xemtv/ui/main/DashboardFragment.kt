@@ -310,6 +310,12 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     fun onBackPressed() {
         if (mMainFragment is BaseTabLayoutFragment) {
             with(mMainFragment as BaseTabLayoutFragment) {
+                if (this is FragmentDashboardExtensions) {
+                    if (!isShowingHeaders && this.btnAddSource?.isFocused == true) {
+                        navDrawerView.requestFocus()
+                        return
+                    }
+                }
                 if (isShowingHeaders) {
                     finishActivityIfNeeded()
                 } else {

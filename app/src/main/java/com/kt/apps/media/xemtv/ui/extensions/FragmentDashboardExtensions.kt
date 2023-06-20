@@ -2,6 +2,7 @@ package com.kt.apps.media.xemtv.ui.extensions
 
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
@@ -143,6 +144,14 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
             }
         }
 
+    }
+
+    val btnAddSource: Button?
+        get() = _btnAddSource
+
+    override fun onDestroyView() {
+        _btnAddSource = null
+        super.onDestroyView()
     }
 
     fun onFocusSearch(
