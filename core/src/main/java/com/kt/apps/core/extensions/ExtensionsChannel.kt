@@ -1,5 +1,6 @@
 package com.kt.apps.core.extensions
 
+import android.net.Uri
 import android.os.Parcelable
 import androidx.annotation.Keep
 import androidx.room.Entity
@@ -38,8 +39,8 @@ data class ExtensionsChannel(
 
     val isValidChannel: Boolean
         get() {
-            return tvGroup.isNotBlank() && channelId.isNotBlank()
-                    && tvChannelName.isNotBlank()
+            return tvGroup.isNotBlank() && tvChannelName.isNotBlank()
+                    && Uri.parse(tvStreamLink).host != null
         }
 
     override fun toString(): String {
