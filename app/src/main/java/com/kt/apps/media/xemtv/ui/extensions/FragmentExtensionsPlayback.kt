@@ -152,7 +152,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         tvChannel: ExtensionsChannel,
         useCatchup: Boolean = false
     ) {
-        extensionsViewModel.loadProgramForChannel(tvChannel)
+        extensionsViewModel.loadProgramForChannel(tvChannel, extension.type)
         lastExpandUrlTask?.let { disposable.remove(it) }
         disposable.clear()
         val linkToPlay = if (!useCatchup) {

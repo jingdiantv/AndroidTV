@@ -3,6 +3,7 @@ package com.kt.apps.media.xemtv.ui.extensions
 import com.kt.apps.core.base.viewmodels.BaseExtensionsViewModel
 import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.logging.IActionLogger
+import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
 import com.kt.apps.core.usecase.GetListProgrammeForChannel
@@ -15,13 +16,15 @@ class ExtensionsViewModel @Inject constructor(
     private val roomDataBase: RoomDataBase,
     private val getCurrentProgrammeForChannel: GetCurrentProgrammeForChannel,
     private val getListProgrammeForChannel: GetListProgrammeForChannel,
-    private val actionLogger: IActionLogger
+    private val actionLogger: IActionLogger,
+    private val storage: IKeyValueStorage
 ) : BaseExtensionsViewModel(
     parserExtensionsSource,
     roomDataBase,
     getCurrentProgrammeForChannel,
     getListProgrammeForChannel,
-    actionLogger
+    actionLogger,
+    storage
 ) {
 
 }

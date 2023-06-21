@@ -100,12 +100,13 @@ class ParserExtensionsProgramSchedule @Inject constructor(
     }
 
     fun getCurrentProgramForExtensionChannel(
-        channel: ExtensionsChannel
+        channel: ExtensionsChannel,
+        configType: ExtensionsConfig.Type
     ): Observable<TVScheduler.Programme> {
         return getCurrentProgramForChannel(
             channel.channelId,
             useAbsoluteId = true,
-            filterTimestamp = false
+            filterTimestamp = configType == ExtensionsConfig.Type.TV_CHANNEL
         )
     }
 

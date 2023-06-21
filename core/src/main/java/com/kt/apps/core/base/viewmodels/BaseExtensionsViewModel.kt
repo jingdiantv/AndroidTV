@@ -12,11 +12,11 @@ import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logAddIPTVSource
+import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.storage.removeLastRefreshExtensions
 import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
 import com.kt.apps.core.usecase.GetListProgrammeForChannel
-import com.kt.apps.core.utils.showErrorDialog
-import com.kt.apps.core.utils.showSuccessDialog
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -29,7 +29,8 @@ open class BaseExtensionsViewModel @Inject constructor(
     private val roomDataBase: RoomDataBase,
     private val getCurrentProgrammeForChannel: GetCurrentProgrammeForChannel,
     private val getListProgrammeForChannel: GetListProgrammeForChannel,
-    private val actionLogger: IActionLogger
+    private val actionLogger: IActionLogger,
+    private val storage: IKeyValueStorage
 ) : BaseViewModel() {
 
     private val _totalExtensionsConfig by lazy {
@@ -94,9 +95,12 @@ open class BaseExtensionsViewModel @Inject constructor(
     val programmeForChannelLiveData: LiveData<DataState<TVScheduler.Programme>>
         get() = _programmeForChannelLiveData
 
-    fun loadProgramForChannel(channel: ExtensionsChannel) {
+    fun loadProgramForChannel(
+        channel: ExtensionsChannel,
+        extensionsType: ExtensionsConfig.Type
+    ) {
         add(
-            getCurrentProgrammeForChannel.invoke(channel)
+            getCurrentProgrammeForChannel.invoke(channel, extensionsType)
                 .subscribe({
                     _programmeForChannelLiveData.postValue(DataState.Success(it))
                 }, {
@@ -123,6 +127,10 @@ open class BaseExtensionsViewModel @Inject constructor(
                     _totalExtensionsConfig.postValue(DataState.Error(it))
                 })
         )
+    }
+
+    fun deleteExtensionConfig(extensionsConfig: ExtensionsConfig) {
+        storage.removeLastRefreshExtensions(extensionsConfig)
     }
 
     fun parseExtensionByID(extensionsID: String) {

@@ -2,6 +2,7 @@ package com.kt.apps.core.usecase
 
 import com.kt.apps.core.base.rxjava.BaseUseCase
 import com.kt.apps.core.extensions.ExtensionsChannel
+import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.extensions.ParserExtensionsProgramSchedule
 import com.kt.apps.core.extensions.model.TVScheduler
 import io.reactivex.rxjava3.core.Observable
@@ -17,7 +18,10 @@ class GetCurrentProgrammeForChannel @Inject constructor(
             }
 
             is ExtensionsChannel -> {
-                parser.getCurrentProgramForExtensionChannel(channel)
+                parser.getCurrentProgramForExtensionChannel(
+                    channel, params[EXTRA_CHANNEL_TYPE] as? ExtensionsConfig.Type
+                        ?: ExtensionsConfig.Type.MOVIE
+                )
             }
 
             else -> {
@@ -34,16 +38,21 @@ class GetCurrentProgrammeForChannel @Inject constructor(
         )
     }
 
-    operator fun invoke(extensionsChannel: ExtensionsChannel): Observable<TVScheduler.Programme> {
+    operator fun invoke(
+        extensionsChannel: ExtensionsChannel,
+        configType: ExtensionsConfig.Type
+    ): Observable<TVScheduler.Programme> {
         return execute(
             mapOf(
-                EXTRA_CHANNEL to extensionsChannel
+                EXTRA_CHANNEL to extensionsChannel,
+                EXTRA_CHANNEL_TYPE to configType
             )
         )
     }
 
     companion object {
         private const val EXTRA_CHANNEL = "extra:channel"
+        private const val EXTRA_CHANNEL_TYPE = "extra:channel_type"
     }
 
 

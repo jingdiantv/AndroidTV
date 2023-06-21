@@ -132,6 +132,7 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                         disposable,
                         RoomDataBase.getInstance(requireContext())
                     ) {
+                        extensionsViewModel.deleteExtensionConfig(data[i])
                         extensionsViewModel.loadAllListExtensionsChannelConfig(true)
                     }
                     GuidedStepSupportFragment.addAsRoot(
