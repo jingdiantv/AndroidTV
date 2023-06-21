@@ -149,6 +149,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                 onPlayerPlaybackStateChanged(playbackState)
                 if (playbackState == ExoPlayer.STATE_READY) {
                     progressManager.hide()
+                    progressBar?.isActivated = true
+                    changeNextFocus()
                     val player = exoPlayerManager.exoPlayer ?: return
                     durationSet = true
                     updateProgress(player)
@@ -379,6 +381,20 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     protected fun <T> setupRowAdapter(
+        objectList: Map<String, List<T>>,
+        presenterSelector: PresenterSelector
+    ) {
+        mAdapter = ArrayObjectAdapter(ListRowPresenter())
+        for ((key, value) in objectList) {
+            (mAdapter as ArrayObjectAdapter)
+                .add(ListRow(HeaderItem(key), ArrayObjectAdapter(presenterSelector).apply {
+                    this.addAll(0, value)
+                }))
+        }
+        updateAdapter()
+    }
+
+    protected fun <T> setupRowAdapter(
         objectList: List<T>,
         presenterSelector: PresenterSelector
     ) {
@@ -501,6 +517,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             progressBarContainer?.visible()
         }
         changeNextFocus()
+        progressBar?.isActivated = false
+        progressBar?.isFocusable = false
     }
 
     fun getBackgroundView(): View? {
@@ -639,7 +657,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     override fun onDpadDown() {
         mHandler.removeCallbacks(autoHideOverlayRunnable)
 
-        if ((mPlayPauseIcon?.isFocused == true) && (progressBarContainer?.visibility == View.VISIBLE)) {
+        if ((mPlayPauseIcon?.isFocused == true) && (progressBarContainer?.visibility == View.VISIBLE)
+            && progressBar?.isActivated == true
+        ) {
             progressBar?.requestFocus()
         } else if (isMenuShowed()) {
             Logger.d(this, message = "y = ${mGridViewOverlays?.translationY} - $mGridViewPickHeight")
@@ -708,7 +728,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     private fun focusOnDpadUp() {
-        if (progressBarContainer?.isVisible == true) {
+        if (progressBarContainer?.isVisible == true && progressBar?.isActivated == true) {
             progressBar?.requestFocus()
         } else {
             mPlayPauseIcon?.requestFocus()
