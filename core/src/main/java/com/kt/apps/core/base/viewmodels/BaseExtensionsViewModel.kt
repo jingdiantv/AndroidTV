@@ -159,7 +159,7 @@ open class BaseExtensionsViewModel @Inject constructor(
         ) {
             return
         }
-        _addExtensionConfigLiveData.postValue(DataState.Loading())
+        _addExtensionConfigLiveData.value = DataState.Loading()
         pendingIptvSource = extensionsConfig
 
         add(

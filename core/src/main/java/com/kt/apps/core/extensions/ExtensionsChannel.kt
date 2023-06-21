@@ -36,6 +36,12 @@ data class ExtensionsChannel(
     @Ignore
     var currentProgramme: TVScheduler.Programme? = null
 
+    val isValidChannel: Boolean
+        get() {
+            return tvGroup.isNotBlank() && channelId.isNotBlank()
+                    && tvChannelName.isNotBlank()
+        }
+
     override fun toString(): String {
         return "{" +
                 "channelId=$channelId,\n" +

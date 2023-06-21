@@ -9,6 +9,7 @@ import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.getLastRefreshExtensions
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.ExtensionChannelCategory
+import com.kt.apps.core.storage.removeLastRefreshExtensions
 import com.kt.apps.core.storage.saveLastRefreshExtensions
 import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Maybe
@@ -82,8 +83,9 @@ class ParserExtensionsSource @Inject constructor(
                 }
                 val totalList = parseFromRemote(extension)
                 if (totalList.isEmpty()) {
+                    storage.removeLastRefreshExtensions(extension)
                     disposable.add(extensionsConfigDao.delete(extension).subscribe({}, {}))
-                    it.onComplete()
+                    it.onError(Throwable("Định dạng nguồn kênh không hợp lệ"))
                 } else {
                     it.onNext(totalList)
                     it.onComplete()
@@ -343,6 +345,9 @@ class ParserExtensionsSource @Inject constructor(
                 props = props,
                 extensionSourceId = extension.sourceUrl
             )
+            if (!channel.isValidChannel) {
+                throw NullPointerException()
+            }
             if (DEBUG) {
                 Logger.d(this@ParserExtensionsSource, "Channel", message = "$channel")
             }

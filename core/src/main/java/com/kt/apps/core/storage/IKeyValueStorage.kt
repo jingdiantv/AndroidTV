@@ -10,12 +10,16 @@ interface IKeyValueStorage {
 
     fun <T> save(key: String, value: List<T>)
     fun <T> getList(key: String, clazz: Class<T>): List<T>
+    fun remove(key: String)
 }
 
 fun IKeyValueStorage.saveLastRefreshExtensions(config: ExtensionsConfig) {
     this.save("${config.sourceUrl}_last_refresh_data", System.currentTimeMillis())
 }
 
+fun IKeyValueStorage.removeLastRefreshExtensions(config: ExtensionsConfig) {
+    this.remove("${config.sourceUrl}_last_refresh_data")
+}
 
 fun IKeyValueStorage.getLastRefreshExtensions(config: ExtensionsConfig): Long {
     return try {

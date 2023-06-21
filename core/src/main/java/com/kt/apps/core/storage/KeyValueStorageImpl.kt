@@ -100,4 +100,10 @@ open class KeyValueStorageImpl @Inject constructor(
         if (gsonValue?.isEmpty() != false) return listOf()
         return Gson().fromJson(gsonValue, type)
     }
+
+    override fun remove(key: String) {
+        sharedPreferences.edit()
+            .remove(key)
+            .apply()
+    }
 }

@@ -28,4 +28,8 @@ class KeyValueStorageForTesting : IKeyValueStorage {
         println(key)
         return listOf()
     }
+
+    override fun remove(key: String) {
+        println("Remove key: $key")
+    }
 }
