@@ -33,8 +33,10 @@ class DashboardTVChannelPresenter : Presenter() {
     class TVImageCardView(context: Context) :
         ImageCardView(ContextThemeWrapper(context, R.style.ImageCardViewStyleTitle)) {
         override fun setSelected(selected: Boolean) {
-            findViewById<TextView>(androidx.leanback.R.id.title_text)
-                .background = null
+            with(findViewById<TextView>(androidx.leanback.R.id.title_text)) {
+                this.background = null
+                this.isSelected = selected
+            }
             background = null
             infoAreaBackground = null
             super.setSelected(selected)
@@ -95,6 +97,7 @@ class DashboardTVChannelPresenter : Presenter() {
                                 .removeSuffix("vieon")
                                 .removeSuffix("tv360")
                                 .trim()
+                                .removeSuffix("4k")
                                 .removeAllSpecialChars()
                                 .removeSuffix("hd")
                                 .replace(".", "")
