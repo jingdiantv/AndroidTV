@@ -79,7 +79,6 @@ class DashboardTVChannelPresenter : Presenter() {
                 cardView.contentText = ""
                 cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
                 updateCardBackgroundColor(cardView, false)
-                cardView.mainImageView.setBackgroundResource(com.kt.apps.core.R.drawable.channel_bg)
                 cardView.let { imgView ->
                     val name = Constants.mapChannel[item.tvChannelName]
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER

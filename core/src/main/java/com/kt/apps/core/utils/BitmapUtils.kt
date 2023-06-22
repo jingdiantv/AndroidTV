@@ -1,8 +1,10 @@
 package com.kt.apps.core.utils
 
 import android.graphics.Bitmap
-import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.widget.ImageView
 import android.widget.ImageView.ScaleType
 import androidx.annotation.ColorInt
@@ -15,13 +17,17 @@ import androidx.palette.graphics.Palette
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.kt.apps.core.GlideApp
 import com.kt.apps.core.GlideRequest
 import com.kt.apps.core.R
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.utils.blurry.Blur
+import com.kt.apps.core.utils.blurry.BlurFactor
+import java.util.concurrent.Executors
+
+private val BITMAP_THREAD_POOL = Executors.newCachedThreadPool()
 
 fun Bitmap.getMainColor(): Int = Palette.from(this)
     .generate()
@@ -78,18 +84,57 @@ fun ImageView.loadImageBitmap(
 
 fun ImageView.loadImgByUrl(url: String, scaleType: ScaleType = ScaleType.CENTER_INSIDE) {
     GlideApp.with(this)
+        .asBitmap()
         .load(url)
-        .error(R.drawable.app_icon)
+        .error(R.drawable.app_banner)
         .override(170, 120)
         .scaleType(scaleType)
         .fitCenter()
+        .addListener(object : RequestListener<Bitmap> {
+            override fun onLoadFailed(
+                e: GlideException?,
+                model: Any?,
+                target: Target<Bitmap>?,
+                isFirstResource: Boolean
+            ): Boolean {
+                return false
+            }
+
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onResourceReady(
+                resource: Bitmap?,
+                model: Any?,
+                target: Target<Bitmap>?,
+                dataSource: DataSource?,
+                isFirstResource: Boolean
+            ): Boolean {
+                this@loadImgByUrl.setImageBitmap(resource)
+                BITMAP_THREAD_POOL.execute {
+                    val bitmap = Blur.of(context, resource, BlurFactor().apply {
+                        this.width =
+                            ((resource?.width ?: 50) / 2 * context.resources.displayMetrics.scaledDensity).toInt()
+                        this.height =
+                            ((resource?.height ?: 120) / 2 * context.resources.displayMetrics.scaledDensity).toInt()
+                        this.radius = 10
+                        this.sampling = 1
+                    })
+
+                    Handler(Looper.getMainLooper()).post {
+                        this@loadImgByUrl.background = BitmapDrawable(context.resources, bitmap)
+                    }
+                }
+                return true
+            }
+
+
+        })
         .into(this)
 }
 
 fun ImageView.loadDrawableRes(@DrawableRes @RawRes resId: Int, scaleType: ScaleType = ScaleType.CENTER_INSIDE) {
     GlideApp.with(this)
         .load(resId)
-        .error(R.drawable.app_icon)
+        .error(R.drawable.app_banner)
         .scaleType(scaleType)
         .into(this)
 }
@@ -118,7 +163,7 @@ fun ImageView.loadImgByDrawableIdResName(
         Logger.e(this, name, e)
         backupUrl?.let { url ->
             loadImgByUrl(url, scaleType)
-        } ?: loadDrawableRes(R.drawable.app_icon, scaleType)
+        } ?: loadDrawableRes(R.drawable.app_banner, scaleType)
     }
 
 }
