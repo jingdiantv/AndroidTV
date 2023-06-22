@@ -32,12 +32,14 @@ abstract class ExtensionsChannelDAO {
     abstract fun deleteBySourceId(sourceId: String): Completable
 
     @Transaction
-    @Query("SELECT * FROM extensionschannel WHERE extensionSourceId=:sourceId")
+    @Query("SELECT * FROM extensionschannel WHERE extensionSourceId=:sourceId " +
+            "ORDER BY tvChannelName")
     abstract fun getAllBySourceId(sourceId: String): Single<List<ExtensionsChannel>>
 
     @Transaction
     @Query(
         "SELECT * FROM extensionschannel WHERE extensionSourceId=:sourceId " +
+                "ORDER BY tvChannelName " +
                 "AND tvGroup=:category " +
                 "LIMIT :limit " +
                 "OFFSET :offset "
