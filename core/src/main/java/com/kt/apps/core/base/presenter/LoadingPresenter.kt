@@ -21,6 +21,7 @@ abstract class LoadingPresenter : Presenter() {
     override fun onBindViewHolder(viewHolder: ViewHolder?, item: Any?) {
         (viewHolder?.view as? ViewGroup)?.forEach {
             it.runAnimationChangeBackground()
+            it.isFocusable = false
         }
     }
 
