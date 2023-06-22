@@ -86,7 +86,7 @@ class FragmentExtensions : BaseRowSupportFragment() {
                         this@FragmentExtensions.tvList = dataState.data
                         val channelWithCategory = tvList!!.groupBy {
                             it.tvGroup
-                        }
+                        }.toSortedMap()
                         mRowsAdapter.clear()
                         val childPresenter = DashboardTVChannelPresenter()
                         for ((group, channelList) in channelWithCategory) {
