@@ -203,6 +203,9 @@ class ParserExtensionsSource @Inject constructor(
             }.mapNotNull { itemStr ->
                 extractChannel(itemStr, extension)
             }
+            .distinctBy {
+                "${it.tvGroup}${it.tvStreamLink}${it.channelId}"
+            }
     }
 
     private fun getKeyValueByRegex(regex: Pattern, finder: String): Pair<String, String> {
@@ -334,7 +337,31 @@ class ParserExtensionsSource @Inject constructor(
                 tvGroup = channelGroup,
                 logoChannel = channelLogo.trim(),
                 channelId = channelId,
-                tvChannelName = channelName.trim().removeSuffix(" "),
+                tvChannelName = channelName.trim()
+                    .removeSuffix(" ")
+                    .let {
+                        var str = it
+                        if (str.contains("Tham gia group")) {
+                            val index = str.indexOf("Tham gia group")
+                            if (index > 0) {
+                                str = str.substring(0, index)
+                            }
+                        }
+                        if (str.contains("Donate")
+                            || str.lowercase().startsWith("tham gia group")
+                            || str.lowercase().startsWith("nhóm zalo")) {
+                            throw NullPointerException("Not valid channel name: $channelName")
+                        }
+                        if (it.contains("Mời bạn tham gia nhóm Zalo")) {
+                            val index = str.indexOf("Mời bạn tham gia nhóm Zalo")
+                            if (index > 0) {
+                                str = str.substring(0, index)
+                            }
+                        }
+
+                        str.trim()
+                            .removeSuffix("-")
+                    },
                 sourceFrom = extension.sourceName,
                 tvStreamLink = channelLink.trim().removeSuffix(" "),
                 isHls = channelLink.contains("m3u8"),
@@ -346,7 +373,7 @@ class ParserExtensionsSource @Inject constructor(
                 extensionSourceId = extension.sourceUrl
             )
             if (!channel.isValidChannel) {
-                throw NullPointerException()
+                throw NullPointerException("Channel not valid: $channel")
             }
             if (DEBUG) {
                 Logger.d(this@ParserExtensionsSource, "Channel", message = "$channel")
@@ -502,7 +529,7 @@ class ParserExtensionsSource @Inject constructor(
 
         val filmData = mapOf(
             "Phim lẻ TVHay" to "http://hqth.me/tvhayphimle",
-            "Phim lẻ FPTPlay" to "http://hqth.me/fptphimle",
+            "Phim lẻ FPTPlay" to "http://hqth.me/jsfptphimle",
             "Phim bộ" to "http://hqth.me/phimbo",
             "Phim miễn phí" to "https://hqth.me/phimfree",
             "Film" to "https://gg.gg/films24",

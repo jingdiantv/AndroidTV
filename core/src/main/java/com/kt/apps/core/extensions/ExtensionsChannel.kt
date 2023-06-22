@@ -39,8 +39,7 @@ data class ExtensionsChannel(
 
     val isValidChannel: Boolean
         get() {
-            return tvGroup.isNotBlank() && tvChannelName.isNotBlank()
-                    && Uri.parse(tvStreamLink).host != null
+            return tvGroup.isNotBlank() && Uri.parse(tvStreamLink).host != null
         }
 
     override fun toString(): String {
