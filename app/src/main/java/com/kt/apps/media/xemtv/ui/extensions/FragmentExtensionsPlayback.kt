@@ -96,7 +96,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             if (it is DataState.Success) {
                 if (itemToPlay?.channelId == it.data.channel) {
                     itemToPlay?.currentProgramme = it.data
-                    itemToPlay?.let { it1 -> showInfo(it1) }
+                    itemToPlay?.let { it1 -> showInfo(it1, false) }
                 }
             }
         }
@@ -234,8 +234,11 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         )
     }
 
-    private fun showInfo(tvChannel: ExtensionsChannel) {
-        Logger.d(this@FragmentExtensionsPlayback,"ChannelInfo", message = "$tvChannel")
+    private fun showInfo(
+        tvChannel: ExtensionsChannel,
+        showProgressManager: Boolean = true
+    ) {
+        Logger.d(this@FragmentExtensionsPlayback, "ChannelInfo", message = "$tvChannel")
         prepare(
             tvChannel.currentProgramme?.title?.takeIf {
                 it.trim().isNotBlank()
@@ -243,7 +246,8 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             tvChannel.currentProgramme?.description?.takeIf {
                 it.isNotBlank()
             }?.trim(),
-            false
+            false,
+            showProgressManager = showProgressManager
         )
     }
 
