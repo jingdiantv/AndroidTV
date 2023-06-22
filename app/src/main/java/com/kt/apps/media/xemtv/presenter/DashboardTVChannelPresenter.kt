@@ -16,6 +16,7 @@ import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.loadImgByDrawableIdResName
 import com.kt.apps.core.utils.loadImgByUrl
+import com.kt.apps.core.utils.removeAllSpecialChars
 import com.kt.apps.media.xemtv.R
 import kotlin.properties.Delegates
 
@@ -29,7 +30,8 @@ class DashboardTVChannelPresenter : Presenter() {
     private var sDefaultBackgroundColor: Int by Delegates.notNull()
 
 
-    class TVImageCardView(context: Context) : ImageCardView(ContextThemeWrapper(context, R.style.ImageCardViewStyleTitle)) {
+    class TVImageCardView(context: Context) :
+        ImageCardView(ContextThemeWrapper(context, R.style.ImageCardViewStyleTitle)) {
         override fun setSelected(selected: Boolean) {
             findViewById<TextView>(androidx.leanback.R.id.title_text)
                 .background = null
@@ -48,7 +50,7 @@ class DashboardTVChannelPresenter : Presenter() {
         sSelectedBackgroundColor = Color.TRANSPARENT
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
 
-        val cardView:ImageCardView = TVImageCardView(parent.context)
+        val cardView: ImageCardView = TVImageCardView(parent.context)
 
 
         cardView.isFocusable = true
@@ -60,7 +62,7 @@ class DashboardTVChannelPresenter : Presenter() {
     override fun onBindViewHolder(viewHolder: ViewHolder, item: Any) {
         val cardView = viewHolder.view as ImageCardView
 
-        when(item) {
+        when (item) {
             is TVChannel -> {
                 cardView.titleText = item.tvChannelName
                 cardView.contentText = null
@@ -80,7 +82,23 @@ class DashboardTVChannelPresenter : Presenter() {
                 cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
                 updateCardBackgroundColor(cardView, false)
                 cardView.let { imgView ->
-                    val name = Constants.mapChannel[item.tvChannelName]
+                    val name = Constants.mapChannel[
+                            (item.channelId.takeIf {
+                                it.trim().isNotBlank()
+                            } ?: item.tvChannelName)
+                                .lowercase()
+                                .trim()
+                                .replace("•", "")
+                                .replace(" ", "")
+                                .removeSuffix("vietteltv")
+                                .removeSuffix("fpt")
+                                .removeSuffix("vieon")
+                                .removeSuffix("tv360")
+                                .trim()
+                                .removeAllSpecialChars()
+                                .removeSuffix("hd")
+                                .replace(".", "")
+                    ]
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
                     name?.let {
                         imgView.mainImageView
