@@ -85,7 +85,7 @@ fun ImageView.loadImageBitmap(
 fun ImageView.loadImgByUrl(url: String, scaleType: ScaleType = ScaleType.CENTER_INSIDE) {
     GlideApp.with(this)
         .asBitmap()
-        .load(url)
+        .load(url.trim())
         .error(R.drawable.app_banner)
         .override(170, 120)
         .scaleType(scaleType)
@@ -162,7 +162,7 @@ fun ImageView.loadImgByDrawableIdResName(
     } catch (e: Exception) {
         Logger.e(this, name, e)
         backupUrl?.let { url ->
-            loadImgByUrl(url, scaleType)
+            loadImgByUrl(url.trim(), scaleType)
         } ?: loadDrawableRes(R.drawable.app_banner, scaleType)
     }
 
