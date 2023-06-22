@@ -32,11 +32,11 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.kt.apps.core.BuildConfig
 import com.kt.apps.core.R
 import com.kt.apps.core.base.receiver.NetworkChangeReceiver
+import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.isNetworkAvailable
 import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.registerNetworkChangeReceiver
 import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.unregisterNetworkChangeReceiver
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.showSuccessDialog
-import com.kt.apps.core.utils.translateY
 import com.kt.apps.core.utils.updateLocale
 import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
@@ -101,30 +101,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
         networkChangeReceiver?.let {
             registerNetworkChangeReceiver(it, object : NetworkChangeReceiver.OnNetworkChangeListener {
                 override fun onChange(isOnline: Boolean) {
-                    val viewGroup = findViewById<ViewGroup>(android.R.id.content)
-                    if (isOnline) {
-                        viewGroup.findViewById<TextView?>(R.id.no_network_title_view)?.let {
-                            it.setBackgroundColor(Color.GREEN)
-                            it.text = "Kết nối internet đã sẵn sàng"
-                            it.animate()
-                                .setStartDelay(300L)
-                                .translationY(it.measuredHeight.toFloat())
-                                .setListener(object : AnimatorListenerAdapter() {
-                                    override fun onAnimationEnd(animation: Animator?) {
-                                        super.onAnimationEnd(animation)
-                                        viewGroup.findViewById<LinearLayout?>(R.id.no_network_view)?.let {
-                                            viewGroup.removeView(it)
-                                        }
-                                    }
-                                })
-                        }
-                    } else {
-                        viewGroup.findViewById<LinearLayout?>(R.id.no_network_view)?.let {
-                        } ?: viewGroup.addView(
-                            LayoutInflater.from(this@BaseActivity)
-                                .inflate(R.layout.base_no_network_view, null, false)
-                        )
-                    }
+                    showInternetConnected(isOnline)
                 }
             })
         }
@@ -147,6 +124,38 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
         binding = DataBindingUtil.setContentView(this, layoutRes)
         initView(savedInstanceState)
         initAction(savedInstanceState)
+    }
+
+    private fun showInternetConnected(isOnline: Boolean) {
+        val viewGroup = findViewById<ViewGroup>(android.R.id.content)
+        if (isOnline) {
+            viewGroup.findViewById<TextView?>(R.id.no_network_title_view)?.let {
+                it.setBackgroundColor(Color.GREEN)
+                it.text = "Kết nối internet đã sẵn sàng"
+                it.animate()
+                    .setStartDelay(300L)
+                    .translationY(it.measuredHeight.toFloat())
+                    .setListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator?) {
+                            super.onAnimationEnd(animation)
+                            viewGroup.findViewById<LinearLayout?>(R.id.no_network_view)?.let {
+                                viewGroup.removeView(it)
+                            }
+                        }
+                    })
+            }
+        } else {
+            viewGroup.findViewById<LinearLayout?>(R.id.no_network_view)?.let {
+            } ?: viewGroup.addView(
+                LayoutInflater.from(this@BaseActivity)
+                    .inflate(R.layout.base_no_network_view, null, false)
+            )
+        }
+    }
+
+    override fun onResume() {
+        showInternetConnected(this.isNetworkAvailable())
+        super.onResume()
     }
 
     override fun applyOverrideConfiguration(overrideConfiguration: Configuration?) {
