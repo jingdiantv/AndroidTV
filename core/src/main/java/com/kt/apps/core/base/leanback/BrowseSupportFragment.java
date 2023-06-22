@@ -1411,8 +1411,23 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     void onRowSelected(int position) {
         // even position is same, it could be data changed, always post selection runnable
         // to possibly swap main fragment.
-        mSetSelectionRunnable.post(
-                position, SetSelectionRunnable.TYPE_INTERNAL_SYNC, true);
+        if (position == NO_POSITION) {
+            return;
+        }
+        navDrawerView.setItemSelected(position, true);
+
+        mSelectedPosition = position;
+        if (mMainFragmentAdapter == null) {
+            // onDestroyView() called
+            return;
+        }
+        replaceMainFragment(position);
+
+        if (mMainFragmentRowsAdapter != null) {
+            mMainFragmentRowsAdapter.setSelectedPosition(position, false);
+        }
+
+        updateTitleViewVisibility();
     }
 
     void setSelection(int position, boolean smooth) {
