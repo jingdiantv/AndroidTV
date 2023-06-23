@@ -396,13 +396,19 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     protected fun <T> setupRowAdapter(
         objectList: List<T>,
-        presenterSelector: PresenterSelector
+        presenterSelector: PresenterSelector,
+        vararg related: List<T>
     ) {
         mPlayingPosition = mSelectedPosition
         Logger.d(this, message = "setupRowAdapter: $mSelectedPosition")
         val cardPresenterSelector: PresenterSelector = presenterSelector
         mAdapter = ArrayObjectAdapter(cardPresenterSelector)
         (mAdapter as ArrayObjectAdapter).addAll(0, objectList)
+        if (related.isNotEmpty()) {
+            for (i in related.indices) {
+                (mAdapter as ArrayObjectAdapter).addAll(0, related[i])
+            }
+        }
         updateAdapter()
     }
 
@@ -449,11 +455,12 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         linkStream: List<String>,
         isLive: Boolean,
         isHls: Boolean,
-        headers: Map<String, String> = mapOf()
+        headers: Map<String, String> = mapOf(),
+        hidGridView: Boolean = true
     ) {
         playVideo(title, subTitle, linkStream.map {
             LinkStream(it, referer, title)
-        }, mPlayerListener, isLive, isHls, headers)
+        }, mPlayerListener, isLive, isHls, headers, hidGridView)
     }
 
     fun prepare(
@@ -488,7 +495,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         listener: Player.Listener? = null,
         isLive: Boolean,
         isHls: Boolean,
-        headers: Map<String, String> = mapOf()
+        headers: Map<String, String> = mapOf(),
+        hideGridView: Boolean = true
     ) {
         progressManager.hide()
         mGlueHost.setSurfaceHolderCallback(null)
@@ -501,16 +509,17 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mTransportControlGlue.playWhenPrepared()
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)
-        setVideoInfo(title, subTitle, isLive)
-
-        mPlaybackOverlaysContainerView?.fadeIn()
-        mPlaybackInfoContainerView?.fadeIn()
-        if (mGridViewPickHeight > 0) {
-            mGridViewOverlays?.translationY = mGridViewPickHeight
+        if (hideGridView) {
+            setVideoInfo(title, subTitle, isLive)
+            mPlaybackOverlaysContainerView?.fadeIn()
+            mPlaybackInfoContainerView?.fadeIn()
+            if (mGridViewPickHeight > 0) {
+                mGridViewOverlays?.translationY = mGridViewPickHeight
+            }
+            mPlayPauseIcon?.requestFocus()
+            setSelectedPosition(0)
         }
         mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
-        mPlayPauseIcon?.requestFocus()
-        setSelectedPosition(0)
         if (isLive) {
             progressBarContainer?.gone()
         } else {
@@ -547,7 +556,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }
     }
 
-    fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
+    private fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
         if (!mPlaybackTitleView?.text.toString().equals(title, ignoreCase = true)) {
             mPlaybackTitleView?.text = title
         }

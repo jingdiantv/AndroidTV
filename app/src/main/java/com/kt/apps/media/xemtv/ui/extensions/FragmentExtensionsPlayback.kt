@@ -137,14 +137,14 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
 
             useMainSource -> {
                 itemToPlay?.let {
-                    playVideo(it, false)
+                    playVideo(it, useCatchup = false, hideGridView = false)
                 }
                 retryTimes[itemToPlay!!.channelId] = retriedTimes + 1
             }
 
             !itemToPlay?.catchupSource.isNullOrBlank() -> {
                 itemToPlay?.let {
-                    playVideo(it, true)
+                    playVideo(it, useCatchup = true, hideGridView = false)
                 }
                 retryTimes[itemToPlay!!.channelId] = retriedTimes + 1
             }
@@ -157,9 +157,12 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
     }
     private fun playVideo(
         tvChannel: ExtensionsChannel,
-        useCatchup: Boolean = false
+        useCatchup: Boolean = false,
+        hideGridView: Boolean = true
     ) {
-        extensionsViewModel.loadProgramForChannel(tvChannel, extension.type)
+        if (hideGridView) {
+            extensionsViewModel.loadProgramForChannel(tvChannel, extension.type)
+        }
         lastExpandUrlTask?.let { disposable.remove(it) }
         disposable.clear()
         val linkToPlay = if (!useCatchup) {
@@ -186,7 +189,9 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             linkToPlay
         )
 
-        showInfo(tvChannel)
+        if (hideGridView) {
+            showInfo(tvChannel)
+        }
 
         if (linkToPlay.isShortLink()) {
             lastExpandUrlTask = Observable.fromCallable {
@@ -196,15 +201,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, realUrl)
+                    playWhenReady(tvChannel, realUrl, false)
                 }, {
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, linkToPlay)
+                    playWhenReady(tvChannel, linkToPlay, false)
                 })
             disposable.add(lastExpandUrlTask!!)
 
         } else if (linkToPlay.contains(".m3u8")) {
-            playWhenReady(tvChannel, linkToPlay)
+            playWhenReady(tvChannel, linkToPlay, false)
         } else {
             disposable.add(Observable.fromCallable {
                 linkToPlay.expandUrl()
@@ -213,10 +218,10 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, realUrl)
+                    playWhenReady(tvChannel, realUrl, false)
                 }, {
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, linkToPlay)
+                    playWhenReady(tvChannel, linkToPlay, false)
                 }))
 
         }
@@ -224,7 +229,8 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
 
     private fun FragmentExtensionsPlayback.playWhenReady(
         tvChannel: ExtensionsChannel,
-        linkToPlay: String
+        linkToPlay: String,
+        hideGridView: Boolean
     ) {
         playVideo(
             tvChannel.currentProgramme?.title?.takeIf {
@@ -237,7 +243,8 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             linkStream = listOf(linkToPlay),
             isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
             isHls = linkToPlay.contains("m3u8"),
-            headers = tvChannel.props
+            headers = tvChannel.props,
+            hidGridView = hideGridView
         )
     }
 
