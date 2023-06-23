@@ -121,8 +121,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         when {
             retriedTimes > MAX_RETRY_TIME -> {
                 showErrorDialog(
-                    content = "Kênh ${itemToPlay?.tvChannelName ?: "TV"} " +
-                            "hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: " +
+                    content = "${
+                        itemToPlay?.tvChannelName?.replaceFirstChar {
+                            if (it.isLowerCase()) {
+                                it.titlecase()
+                            } else {
+                                it.toString()
+                            }
+                        } ?: "Chương trình IPTV"
+                    } " + "hiện tại đang lỗi : " +
                             "$errorCode $errorMessage"
                 )
                 retryTimes[itemToPlay!!.channelId] = 0
