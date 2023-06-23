@@ -85,17 +85,30 @@ class ParserExtensionsSource @Inject constructor(
                 if (totalList.isEmpty()) {
                     storage.removeLastRefreshExtensions(extension)
                     disposable.add(extensionsConfigDao.delete(extension).subscribe({}, {}))
+                    if (it.isDisposed) {
+                        return@create
+                    }
                     it.onError(Throwable("Định dạng nguồn kênh không hợp lệ"))
                 } else {
+                    if (it.isDisposed) {
+                        return@create
+                    }
                     it.onNext(totalList)
                     it.onComplete()
                 }
             } catch (e: Exception) {
+                if (it.isDisposed) {
+                    return@create
+                }
                 it.onError(e)
             }
         }
-            .retry { time, _ ->
-                return@retry time < 3
+            .retry { time, throwable ->
+                var canRetry = true
+                if (throwable is ParserIPTVThrowable) {
+                    canRetry = throwable.canRetry
+                }
+                return@retry time < 3 && canRetry
             }
             .observeOn(Schedulers.io())
             .subscribeOn(Schedulers.io())
@@ -142,6 +155,8 @@ class ParserExtensionsSource @Inject constructor(
             .doOnEach {
                 programScheduleParser.parseForConfig(extension)
             }
+
+        Logger.d(this@ParserExtensionsSource, "execute", "Old time: ${storage.getLastRefreshExtensions(extension)}")
 
         if (System.currentTimeMillis() - storage.getLastRefreshExtensions(extension) < getIntervalRefreshData(extension.type)) {
             Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource")
@@ -192,6 +207,9 @@ class ParserExtensionsSource @Inject constructor(
             val index = bodyStr.indexOf(TAG_EXT_INFO)
             programScheduleParser.parseForConfig(extension, getByRegex(REGEX_PROGRAM_SCHEDULE_URL, bodyStr))
             return parseFromText(bodyStr.substring(maxOf(0, index), bodyStr.length), extension)
+        }
+        if (response.code >= 500 || response.code == 404 || response.code == 403) {
+            throw ParserIPTVThrowable(false)
         }
         return emptyList()
     }
@@ -475,6 +493,11 @@ class ParserExtensionsSource @Inject constructor(
         val pt = Pattern.compile(regex)
         return getByRegex(pt, finder)
     }
+
+    class ParserIPTVThrowable(
+        val canRetry: Boolean,
+        override val message: String? = null,
+    ) : Throwable(message)
 
     companion object {
         private const val DEBUG = false
