@@ -236,6 +236,12 @@ class NavDrawerView @JvmOverloads constructor(
                     "direction: $direction" +
                     "}"
         )
+        if (!isOpen && focused != null
+            && direction != FOCUS_LEFT
+            && direction != FOCUS_RIGHT
+        ) {
+            return focused
+        }
         if (direction == FOCUS_DOWN) {
             for (i in 0 until childCount) {
                 if (getChildAt(i).tag == selectedItem) {
