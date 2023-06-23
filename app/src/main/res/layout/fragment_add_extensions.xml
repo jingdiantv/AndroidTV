@@ -139,6 +139,7 @@
                     android:checkable="true"
                     android:checked="true"
                     android:fontFamily="@font/roboto_regular"
+                    android:nextFocusUp="@id/textInputEditText_2"
                     android:nextFocusLeft="@id/textInputEditText_2"
                     android:nextFocusDown="@id/btn_save"
                     android:paddingHorizontal="16dp"

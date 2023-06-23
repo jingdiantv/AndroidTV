@@ -14,6 +14,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.isNetworkAvailable
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.showErrorDialog
@@ -42,6 +43,11 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
     }
 
     override fun initView(rootView: View) {
+    }
+
+    override fun onResume() {
+        super.onResume()
+        view?.requestFocus()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -145,8 +151,8 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
                         is DataState.Success -> {
                             progressManager.hide()
                             showSuccessDialog(
-                                content = "Thêm nguồn kênh thành công!" +
-                                        "\r\nKhởi động lại ứng dụng để kiểm tra nguồn kênh",
+                                content = "Thêm nguồn IPTV thành công!" +
+                                        "\r\nKhởi động lại ứng dụng để kiểm tra nguồn IPTV",
                                 onSuccessListener = {
                                     if (!this@FragmentAddExtensions.isDetached) {
                                         requireActivity().supportFragmentManager
@@ -164,7 +170,11 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
 
                         is DataState.Error -> {
                             progressManager.hide()
-                            showErrorDialog(content = "Định dạng nguồn kênh chưa được hỗ trợ!")
+                            if (context?.isNetworkAvailable() == true) {
+                                showErrorDialog(content = "Định dạng nguồn kênh chưa được hỗ trợ!")
+                            } else {
+                                showErrorDialog(content = "Vui lòng kiểm tra kết nối internet và thử lại!")
+                            }
                             Logger.e(this@FragmentAddExtensions, exception = t.throwable)
                         }
 
