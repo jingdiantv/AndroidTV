@@ -78,6 +78,20 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                 .commit()
         }
 
+        extensionsViewModel.addExtensionConfigLiveData.observe(viewLifecycleOwner) {
+            if (it is DataState.Update) {
+                val updatedConfig = it.data
+                val tabIndex = pagerAdapter.totalList.indexOfLast {
+                    it.sourceUrl == updatedConfig.sourceUrl
+                }
+
+                if (tabIndex > -1) {
+                    tabLayout.getTabAt(tabIndex)?.text = updatedConfig.sourceName
+                    pagerAdapter.onPageUpdate(tabIndex, updatedConfig)
+                }
+            }
+        }
+
         extensionsViewModel.totalExtensionsConfig.observe(viewLifecycleOwner) {
             when (it) {
                 is DataState.Success -> {
@@ -107,6 +121,9 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                         viewPager.adapter = pagerAdapter
                         tabLayout.setupWithViewPager(viewPager, true)
                     }
+                }
+
+                is DataState.Error -> {
                 }
 
                 is DataState.Loading -> {
@@ -206,6 +223,11 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
         }
         val totalList: List<ExtensionsConfig>
             get() = _totalList
+
+        fun onPageUpdate(position: Int, extensionsConfig: ExtensionsConfig) {
+            _totalList.removeAt(position)
+            _totalList.add(position, extensionsConfig)
+        }
 
         fun areContentTheSame(targetList: List<ExtensionsConfig>): Boolean {
             if (totalList.isEmpty() || targetList.isEmpty()) {
