@@ -144,6 +144,7 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             type
         )
         extensionsViewModel.addIPTVSource(extensionsConfig)
+        extensionsViewModel.addExtensionConfigLiveData.removeObservers(viewLifecycleOwner)
         extensionsViewModel.addExtensionConfigLiveData.observe(viewLifecycleOwner,
             object : Observer<DataState<ExtensionsConfig>> {
                 override fun onChanged(t: DataState<ExtensionsConfig>?) {
