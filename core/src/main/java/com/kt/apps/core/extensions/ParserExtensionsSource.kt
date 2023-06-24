@@ -252,7 +252,7 @@ class ParserExtensionsSource @Inject constructor(
         var channelLink = ""
         val props = mutableMapOf<String, String>()
 
-        val listChannelInfoStr = itemStr.split("\n", "#")
+        val listChannelInfoStr = itemStr.split("\n")
             .filter {
                 it.isNotBlank()
             }
@@ -282,7 +282,7 @@ class ParserExtensionsSource @Inject constructor(
             Logger.d(this@ParserExtensionsSource, "ChannelLink", channelLink)
         }
         listChannelInfoStr.forEach { line ->
-            if (line.removePrefix("#").startsWith("http")) {
+            if (line.trimStart().removePrefix("#").startsWith("http")) {
                 channelLink = line.trim().removePrefix("#").trim()
                     .replace("\t", "")
                     .replace("\b", "")
@@ -327,6 +327,10 @@ class ParserExtensionsSource @Inject constructor(
 
                     if (line.contains(TITLE_PREFIX)) {
                         channelGroup = getByRegex(CHANNEL_GROUP_TITLE_REGEX, line)
+                        if (channelGroup.isBlank()) {
+                            Logger.d(this@ParserExtensionsSource, message = line)
+                            Logger.d(this@ParserExtensionsSource, message = itemStr)
+                        }
                     }
 
                     if (line.contains(",")) {
@@ -407,7 +411,14 @@ class ParserExtensionsSource @Inject constructor(
     private fun getByRegex(pattern: Pattern, finder: String): String {
         val matcher = pattern.matcher(finder)
         while (matcher.find()) {
-            return matcher.group(0) ?: ""
+            var str = matcher.group(0)
+            var findNextIndexGroup = 1
+            val groupCount = matcher.groupCount()
+            while (str.isNullOrEmpty() && findNextIndexGroup <= groupCount) {
+                str = matcher.group(findNextIndexGroup)
+                findNextIndexGroup++
+            }
+            return str ?: ""
         }
         return ""
     }
