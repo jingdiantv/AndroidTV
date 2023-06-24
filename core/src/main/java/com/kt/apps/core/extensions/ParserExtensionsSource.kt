@@ -73,25 +73,42 @@ class ParserExtensionsSource @Inject constructor(
         if (pendingSource.contains(extension.sourceUrl)) {
             return pendingSource[extension.sourceUrl]!!
         }
-        val onlineSource = Maybe.create<List<ExtensionsChannel>> {
-            try {
-                while (pendingSource.size > 5) {
-                    Thread.sleep(100)
-                }
-                it.onSuccess(parseFromRemoteRxStream(extension).blockingGet()!!)
-                it.onComplete()
-            } catch (e: Exception) {
-                if (it.isDisposed) {
-                    return@create
-                }
-                it.onError(e)
+        val parserStreamingSource = parseFromRemoteRxStream(extension)
+            .doOnSuccess {
+                pendingSource.remove(extension.sourceUrl)
+            }.doOnError {
+                pendingSource.remove(extension.sourceUrl)
             }
-        }.doOnComplete {
-            pendingSource.remove(extension.sourceUrl)
-        }.doOnError {
-            pendingSource.remove(extension.sourceUrl)
-        }.observeOn(Schedulers.io())
+            .doOnDispose {
+                pendingSource.remove(extension.sourceUrl)
+            }
+            .observeOn(Schedulers.io())
             .subscribeOn(Schedulers.io())
+
+        val onlineSource = if (pendingSource.size <= 5) {
+            parserStreamingSource
+        } else {
+            Completable.create { emitter ->
+                try {
+                    while (pendingSource.size > 5 && !emitter.isDisposed) {
+                        Thread.sleep(100)
+                    }
+                    if (!emitter.isDisposed) {
+                        emitter.onComplete()
+                    }
+                } catch (e: Exception) {
+                    if (!emitter.isDisposed) {
+                        emitter.onError(e)
+                    }
+                }
+            }.doOnDispose {
+                pendingSource.remove(extension.sourceUrl)
+            }.andThen(
+                parserStreamingSource
+            )
+        }.map {
+            it as List<ExtensionsChannel>
+        }
 
         val offlineSource = extensionsChannelDao.getAllBySourceId(extension.sourceUrl)
             .toMaybe()
@@ -108,7 +125,7 @@ class ParserExtensionsSource @Inject constructor(
             .observeOn(Schedulers.io())
             .subscribeOn(Schedulers.io())
 
-        Logger.d(this@ParserExtensionsSource, "execute", "Old time: ${storage.getLastRefreshExtensions(extension)}")
+        Logger.d(this@ParserExtensionsSource, "execute", "Old time ${extension.sourceUrl}: ${storage.getLastRefreshExtensions(extension)}")
 
         if (System.currentTimeMillis() - storage.getLastRefreshExtensions(extension) < getIntervalRefreshData(extension.type)) {
             Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource")
@@ -120,6 +137,9 @@ class ParserExtensionsSource @Inject constructor(
                     pendingSource.remove(extension.sourceUrl)
                 }
                 .doOnError {
+                    pendingSource.remove(extension.sourceUrl)
+                }
+                .doOnDispose {
                     pendingSource.remove(extension.sourceUrl)
                 }
             pendingSource[extension.sourceUrl] = source
@@ -134,7 +154,7 @@ class ParserExtensionsSource @Inject constructor(
         storage.save(EXTRA_INTERVAL_REFRESH_DATA_KEY, time)
     }
 
-    private fun parseFromRemoteRxStream(extension: ExtensionsConfig) = Maybe.fromCallable {
+    private fun parseFromRemoteRxStream(extension: ExtensionsConfig): Maybe<MutableList<ExtensionsChannel>> = Maybe.fromCallable {
         trustEveryone()
         val response = client
             .newBuilder()
@@ -169,7 +189,7 @@ class ParserExtensionsSource @Inject constructor(
         return@retry time < 3 && canRetry
     }.flatMap {
         parseFromStream(extension, it)
-    }.doOnComplete {
+    }.doOnSuccess {
         storage.saveLastRefreshExtensions(extension)
     }
         .subscribeOn(Schedulers.io())
