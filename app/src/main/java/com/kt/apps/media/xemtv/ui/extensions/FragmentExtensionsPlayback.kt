@@ -5,7 +5,6 @@ import android.view.View
 import androidx.core.os.bundleOf
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.observe
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
 import com.kt.apps.core.base.BasePlaybackFragment
@@ -78,15 +77,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             playVideo(it)
         }
         Logger.e(this@FragmentExtensionsPlayback, message = "id = $extension")
-        extensionsViewModel.loadChannelForConfig(extension.sourceUrl).observe(viewLifecycleOwner){
+        extensionsViewModel.loadChannelForConfig(extension.sourceUrl).observe(viewLifecycleOwner) {
             if (it is DataState.Success) {
-                listCurrentItem.addAll(it.data)
-                setupRowAdapter(listCurrentItem, TVChannelPresenterSelector(requireActivity()))
+                refreshListRelatedItem(it.data)
                 onItemClickedListener = OnItemViewClickedListener { _, item, rowViewHolder, row ->
                     itemToPlay?.let {
                         retryTimes[it.channelId] = 0
                     }
                     itemToPlay = item as? ExtensionsChannel
+                    refreshListRelatedItem(it.data)
                     itemToPlay?.let { it1 -> playVideo(it1) }
                 }
             }
@@ -102,6 +101,21 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         }
 
 
+    }
+
+    private fun refreshListRelatedItem(data: List<ExtensionsChannel>) {
+        listCurrentItem.clear()
+        itemToPlay?.let { channel ->
+            listCurrentItem.addAll(
+                data.filter {
+                    it.tvGroup == channel.tvGroup
+                }
+            )
+            listCurrentItem.addAll(data.filter {
+                it.tvGroup != channel.tvGroup
+            })
+        } ?: listCurrentItem.addAll(data)
+        setupRowAdapter(listCurrentItem, TVChannelPresenterSelector(requireActivity()))
     }
 
     override fun onError(errorCode: Int, errorMessage: CharSequence?) {
