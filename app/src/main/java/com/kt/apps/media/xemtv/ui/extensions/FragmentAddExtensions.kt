@@ -187,4 +187,9 @@ class FragmentAddExtensions : BaseRowSupportFragment() {
             })
     }
 
+    override fun onDestroyView() {
+        extensionsViewModel.removePendingIPTVSource()
+        super.onDestroyView()
+    }
+
 }
