@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv
 
+import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -55,6 +56,9 @@ class App : CoreApp() {
         super.onCreate()
         app = this
         (applicationInjector() as AppComponents).inject(this)
+    }
+
+    override fun onRemoteConfigReady() {
         workManager.enqueueUniquePeriodicWork(
             "Refresh_extension_channel",
             ExistingPeriodicWorkPolicy.KEEP,
@@ -62,9 +66,14 @@ class App : CoreApp() {
                 if (BuildConfig.DEBUG) {
                     Duration.ofMinutes(15L)
                 } else {
-                    Duration.ofHours(1L)
+                    Duration.ofMinutes(15L)
                 }
             )
+                .setInputData(
+                    Data.Builder()
+                        .putBoolean(AutoRefreshExtensionsChannelWorker.EXTRA_KEY_VERSION_IS_BETA, BuildConfig.isBeta)
+                        .build()
+                )
                 .build()
         )
     }

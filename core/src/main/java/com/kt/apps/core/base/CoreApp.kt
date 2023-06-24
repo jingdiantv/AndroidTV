@@ -23,17 +23,26 @@ abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
                 Constants.EXTRA_KEY_USE_ONLINE to true,
                 Constants.EXTRA_KEY_VERSION_NEED_REFRESH to 1L
             ))
+        fetchAndActivateRemoteConfig(3)
+        Firebase.remoteConfig.fetch(20)
+        registerActivityLifecycleCallbacks(this)
+    }
+
+    private fun fetchAndActivateRemoteConfig(maxRetryCount: Int) {
+        if (maxRetryCount == 0) return
         Firebase.remoteConfig
             .fetchAndActivate()
             .addOnSuccessListener {
                 Logger.d(this, tag = "RemoteConfig", message = "Success")
+                onRemoteConfigReady()
             }
             .addOnFailureListener {
-                Logger.d(this, tag = "RemoteConfig", message = "Failure")
+                Logger.e(this, tag = "RemoteConfig", exception = it)
+                fetchAndActivateRemoteConfig(maxRetryCount - 1)
             }
-        Firebase.remoteConfig.fetch(20)
-        registerActivityLifecycleCallbacks(this)
     }
+
+    abstract fun onRemoteConfigReady()
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
     }

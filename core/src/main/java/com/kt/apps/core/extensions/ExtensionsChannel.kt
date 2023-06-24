@@ -40,6 +40,11 @@ data class ExtensionsChannel(
     val isValidChannel: Boolean
         get() {
             return tvGroup.isNotBlank() && Uri.parse(tvStreamLink).host != null
+                    && !(tvChannelName.contains("Donate")
+                    || tvChannelName.lowercase().startsWith("tham gia group")
+                    || tvChannelName.lowercase().startsWith("nhóm zalo")
+                    )
+
         }
 
     override fun toString(): String {

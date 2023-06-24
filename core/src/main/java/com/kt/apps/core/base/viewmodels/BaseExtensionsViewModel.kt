@@ -73,7 +73,6 @@ open class BaseExtensionsViewModel @Inject constructor(
                 .flatMap {
                     parserExtensionsSource.parseFromRemoteRx(it)
                 }
-                .observeOn(AndroidSchedulers.mainThread())
                 .retry { t1, t2 ->
                     return@retry t1 < 3
                 }
@@ -119,7 +118,7 @@ open class BaseExtensionsViewModel @Inject constructor(
         add(
             roomDataBase.extensionsConfig()
                 .getAll()
-                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
                 .subscribe({
                     _totalExtensionsConfig.postValue(DataState.Success(it))
                     Logger.d(this@BaseExtensionsViewModel, message = "addExtensionsPage")
@@ -138,7 +137,7 @@ open class BaseExtensionsViewModel @Inject constructor(
             roomDataBase.extensionsConfig()
                 .getExtensionById(extensionsID)
                 .subscribeOn(Schedulers.io())
-                .flatMapMaybe {
+                .flatMap {
                     parserExtensionsSource.parseFromRemoteMaybe(it)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
@@ -148,10 +147,6 @@ open class BaseExtensionsViewModel @Inject constructor(
                     Logger.e(this, exception = it)
                 })
         )
-    }
-
-    private fun logAddIPTVSource(config: ExtensionsConfig) {
-        actionLogger.logAddIPTVSource(config.sourceUrl, config.sourceName)
     }
 
     private val _addExtensionConfigLiveData by lazy {
@@ -171,24 +166,30 @@ open class BaseExtensionsViewModel @Inject constructor(
         pendingIptvSource = extensionsConfig
 
         add(
-            parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .flatMapCompletable {
-                    if (it.isNotEmpty()) {
-                        roomDataBase.extensionsConfig()
-                            .insert(extensionsConfig)
+            parserExtensionsSource.isSourceExist(extensionsConfig.sourceUrl)
+                .flatMapCompletable { exist ->
+                    if (exist) {
+                        _addExtensionConfigLiveData.postValue(DataState.Update(extensionsConfig))
+                        parserExtensionsSource.updateIPTVSource(extensionsConfig)
                     } else {
-                        Completable.error(Throwable("Data empty"))
+                        parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(Schedulers.io())
+                            .flatMapCompletable {
+                                if (it.isNotEmpty()) {
+                                    parserExtensionsSource.insertIptvSource(extensionsConfig)
+                                } else {
+                                    Completable.error(Throwable("Data empty"))
+                                }
+                            }
                     }
                 }
                 .subscribe({
-                    if (pendingIptvSource?.sourceUrl != extensionsConfig.sourceUrl) {
-                        return@subscribe
+                    actionLogger.logAddIPTVSource(extensionsConfig.sourceUrl, extensionsConfig.sourceName)
+                    if (pendingIptvSource?.sourceUrl == extensionsConfig.sourceUrl) {
+                        _addExtensionConfigLiveData.postValue(DataState.Success(extensionsConfig))
                     }
-                    logAddIPTVSource(extensionsConfig)
                     loadAllListExtensionsChannelConfig(true)
-                    _addExtensionConfigLiveData.postValue(DataState.Success(extensionsConfig))
                     Logger.e(this@BaseExtensionsViewModel, message = "addIPTVSource Success: $extensionsConfig")
                 }, {
                     if (pendingIptvSource?.sourceUrl != extensionsConfig.sourceUrl) {
@@ -198,6 +199,10 @@ open class BaseExtensionsViewModel @Inject constructor(
                     Logger.e(this@BaseExtensionsViewModel, exception = it)
                 })
         )
+    }
+
+    fun removePendingIPTVSource() {
+        pendingIptvSource = null
     }
 
     fun insertDefaultSource() {

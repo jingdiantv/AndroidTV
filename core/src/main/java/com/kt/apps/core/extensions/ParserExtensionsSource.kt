@@ -1,7 +1,6 @@
 package com.kt.apps.core.extensions
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.gson.Gson
 import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.di.NetworkModule
 import com.kt.apps.core.logging.Logger
@@ -9,18 +8,18 @@ import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.getLastRefreshExtensions
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.ExtensionChannelCategory
-import com.kt.apps.core.storage.removeLastRefreshExtensions
 import com.kt.apps.core.storage.saveLastRefreshExtensions
 import com.kt.apps.core.utils.trustEveryone
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.DisposableContainer
 import io.reactivex.rxjava3.schedulers.Schedulers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
-import java.lang.NullPointerException
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import javax.inject.Inject
@@ -61,100 +60,53 @@ class ParserExtensionsSource @Inject constructor(
             }
     }
 
-    private val pendingSource: MutableMap<String, Observable<List<ExtensionsChannel>>> by lazy {
+    private val pendingSource: MutableMap<String, Maybe<List<ExtensionsChannel>>> by lazy {
         mutableMapOf()
     }
 
 
     fun parseFromRemoteMaybe(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
-        return Maybe.fromCallable {
-            return@fromCallable parseFromRemote(extension)
-        }
+        return parseFromRemoteRx(extension)
     }
 
-    fun parseFromRemoteRx(extension: ExtensionsConfig): Observable<List<ExtensionsChannel>> {
+    fun parseFromRemoteRx(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
         if (pendingSource.contains(extension.sourceUrl)) {
             return pendingSource[extension.sourceUrl]!!
         }
-        val onlineSource = Observable.create<List<ExtensionsChannel>> {
+        val onlineSource = Maybe.create<List<ExtensionsChannel>> {
             try {
                 while (pendingSource.size > 5) {
                     Thread.sleep(100)
                 }
-                val totalList = parseFromRemote(extension)
-                if (totalList.isEmpty()) {
-                    storage.removeLastRefreshExtensions(extension)
-                    disposable.add(extensionsConfigDao.delete(extension).subscribe({}, {}))
-                    if (it.isDisposed) {
-                        return@create
-                    }
-                    it.onError(Throwable("Định dạng nguồn kênh không hợp lệ"))
-                } else {
-                    if (it.isDisposed) {
-                        return@create
-                    }
-                    it.onNext(totalList)
-                    it.onComplete()
-                }
+                it.onSuccess(parseFromRemoteRxStream(extension).blockingGet()!!)
+                it.onComplete()
             } catch (e: Exception) {
                 if (it.isDisposed) {
                     return@create
                 }
                 it.onError(e)
             }
-        }
-            .retry { time, throwable ->
-                var canRetry = true
-                if (throwable is ParserIPTVThrowable) {
-                    canRetry = throwable.canRetry
-                }
-                return@retry time < 3 && canRetry
-            }
-            .observeOn(Schedulers.io())
+        }.doOnComplete {
+            pendingSource.remove(extension.sourceUrl)
+        }.doOnError {
+            pendingSource.remove(extension.sourceUrl)
+        }.observeOn(Schedulers.io())
             .subscribeOn(Schedulers.io())
-            .doOnNext {
-                if (DEBUG) {
-                    Logger.d(this@ParserExtensionsSource, message = Gson().toJson(it))
-                }
-                Logger.d(this@ParserExtensionsSource, "execute", "insert db ${it.size}")
-                disposable.add(
-                    extensionsChannelDao.insert(it)
-                        .doOnComplete {
-                            Logger.d(this@ParserExtensionsSource, "execute", "insert complete")
-                            storage.saveLastRefreshExtensions(extension)
-                        }
-                        .subscribe({}, {}),
-
-                    )
-                disposable.add(
-                    roomDataBase.extensionsChannelCategoryDao()
-                        .insert(
-                            it.groupBy {
-                                it.tvGroup
-                            }.keys
-                                .map {
-                                    ExtensionChannelCategory(extension.sourceUrl, it)
-                                }
-                        )
-                        .subscribe()
-                )
-            }
-            .doOnComplete {
-                pendingSource.remove(extension.sourceUrl)
-            }
 
         val offlineSource = extensionsChannelDao.getAllBySourceId(extension.sourceUrl)
-            .toObservable()
+            .toMaybe()
             .flatMap {
                 if (it.isEmpty()) {
                     onlineSource
                 } else {
-                    Observable.just(it)
+                    Maybe.just(it)
                 }
             }
-            .doOnEach {
+            .doOnComplete {
                 programScheduleParser.parseForConfig(extension)
             }
+            .observeOn(Schedulers.io())
+            .subscribeOn(Schedulers.io())
 
         Logger.d(this@ParserExtensionsSource, "execute", "Old time: ${storage.getLastRefreshExtensions(extension)}")
 
@@ -165,6 +117,9 @@ class ParserExtensionsSource @Inject constructor(
                     onlineSource
                 }
                 .doOnComplete {
+                    pendingSource.remove(extension.sourceUrl)
+                }
+                .doOnError {
                     pendingSource.remove(extension.sourceUrl)
                 }
             pendingSource[extension.sourceUrl] = source
@@ -179,10 +134,7 @@ class ParserExtensionsSource @Inject constructor(
         storage.save(EXTRA_INTERVAL_REFRESH_DATA_KEY, time)
     }
 
-    fun parseFromRemote(extension: ExtensionsConfig): List<ExtensionsChannel> {
-        if (!(extension.sourceUrl.startsWith("http://") || extension.sourceUrl.startsWith("https://"))) {
-            return emptyList()
-        }
+    private fun parseFromRemoteRxStream(extension: ExtensionsConfig) = Maybe.fromCallable {
         trustEveryone()
         val response = client
             .newBuilder()
@@ -198,33 +150,31 @@ class ParserExtensionsSource @Inject constructor(
             ).execute()
 
         if (response.code in 200..299) {
-            val bodyStr = response.body.string()
+            val stream = response.body.byteStream()
             Logger.d(
                 this@ParserExtensionsSource,
-                message = "${extension.sourceUrl} - Content Length: $${bodyStr.length}"
+                message = "${extension.sourceUrl} - Streaming - Content Length: $${response.body.contentLength()}"
             )
-            response.body.close()
-            val index = bodyStr.indexOf(TAG_EXT_INFO)
-            programScheduleParser.parseForConfig(extension, getByRegex(REGEX_PROGRAM_SCHEDULE_URL, bodyStr))
-            return parseFromText(bodyStr.substring(maxOf(0, index), bodyStr.length), extension)
+            return@fromCallable stream
         }
         if (response.code >= 500 || response.code == 404 || response.code == 403) {
             throw ParserIPTVThrowable(false)
         }
-        return emptyList()
+        throw Throwable("Retry")
+    }.retry { time, throwable ->
+        var canRetry = true
+        if (throwable is ParserIPTVThrowable) {
+            canRetry = throwable.canRetry
+        }
+        return@retry time < 3 && canRetry
+    }.flatMap {
+        parseFromStream(extension, it)
+    }.doOnComplete {
+        storage.saveLastRefreshExtensions(extension)
     }
+        .subscribeOn(Schedulers.io())
+        .observeOn(Schedulers.io())
 
-    private fun parseFromText(text: String, extension: ExtensionsConfig): List<ExtensionsChannel> {
-        return text.split(REGEX_MEDIA_DURATION)
-            .map {
-                it.trim().removePrefix(",")
-            }.mapNotNull { itemStr ->
-                extractChannel(itemStr, extension)
-            }
-            .distinctBy {
-                "${it.tvGroup}${it.tvStreamLink}${it.channelId}"
-            }
-    }
 
     private fun getKeyValueByRegex(regex: Pattern, finder: String): Pair<String, String> {
         val key = getByRegex(regex, finder)
@@ -238,10 +188,14 @@ class ParserExtensionsSource @Inject constructor(
         return Pair(realHttpKey, value)
     }
 
-    private fun extractChannel(
-        itemStr: String,
-        extension: ExtensionsConfig
-    ): ExtensionsChannel? {
+    private fun parseFromStream(
+        config: ExtensionsConfig,
+        stream: InputStream
+    ): Maybe<MutableList<ExtensionsChannel>> = Observable.create<MutableList<ExtensionsChannel>> { emitter ->
+        val reader = stream.bufferedReader()
+        var line = reader.readLine()?.trimStart()
+        var extensionsChannel: ExtensionsChannel?
+        var listChannel = mutableListOf<ExtensionsChannel>()
         var channelId = ""
         var channelLogo = ""
         var channelGroup = ""
@@ -251,38 +205,64 @@ class ParserExtensionsSource @Inject constructor(
         var referer = ""
         var channelLink = ""
         val props = mutableMapOf<String, String>()
+        val sourceFrom = config.sourceName
+        while (line != null) {
+            if (line.startsWith(TAG_EXT_INFO) || line.startsWith("EXTINF:")) {
+                extensionsChannel = ExtensionsChannel(
+                    tvGroup = channelGroup,
+                    logoChannel = channelLogo,
+                    tvChannelName = channelName.trim(),
+                    tvStreamLink = channelLink,
+                    sourceFrom = sourceFrom,
+                    channelId = channelId,
+                    channelPreviewProviderId = -1,
+                    isHls = false,
+                    extensionSourceId = config.sourceUrl,
+                    props = props,
+                    userAgent = userAgent,
+                    catchupSource = tvCatchupSource,
+                    referer = referer
+                )
 
-        val listChannelInfoStr = itemStr.split("\n")
-            .filter {
-                it.isNotBlank()
+                if (extensionsChannel.isValidChannel) {
+                    synchronized(listChannel) {
+                        listChannel.add(extensionsChannel)
+                        if (listChannel.size > 50) {
+                            if (!emitter.isDisposed) {
+                                emitter.onNext(listChannel)
+                            }
+                            listChannel = mutableListOf()
+                        }
+                    }
+                }
+                channelId = ""
+                channelLogo = ""
+                channelGroup = ""
+                channelName = ""
+                tvCatchupSource = ""
+                userAgent = ""
+                referer = ""
+                channelLink = ""
+                props.clear()
             }
 
-        if (listChannelInfoStr.isEmpty()) {
-            return null
-        }
+            if (line.contains(URL_TVG_PREFIX)) {
+                programScheduleParser.parseForConfig(config, getByRegex(REGEX_PROGRAM_SCHEDULE_URL, line))
+            }
 
-        val lastLine = listChannelInfoStr.last()
-        channelLink = lastLine.trim().removePrefix("#").trim()
-            .replace("\t", "")
-            .replace("\b", "")
-            .replace("\r", "")
-            .replace(" ", "")
-            .replace("  ", "")
-            .trim()
-        while (channelLink.contains(TAG_REFERER)) {
-            val refererInChannelLink = getByRegex(REFERER_REGEX, lastLine)
-            channelLink = channelLink.replace("$TAG_REFERER=$refererInChannelLink", "")
-                .trim()
-        }
-        channelLink = channelLink.trim()
-            .removeSuffix("#")
-            .trim()
+            if (line.contains(CATCHUP_SOURCE_PREFIX)) {
+                tvCatchupSource = getByRegex(CHANNEL_CATCH_UP_SOURCE_REGEX, line)
+            }
 
-        if (DEBUG) {
-            Logger.d(this@ParserExtensionsSource, "ChannelLink", channelLink)
-        }
-        listChannelInfoStr.forEach { line ->
-            if (line.trimStart().removePrefix("#").startsWith("http")) {
+            if (line.contains(TAG_USER_AGENT)) {
+                userAgent = getByRegex(REGEX_USER_AGENT, line)
+            }
+
+            if (line.contains(TAG_REFERER)) {
+                referer = getByRegex(REFERER_REGEX, line)
+            }
+
+            if (line.removePrefix("#").startsWith("http")) {
                 channelLink = line.trim().removePrefix("#").trim()
                     .replace("\t", "")
                     .replace("\b", "")
@@ -303,18 +283,6 @@ class ParserExtensionsSource @Inject constructor(
                 }
             }
 
-            if (line.contains(CATCHUP_SOURCE_PREFIX)) {
-                tvCatchupSource = getByRegex(CHANNEL_CATCH_UP_SOURCE_REGEX, line)
-            }
-
-            if (line.contains(TAG_USER_AGENT)) {
-                userAgent = getByRegex(REGEX_USER_AGENT, line)
-            }
-
-            if (line.contains(TAG_REFERER)) {
-                referer = getByRegex(REFERER_REGEX, line)
-            }
-
             when {
                 line.contains(LOGO_PREFIX) || line.contains(ID_PREFIX) || line.contains(TITLE_PREFIX) -> {
                     if (line.contains(ID_PREFIX)) {
@@ -327,15 +295,30 @@ class ParserExtensionsSource @Inject constructor(
 
                     if (line.contains(TITLE_PREFIX)) {
                         channelGroup = getByRegex(CHANNEL_GROUP_TITLE_REGEX, line)
-                        if (channelGroup.isBlank()) {
-                            Logger.d(this@ParserExtensionsSource, message = line)
-                            Logger.d(this@ParserExtensionsSource, message = itemStr)
-                        }
                     }
 
                     if (line.contains(",")) {
-                        channelName = line.split(",").lastOrNull()
-                            ?: ""
+                        channelName = (line.split(",").lastOrNull()
+                            ?: "").trim()
+                            .removeSuffix(" ")
+                            .let {
+                                var str = it
+                                if (str.contains("Tham gia group")) {
+                                    val index = str.indexOf("Tham gia group")
+                                    if (index > 0) {
+                                        str = str.substring(0, index)
+                                    }
+                                }
+                                if (it.contains("Mời bạn tham gia nhóm Zalo")) {
+                                    val index = str.indexOf("Mời bạn tham gia nhóm Zalo")
+                                    if (index > 0) {
+                                        str = str.substring(0, index)
+                                    }
+                                }
+
+                                str.trim()
+                                    .removeSuffix("-")
+                            }
                     }
 
                 }
@@ -350,62 +333,31 @@ class ParserExtensionsSource @Inject constructor(
                     props[keyValue.first] = keyValue.second
                 }
             }
-        }
-        return try {
-            if (channelLink.isBlank() && tvCatchupSource.isBlank()) {
-                throw NullPointerException()
-            }
-            val channel = ExtensionsChannel(
-                tvGroup = channelGroup,
-                logoChannel = channelLogo.trim(),
-                channelId = channelId,
-                tvChannelName = channelName.trim()
-                    .removeSuffix(" ")
-                    .let {
-                        var str = it
-                        if (str.contains("Tham gia group")) {
-                            val index = str.indexOf("Tham gia group")
-                            if (index > 0) {
-                                str = str.substring(0, index)
-                            }
-                        }
-                        if (str.contains("Donate")
-                            || str.lowercase().startsWith("tham gia group")
-                            || str.lowercase().startsWith("nhóm zalo")) {
-                            throw NullPointerException("Not valid channel name: $channelName")
-                        }
-                        if (it.contains("Mời bạn tham gia nhóm Zalo")) {
-                            val index = str.indexOf("Mời bạn tham gia nhóm Zalo")
-                            if (index > 0) {
-                                str = str.substring(0, index)
-                            }
-                        }
 
-                        str.trim()
-                            .removeSuffix("-")
-                    },
-                sourceFrom = extension.sourceName,
-                tvStreamLink = channelLink.trim().removeSuffix(" "),
-                isHls = channelLink.contains("m3u8"),
-                catchupSource = tvCatchupSource.replace("\${start}", "${System.currentTimeMillis()}")
-                    .replace("\${offset}", "${System.currentTimeMillis() + OFFSET_TIME}"),
-                referer = referer,
-                userAgent = userAgent,
-                props = props,
-                extensionSourceId = extension.sourceUrl
-            )
-            if (!channel.isValidChannel) {
-                throw NullPointerException("Channel not valid: $channel")
-            }
-            if (DEBUG) {
-                Logger.d(this@ParserExtensionsSource, "Channel", message = "$channel")
-            }
-            channel
-        } catch (e: Exception) {
-            Logger.e(this, message = "Parser error: $itemStr")
-            Logger.e(this, exception = e)
-            null
+            line = reader.readLine()?.trimStart()
         }
+        if (listChannel.isNotEmpty() && !emitter.isDisposed) {
+            emitter.onNext(listChannel)
+        }
+        emitter.onComplete()
+    }.flatMap { list ->
+        extensionsChannelDao.insert(list)
+            .andThen(
+                roomDataBase.extensionsChannelCategoryDao()
+                    .insert(
+                        list.groupBy {
+                            it.tvGroup
+                        }.keys.map {
+                            ExtensionChannelCategory(config.sourceUrl, it)
+                        }
+                    )
+            )
+            .andThen(
+                Observable.just(list)
+            )
+    }.reduce { t1, t2 ->
+        t1.addAll(t2)
+        t1
     }
 
     private fun getByRegex(pattern: Pattern, finder: String): String {
@@ -429,11 +381,11 @@ class ParserExtensionsSource @Inject constructor(
                 .addOnSuccessListener { success ->
                         Logger.d(
                             this@ParserExtensionsSource,
-                            message = "${remoteConfig.getLong("default_iptv_version")}"
+                            message = "Default data version from remote: ${remoteConfig.getLong("default_iptv_version")}"
                         )
                         Logger.d(
                             this@ParserExtensionsSource,
-                            message = "${storage.get("default_iptv_version", Long::class.java)}"
+                            message = "Cache version: ${storage.get("default_iptv_version", Long::class.java)}"
                         )
                         Logger.d(
                             this@ParserExtensionsSource,
@@ -503,6 +455,25 @@ class ParserExtensionsSource @Inject constructor(
     private fun getByRegex(regex: String, finder: String): String {
         val pt = Pattern.compile(regex)
         return getByRegex(pt, finder)
+    }
+
+    fun insertIptvSource(extensionsConfig: ExtensionsConfig) = roomDataBase.extensionsConfig()
+        .insert(extensionsConfig)
+        .subscribeOn(Schedulers.io())
+
+    fun isSourceExist(configId: String): Single<Boolean> {
+        return roomDataBase.extensionsConfig()
+            .checkExtensionById(configId)
+            .subscribeOn(Schedulers.io())
+            .map { count ->
+                count > 0
+            }
+    }
+
+    fun updateIPTVSource(extensionsConfig: ExtensionsConfig): Completable {
+        return roomDataBase.extensionsConfig()
+            .update(extensionsConfig)
+            .subscribeOn(Schedulers.io())
     }
 
     class ParserIPTVThrowable(
