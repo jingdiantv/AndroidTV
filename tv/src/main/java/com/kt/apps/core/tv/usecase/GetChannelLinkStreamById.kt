@@ -30,9 +30,11 @@ class GetChannelLinkStreamById @Inject constructor(
                 }
                 getStreamLinkStreamFrom(chanel)
                     .retry(2)
+            } catch (e: NoSuchElementException) {
+                Observable.error(Throwable("Không tìm thấy kênh phù hợp!"))
             } catch (e: Exception) {
                 Logger.e(this, exception = e)
-                Observable.empty()
+                Observable.error(e)
             }
         }
     }
