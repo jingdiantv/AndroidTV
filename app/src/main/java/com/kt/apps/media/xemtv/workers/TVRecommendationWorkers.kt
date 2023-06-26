@@ -97,10 +97,9 @@ class TVRecommendationWorkers(
                     .setDurationMillis(3 * 60 * 1000)
                     .setReleaseDate(Calendar.getInstance(Locale.TAIWAN).time)
                     .setSearchable(true)
-                    .setType(TvContractCompat.WatchNextPrograms.TYPE_MOVIE)
+                    .setType(TvContractCompat.WatchNextPrograms.TYPE_CHANNEL)
                     .setWatchNextType(TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE)
                     .setLogoUri(tvChannelEntity.logoChannel)
-                    .setPreviewVideoUri(tvChannelEntity.logoChannel)
                     .build()
                 Logger.d(this@TVRecommendationWorkers, "WatchNextChannel", "$continueProgram")
 
