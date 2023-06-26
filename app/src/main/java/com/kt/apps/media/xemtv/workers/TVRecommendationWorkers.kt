@@ -145,14 +145,15 @@ class TVRecommendationWorkers(
                 .flatMapCompletable { channelList ->
                     Logger.d(this@TVRecommendationWorkers, message = "Size: ${channelList.size}")
                     val isRadio = channelList.first().isRadio
-                    Logger.d(this@TVRecommendationWorkers, message = "isRadio: $isRadio")
                     val allChannels: List<PreviewChannel> = try {
                         getAllChannels(context)
                     } catch (exc: IllegalArgumentException) {
                         listOf()
                     }
-                    allChannels.forEach {
-                        Logger.d(this, message = "$it")
+                    if (DEBUG) {
+                        allChannels.forEach {
+                            Logger.d(this, message = "$it")
+                        }
                     }
 
                     val tvChannelProviderId: String = if (isRadio) {
@@ -175,7 +176,9 @@ class TVRecommendationWorkers(
 
                     val existingChannel = allChannels.find { it.internalProviderId == tvChannelProviderId }
 
-                    Logger.d(this, message = "existingChannel: $existingChannel")
+                    if (DEBUG) {
+                        Logger.d(this, message = "existingChannel: $existingChannel")
+                    }
 
                     val channelBuilder = if (existingChannel == null) {
                         PreviewChannel.Builder()
@@ -223,7 +226,6 @@ class TVRecommendationWorkers(
                     channelEntity.forEach { tvChannel ->
 
                         val existingProgram = existingProgramList.find { it.contentId == tvChannel.channelId }
-                        Logger.d(this, message = "existingProgram: $existingProgram")
 
                         val programBuilder = if (existingProgram == null) {
                             PreviewProgram.Builder()
@@ -247,7 +249,6 @@ class TVRecommendationWorkers(
                             .build()
 
                         try {
-                            Logger.d(this, message = "Update program")
                             if (existingProgram == null) {
                                 PreviewChannelHelper(context)
                                     .publishPreviewProgram(updatedProgram)
@@ -256,7 +257,9 @@ class TVRecommendationWorkers(
                                     .updatePreviewProgram(existingProgram.id, updatedProgram)
                             }
                         } catch (e: IllegalArgumentException) {
-                            Logger.e(this@TVRecommendationWorkers, exception = e)
+                            if (DEBUG) {
+                                Logger.e(this@TVRecommendationWorkers, exception = e)
+                            }
                         }
 
                     }
@@ -313,6 +316,7 @@ class TVRecommendationWorkers(
 
     companion object {
 
+        private const val DEBUG = false
         const val EXTRA_TYPE = "extra:type"
         const val EXTRA_TV_PROGRAM_ID = "extra:program_id"
 
