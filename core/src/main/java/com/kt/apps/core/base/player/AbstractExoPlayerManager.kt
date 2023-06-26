@@ -155,6 +155,9 @@ abstract class AbstractExoPlayerManager(
                             .setUri(it)
                             .build()
                     )
+            } else if (it.contains(".mp4")) {
+                DefaultMediaSourceFactory(dfSource)
+                    .createMediaSource(MediaItem.fromUri(it.trim()))
             } else {
                 Logger.d(this,"MediaSource", "ProgressiveMediaSource: $it")
                 ProgressiveMediaSource.Factory(dfSource)
