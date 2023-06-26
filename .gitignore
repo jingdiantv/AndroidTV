@@ -40,3 +40,4 @@ output.json
 /app/modBeta/release/
 /app_mobile/playStore/release/
 /app_mobile/modBeta/release/
+/build.properties

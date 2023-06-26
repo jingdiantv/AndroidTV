@@ -21,9 +21,19 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            storeFile file("../keys/Untitled")
+            storePassword props.getProperty("pass")
+            keyAlias props.getProperty("alias.mobile")
+            keyPassword props.getProperty("pass")
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
