@@ -55,7 +55,12 @@ class MainTVDataSource @Inject constructor(
             getFireStoreSource()
         } else {
             getFirebaseSource()
-        }
+        }.reduce { t1, t2 ->
+            t1.toMutableList().let {
+                it.addAll(t2)
+                it
+            }
+        }.toObservable()
 
         val dataBaseSource = roomDataBase.tvChannelDao()
             .getListChannelWithUrl()
