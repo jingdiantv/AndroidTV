@@ -455,7 +455,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         linkStream: List<String>,
         isLive: Boolean,
         isHls: Boolean,
-        headers: Map<String, String> = mapOf(),
+        headers: Map<String, String>? = null,
         hidGridView: Boolean = true
     ) {
         playVideo(title, subTitle, linkStream.map {
@@ -495,7 +495,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         listener: Player.Listener? = null,
         isLive: Boolean,
         isHls: Boolean,
-        headers: Map<String, String> = mapOf(),
+        headers: Map<String, String>? = null,
         hideGridView: Boolean = true
     ) {
         progressManager.hide()

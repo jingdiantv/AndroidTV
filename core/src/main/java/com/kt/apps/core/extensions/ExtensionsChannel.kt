@@ -29,7 +29,7 @@ data class ExtensionsChannel(
     val catchupSource: String = "",
     val userAgent: String = "",
     val referer: String = "",
-    val props: Map<String, String> = mapOf(),
+    val props: Map<String, String>? = null,
     val extensionSourceId: String
 ) : Parcelable {
 

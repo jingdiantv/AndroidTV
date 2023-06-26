@@ -31,7 +31,7 @@ import com.kt.apps.core.storage.local.dto.*
         TVScheduler.Programme::class,
         TVScheduler::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 abstract class RoomDataBase : RoomDatabase() {
@@ -110,6 +110,30 @@ abstract class RoomDataBase : RoomDatabase() {
             }
         }
 
+        private val MIGRATE_8_9 by lazy {
+            object : Migration(8, 9 ) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("CREATE TABLE IF NOT EXISTS `ExtensionsChannel_New` (`tvGroup` TEXT NOT NULL, " +
+                            "`logoChannel` TEXT NOT NULL, " +
+                            "`tvChannelName` TEXT NOT NULL, " +
+                            "`tvStreamLink` TEXT NOT NULL, " +
+                            "`sourceFrom` TEXT NOT NULL, " +
+                            "`channelId` TEXT NOT NULL, " +
+                            "`channelPreviewProviderId` INTEGER NOT NULL, " +
+                            "`isHls` INTEGER NOT NULL, " +
+                            "`catchupSource` TEXT NOT NULL, " +
+                            "`userAgent` TEXT NOT NULL, " +
+                            "`referer` TEXT NOT NULL, " +
+                            "`props` TEXT, " +
+                            "`extensionSourceId` TEXT NOT NULL, " +
+                            "PRIMARY KEY(`channelId`, `tvStreamLink`))")
+                    database.execSQL("INSERT INTO `ExtensionsChannel_New` (`tvGroup`, `logoChannel`, `tvChannelName`, `tvStreamLink`, `sourceFrom`, `channelId`, `channelPreviewProviderId`, `isHls`, `catchupSource`, `userAgent`, `referer`, `props`, `extensionSourceId`) SELECT `tvGroup`, `logoChannel`, `tvChannelName`, `tvStreamLink`, `sourceFrom`, `channelId`, `channelPreviewProviderId`, `isHls`, `catchupSource`, `userAgent`, `referer`, `props`, `extensionSourceId` FROM ExtensionsChannel")
+                    database.execSQL("DROP TABLE ExtensionsChannel")
+                    database.execSQL("ALTER TABLE ExtensionsChannel_New RENAME TO ExtensionsChannel")
+                }
+            }
+        }
+
         @Volatile
         var INSTANCE: RoomDataBase? = null
         fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
@@ -121,6 +145,7 @@ abstract class RoomDataBase : RoomDatabase() {
                 .addMigrations(MIGRATE_5_6)
                 .addMigrations(MIGRATE_6_7)
                 .addMigrations(MIGRATE_7_8)
+                .addMigrations(MIGRATE_8_9)
                 .build()
                 .also {
                     INSTANCE = it

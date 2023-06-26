@@ -25,24 +25,24 @@ class RoomDBTypeConverters {
     )
 
     @TypeConverter
-    fun mapToString(map: Map<String, String>): String = Gson().toJson(
-        map,
-        TypeToken.getParameterized(
-            Map::class.java,
-            String::class.java,
-            String::class.java
-        ).type
-    )
+    fun mapToString(map: Map<String, String>?): String = try {
+        Gson().toJson(
+            map,
+            typeToken
+        )
+    } catch (e: Exception) {
+        ""
+    }
 
     @TypeConverter
-    fun stringToMap(map: String): Map<String, String> = Gson().fromJson(
-        map,
-        TypeToken.getParameterized(
-            Map::class.java,
-            String::class.java,
-            String::class.java
-        ).type
-    )
+    fun stringToMap(map: String): Map<String, String>? = try {
+        Gson().fromJson(
+            map,
+            typeToken
+        )
+    } catch (e: Exception) {
+        null
+    }
 
 
     @TypeConverter
@@ -60,5 +60,12 @@ class RoomDBTypeConverters {
         ExtensionsConfig.Type.TV_CHANNEL.name
     }
 
+    companion object {
+        private val typeToken = TypeToken.getParameterized(
+            Map::class.java,
+            String::class.java,
+            String::class.java
+        ).type
+    }
 
 }
