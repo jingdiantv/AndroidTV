@@ -70,7 +70,7 @@ class ParserExtensionsSource @Inject constructor(
     }
 
     fun parseFromRemoteRx(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
-        if (pendingSource.contains(extension.sourceUrl)) {
+        if (pendingSource.containsKey(extension.sourceUrl)) {
             return pendingSource[extension.sourceUrl]!!
         }
         val parserStreamingSource = parseFromRemoteRxStream(extension)
@@ -134,12 +134,19 @@ class ParserExtensionsSource @Inject constructor(
                     onlineSource
                 }
                 .doOnComplete {
+                    Logger.d(this@ParserExtensionsSource, "execute", "Offline source complete")
                     pendingSource.remove(extension.sourceUrl)
                 }
                 .doOnError {
+                    Logger.d(this@ParserExtensionsSource, "execute", "Offline source error")
                     pendingSource.remove(extension.sourceUrl)
                 }
                 .doOnDispose {
+                    Logger.d(this@ParserExtensionsSource, "execute", "Offline source dispose")
+                    pendingSource.remove(extension.sourceUrl)
+                }
+                .doOnSuccess {
+                    Logger.d(this@ParserExtensionsSource, "execute", "Offline source success")
                     pendingSource.remove(extension.sourceUrl)
                 }
             pendingSource[extension.sourceUrl] = source
@@ -158,7 +165,7 @@ class ParserExtensionsSource @Inject constructor(
         trustEveryone()
         val response = client
             .newBuilder()
-            .callTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(600, TimeUnit.SECONDS)
             .readTimeout(600, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
@@ -190,6 +197,8 @@ class ParserExtensionsSource @Inject constructor(
     }.flatMap {
         parseFromStream(extension, it)
     }.doOnSuccess {
+        storage.saveLastRefreshExtensions(extension)
+    }.doOnComplete {
         storage.saveLastRefreshExtensions(extension)
     }
         .subscribeOn(Schedulers.io())
@@ -227,6 +236,10 @@ class ParserExtensionsSource @Inject constructor(
         val props = mutableMapOf<String, String>()
         val sourceFrom = config.sourceName
         while (line != null) {
+            if (line.trim().isBlank()) {
+                line = reader.readLine()?.trimStart()
+                continue
+            }
             if (line.startsWith(TAG_EXT_INFO) || line.startsWith("EXTINF:")) {
                 extensionsChannel = ExtensionsChannel(
                     tvGroup = channelGroup,
@@ -248,6 +261,7 @@ class ParserExtensionsSource @Inject constructor(
                     synchronized(listChannel) {
                         listChannel.add(extensionsChannel)
                         if (listChannel.size > 50) {
+                            Logger.d(this@ParserExtensionsSource, "execute", "Insert to db: ${listChannel.size}")
                             if (!emitter.isDisposed) {
                                 emitter.onNext(listChannel)
                             }
@@ -360,24 +374,28 @@ class ParserExtensionsSource @Inject constructor(
             emitter.onNext(listChannel)
         }
         emitter.onComplete()
-    }.flatMap { list ->
+    }.observeOn(Schedulers.io()).flatMap { list ->
+        Logger.d(this@ParserExtensionsSource, "InsertDB", "$list")
+        val listCategory = list.groupBy {
+            it.tvGroup
+        }.keys.map {
+            ExtensionChannelCategory(config.sourceUrl, it)
+        }
+        val insertCategorySource = roomDataBase.extensionsChannelCategoryDao()
+            .insert(listCategory)
         extensionsChannelDao.insert(list)
-            .andThen(
-                roomDataBase.extensionsChannelCategoryDao()
-                    .insert(
-                        list.groupBy {
-                            it.tvGroup
-                        }.keys.map {
-                            ExtensionChannelCategory(config.sourceUrl, it)
-                        }
-                    )
-            )
-            .andThen(
-                Observable.just(list)
-            )
+            .andThen(insertCategorySource)
+            .andThen(Observable.just(list))
+            .doOnComplete {
+                Logger.d(this@ParserExtensionsSource, "InsertDB", "OnComplete insert")
+            }.doOnError {
+                Logger.e(this@ParserExtensionsSource, "InsertDBFail", exception = it)
+            }
     }.reduce { t1, t2 ->
-        t1.addAll(t2)
-        t1
+        t1.toMutableList().let {
+            it.addAll(t2)
+            it
+        }
     }
 
     private fun getByRegex(pattern: Pattern, finder: String): String {
