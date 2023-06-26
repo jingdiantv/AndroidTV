@@ -39,11 +39,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
-
-        if (BuildConfig.isBeta) {
-            extensionsViewModel.insertDefaultSource()
-        }
-
         supportFragmentManager.beginTransaction()
             .replace(R.id.main_browse_fragment, DashboardFragment())
             .commitNow()
