@@ -64,6 +64,9 @@ class App : CoreApp(), Configuration.Provider {
         super.onCreate()
         app = this
         (applicationInjector() as AppComponents).inject(this)
+    }
+
+    override fun onRemoteConfigReady() {
         if (BuildConfig.isBeta) enqueuePreloadData()
     }
 

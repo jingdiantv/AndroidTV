@@ -42,6 +42,7 @@ class ExtensionsViewModel @Inject constructor(
             .getAll()
             .observeOn(Schedulers.io())
             .subscribeOn(AndroidSchedulers.mainThread())
+            .toObservable()
 
 
     fun loadExtensionData() {

@@ -176,7 +176,8 @@ class AddExtensionFragment: BaseDialogFragment<AddExtensionDialogBinding>() {
 
     private suspend fun parseFromRemote(extension: ExtensionsConfig): List<ExtensionsChannel> {
         return lifecycleScope.async(Dispatchers.IO) {
-            return@async parserExtensionsSource.parseFromRemote(extension)
+            return@async parserExtensionsSource.parseFromRemoteRx(extension)
+                .blockingGet(emptyList())
         }.await()
     }
 
@@ -196,7 +197,7 @@ class AddExtensionFragment: BaseDialogFragment<AddExtensionDialogBinding>() {
                     disposableContainer.add(
                         Single.fromCallable {
                             val existList = roomDataBase.extensionsConfig().getAll()
-                                .blockingFirst(emptyList())
+                                .blockingGet(emptyList())
                             if (existList.indexOfFirst { it.sourceName == name } != -1)  {
                                 throw Error("Tên nguồn không được trùng")
                             }
