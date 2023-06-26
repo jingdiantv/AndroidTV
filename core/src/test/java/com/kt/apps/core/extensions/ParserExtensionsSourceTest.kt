@@ -6,9 +6,11 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import io.reactivex.rxjava3.schedulers.Schedulers
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 
 class ParserExtensionsSourceTest {
@@ -30,12 +32,37 @@ class ParserExtensionsSourceTest {
         storage = KeyValueStorageForTesting()
         okHttpClient = OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = HttpLoggingInterceptor.Level.HEADERS
             })
             .build()
-        parserExtensionsSource = ParserExtensionsSource(okHttpClient, storage)
         disposable = CompositeDisposable()
 
+    }
+
+    @Test fun testStream() {
+        val start = System.currentTimeMillis()
+        println("Start: $start")
+        val call = okHttpClient
+            .newBuilder()
+            .callTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(600, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .build()
+            .newCall(
+                Request.Builder()
+                    .url("https://hqth.me/phimle")
+                    .build()
+
+            ).execute()
+        val reader = call.body.byteStream()
+            .bufferedReader()
+
+        var line = reader.readLine()
+        while (line != null) {
+            println(line)
+            line = reader.readLine()
+        }
+        println("Time: ${System.currentTimeMillis() - start}")
     }
 
     @Test
@@ -57,9 +84,10 @@ class ParserExtensionsSourceTest {
 
     @Test
     fun parseFromRemote() {
-        val result = parserExtensionsSource.parseFromRemote(config)
-        assert(result.map {
+        val result = parserExtensionsSource.parseFromRemoteRx(config)
+            .blockingGet()
+        assert(result?.map {
             it.tvChannelName
-        }.contains("CNN"))
+        }?.contains("CNN") ?: false)
     }
 }
