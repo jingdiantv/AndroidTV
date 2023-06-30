@@ -25,20 +25,6 @@ import android.view.animation.Interpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.leanback.widget.BaseOnItemViewClickedListener;
-import androidx.leanback.widget.BaseOnItemViewSelectedListener;
-import androidx.leanback.widget.HorizontalGridView;
-import androidx.leanback.widget.ItemBridgeAdapter;
-import androidx.leanback.widget.ListRowPresenter;
-import androidx.leanback.widget.ObjectAdapter;
-import androidx.leanback.widget.OnItemViewClickedListener;
-import androidx.leanback.widget.OnItemViewSelectedListener;
-import androidx.leanback.widget.Presenter;
-import androidx.leanback.widget.PresenterSelector;
-import androidx.leanback.widget.RowPresenter;
-import androidx.leanback.widget.VerticalGridPresenter;
-import androidx.leanback.widget.VerticalGridView;
-import androidx.leanback.widget.ViewHolderTask;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.kt.apps.core.R;
@@ -238,7 +224,7 @@ public class RowsSupportFragment extends BaseRowSupportFragmentLeanback implemen
     }
 
     @Override
-    void onRowSelected(RecyclerView parent, RecyclerView.ViewHolder viewHolder,
+    public void onRowSelected(RecyclerView parent, RecyclerView.ViewHolder viewHolder,
                        int position, int subposition) {
         if (mSelectedViewHolder != viewHolder || mSubPosition != subposition) {
             if (DEBUG) {

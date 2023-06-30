@@ -5,8 +5,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.leanback.widget.ImageCardView
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.ImageCardView
+import com.kt.apps.core.base.leanback.Presenter
 import com.bumptech.glide.Glide
 import com.kt.apps.core.GlideApp
 import com.kt.apps.core.tv.model.TVChannel

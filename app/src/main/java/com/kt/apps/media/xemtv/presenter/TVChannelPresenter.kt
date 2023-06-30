@@ -4,8 +4,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.leanback.widget.ImageCardView
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.ImageCardView
+import com.kt.apps.core.base.leanback.Presenter
 import com.kt.apps.core.Constants
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.utils.dpToPx

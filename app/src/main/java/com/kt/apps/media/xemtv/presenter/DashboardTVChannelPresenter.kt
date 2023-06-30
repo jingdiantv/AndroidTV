@@ -3,8 +3,8 @@ package com.kt.apps.media.xemtv.presenter
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
-import androidx.leanback.widget.ImageCardView
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.ImageCardView
+import com.kt.apps.core.base.leanback.Presenter
 import androidx.core.content.ContextCompat
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -14,9 +14,9 @@ import com.kt.apps.core.Constants
 
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.utils.getKeyForLocalLogo
 import com.kt.apps.core.utils.loadImgByDrawableIdResName
 import com.kt.apps.core.utils.loadImgByUrl
-import com.kt.apps.core.utils.removeAllSpecialChars
 import com.kt.apps.media.xemtv.R
 import kotlin.properties.Delegates
 
@@ -53,8 +53,6 @@ class DashboardTVChannelPresenter : Presenter() {
         mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
 
         val cardView: ImageCardView = TVImageCardView(parent.context)
-
-
         cardView.isFocusable = true
         cardView.isFocusableInTouchMode = true
         updateCardBackgroundColor(cardView, false)
@@ -87,20 +85,7 @@ class DashboardTVChannelPresenter : Presenter() {
                     val name = Constants.mapChannel[
                             (item.channelId.takeIf {
                                 it.trim().isNotBlank()
-                            } ?: item.tvChannelName)
-                                .lowercase()
-                                .trim()
-                                .replace("•", "")
-                                .replace(" ", "")
-                                .removeSuffix("vietteltv")
-                                .removeSuffix("fpt")
-                                .removeSuffix("vieon")
-                                .removeSuffix("tv360")
-                                .trim()
-                                .removeSuffix("4k")
-                                .removeAllSpecialChars()
-                                .removeSuffix("hd")
-                                .replace(".", "")
+                            } ?: item.tvChannelName).getKeyForLocalLogo()
                     ]
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
                     name?.let {

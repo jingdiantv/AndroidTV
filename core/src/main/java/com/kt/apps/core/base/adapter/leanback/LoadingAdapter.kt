@@ -1,8 +1,8 @@
 package com.kt.apps.core.base.adapter.leanback
 
-import androidx.leanback.widget.ArrayObjectAdapter
-import androidx.leanback.widget.ListRow
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.ArrayObjectAdapter
+import com.kt.apps.core.base.leanback.ListRow
+import com.kt.apps.core.base.leanback.Presenter
 import com.kt.apps.core.base.presenter.DefaultLoadingPresenter
 import com.kt.apps.core.base.presenter.LoadingPresenter
 

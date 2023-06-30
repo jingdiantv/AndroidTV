@@ -1,8 +1,8 @@
 package com.kt.apps.core.base.player
 
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.kt.apps.core.base.CoreApp
+import com.kt.apps.core.base.leanback.media.LeanbackPlayerAdapter
 import com.kt.apps.core.logging.Logger
 import javax.inject.Inject
 

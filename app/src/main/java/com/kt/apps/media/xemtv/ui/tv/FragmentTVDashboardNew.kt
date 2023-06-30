@@ -8,8 +8,8 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.leanback.tab.LeanbackTabLayout
 import androidx.leanback.tab.LeanbackViewPager
-import androidx.leanback.widget.ArrayObjectAdapter
-import androidx.leanback.widget.ListRowPresenter
+import com.kt.apps.core.base.leanback.ArrayObjectAdapter
+import com.kt.apps.core.base.leanback.ListRowPresenter
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment

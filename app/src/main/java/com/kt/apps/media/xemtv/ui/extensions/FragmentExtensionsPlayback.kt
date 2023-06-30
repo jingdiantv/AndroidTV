@@ -3,7 +3,7 @@ package com.kt.apps.media.xemtv.ui.extensions
 import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
-import androidx.leanback.widget.OnItemViewClickedListener
+import com.kt.apps.core.base.leanback.OnItemViewClickedListener
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
@@ -45,6 +45,14 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
 
     private val extension: ExtensionsConfig by lazy {
         requireArguments().getParcelable(EXTRA_EXTENSION_ID)!!
+    }
+
+    override fun getSearchFilter(): String {
+        return extension.sourceUrl
+    }
+
+    override fun getSearchHint(): String? {
+        return extension.sourceName
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

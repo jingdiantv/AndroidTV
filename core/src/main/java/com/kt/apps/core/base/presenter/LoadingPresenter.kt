@@ -4,7 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.forEach
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.Presenter
 import com.kt.skeleton.runAnimationChangeBackground
 
 abstract class LoadingPresenter : Presenter() {

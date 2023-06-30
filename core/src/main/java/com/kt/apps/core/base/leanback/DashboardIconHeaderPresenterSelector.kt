@@ -5,10 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.leanback.widget.HeaderItem
-import androidx.leanback.widget.Presenter
-import androidx.leanback.widget.PresenterSelector
-import androidx.leanback.widget.Row
 import com.kt.apps.core.GlideApp
 import com.kt.apps.core.R
 import com.kt.apps.core.logging.Logger
@@ -83,5 +79,11 @@ class DashboardIconHeaderPresenterSelector : PresenterSelector() {
             private val headerName: String,
             val icon: Int
         ) : HeaderItem(headerId, headerName) {}
+
+        class HighLightHeaderItem(
+            private val _headerName: String
+        ) : HeaderItem(_headerName) {
+
+        }
     }
 }

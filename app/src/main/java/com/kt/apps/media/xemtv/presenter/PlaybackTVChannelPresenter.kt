@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.Presenter
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.media.xemtv.R
 import kotlin.properties.Delegates

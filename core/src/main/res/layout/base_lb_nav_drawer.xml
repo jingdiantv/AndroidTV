@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_drawer"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
@@ -9,5 +10,17 @@
     android:minWidth="86dp"
     android:orientation="vertical"
     android:transitionGroup="true">
+    <ImageView
+        android:id="@+id/icon"
+        android:focusable="false"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:cropToPadding="true"
+        android:elevation="1dp"
+        android:padding="4dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_search_24p"
+        android:tint="@color/color_item_header_selector"
+        tools:ignore="UseAppTint"/>
 
-</LinearLayout>
+</FrameLayout>

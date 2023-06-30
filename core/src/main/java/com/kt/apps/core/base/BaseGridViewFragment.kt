@@ -9,9 +9,8 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
-import androidx.leanback.app.ProgressBarManager
 import androidx.leanback.transition.TransitionHelper
-import androidx.leanback.widget.*
+import com.kt.apps.core.base.leanback.*
 import com.kt.apps.core.R
 import com.kt.apps.core.base.leanback.BrowseSupportFragment
 import com.kt.apps.core.logging.Logger

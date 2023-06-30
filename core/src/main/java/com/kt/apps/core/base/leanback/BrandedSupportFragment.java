@@ -24,9 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.R;
-import androidx.leanback.widget.SearchOrbView;
-import androidx.leanback.widget.TitleHelper;
-import androidx.leanback.widget.TitleViewAdapter;
 
 public class BrandedSupportFragment extends Fragment {
 

@@ -1,8 +1,5 @@
 package com.kt.apps.core.base.leanback;
 
-import androidx.leanback.widget.ObjectAdapter;
-import androidx.leanback.widget.Row;
-
 public class ListRowDataAdapter extends ObjectAdapter {
     public static final int ON_ITEM_RANGE_CHANGED = 2;
     public static final int ON_ITEM_RANGE_INSERTED = 4;

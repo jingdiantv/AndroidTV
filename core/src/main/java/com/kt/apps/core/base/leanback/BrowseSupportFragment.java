@@ -40,18 +40,6 @@ import androidx.leanback.transition.TransitionListener;
 import com.kt.apps.core.base.leanback.util.StateMachine.Event;
 import com.kt.apps.core.base.leanback.util.StateMachine.State;
 
-import androidx.leanback.widget.InvisibleRowPresenter;
-import androidx.leanback.widget.ListRow;
-import androidx.leanback.widget.ObjectAdapter;
-import androidx.leanback.widget.OnItemViewClickedListener;
-import androidx.leanback.widget.OnItemViewSelectedListener;
-import androidx.leanback.widget.PageRow;
-import androidx.leanback.widget.Presenter;
-import androidx.leanback.widget.PresenterSelector;
-import androidx.leanback.widget.Row;
-import androidx.leanback.widget.RowPresenter;
-import androidx.leanback.widget.TitleViewAdapter;
-
 import com.kt.apps.core.R;
 import com.kt.apps.core.logging.Logger;
 

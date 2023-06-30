@@ -189,7 +189,7 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             if (it is DataState.Success) {
                 val list = it.data
-                val listRowAdapter = ArrayObjectAdapter(DashboardTVChannelPresenter())
+                val listRowAdapter = ArrayObjectAdapter()
                 for (element in list) {
                     listRowAdapter.add(element)
                 }

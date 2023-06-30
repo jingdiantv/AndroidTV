@@ -3,7 +3,7 @@ package com.kt.apps.media.xemtv.ui.main
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.leanback.app.BackgroundManager
-import androidx.leanback.widget.Row
+import com.kt.apps.core.base.leanback.Row
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.R
 import com.kt.apps.core.base.leanback.BrowseSupportFragment

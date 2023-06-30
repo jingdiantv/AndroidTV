@@ -1,7 +1,9 @@
 package com.kt.apps.core.base
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -16,21 +18,19 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.leanback.app.PlaybackSupportFragment
-import androidx.leanback.app.PlaybackSupportFragmentGlueHost
-import androidx.leanback.media.PlaybackTransportControlGlue
-import androidx.leanback.media.SurfaceHolderGlueHost
-import androidx.leanback.widget.*
+import com.kt.apps.core.base.leanback.media.PlaybackTransportControlGlue
+import com.kt.apps.core.base.leanback.media.SurfaceHolderGlueHost
+import com.kt.apps.core.base.leanback.*
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SeekParameters
 import com.google.android.exoplayer2.Timeline
-import com.google.android.exoplayer2.ext.leanback.LeanbackPlayerAdapter
 import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.util.Util
 import com.kt.apps.core.R
 import com.kt.apps.core.base.leanback.ProgressBarManager
+import com.kt.apps.core.base.leanback.media.LeanbackPlayerAdapter
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.logging.IActionLogger
@@ -695,6 +695,14 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         AtomicBoolean()
     }
 
+    open fun getSearchFilter(): String {
+        return ""
+    }
+
+    open fun getSearchHint(): String? {
+        return null
+    }
+
     override fun onDpadUp() {
         if (isAnimationHideGridMenuShowVideoInfoRunning.get()) {
             return
@@ -709,7 +717,18 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             }
 
             mPlayPauseIcon?.isFocused == true -> {
-                autoHideOverlayRunnable.run()
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(
+                            "xemtv://iptv/search?" +
+                                    "filter=${getSearchFilter()}" +
+                                    (getSearchHint()?.let {
+                                        "&query_hint=$it"
+                                    } ?: "")
+                        )
+                    )
+                )
                 isAnimationHideGridMenuShowVideoInfoRunning.set(false)
             }
 
@@ -816,6 +835,15 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             }
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (mGridViewPickHeight == mGridViewOverlays?.translationY) {
+            mPlayPauseIcon?.requestFocus()
+        } else {
+            mGridViewOverlays?.requestFocus()
+        }
     }
 
     class BasePlaybackSupportFragmentGlueHost(

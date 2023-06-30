@@ -13,7 +13,7 @@ import androidx.core.graphics.component1
 import androidx.core.graphics.component2
 import androidx.core.graphics.component3
 import androidx.core.graphics.toColor
-import androidx.leanback.widget.Presenter
+import com.kt.apps.core.base.leanback.Presenter
 import com.kt.apps.core.utils.changeWithAlpha
 import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.core.utils.getMainColor

@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <androidx.leanback.widget.VerticalGridView
+    <com.kt.apps.core.base.leanback.VerticalGridView
         android:id="@+id/child_grid_view"
         android:layout_width="match_parent"
         android:layout_height="200dp" />

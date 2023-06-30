@@ -3,10 +3,10 @@ package com.kt.apps.media.xemtv.ui.extensions
 import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.core.content.ContextCompat
-import androidx.leanback.app.GuidedStepSupportFragment
-import androidx.leanback.app.ProgressBarManager
-import androidx.leanback.widget.GuidanceStylist
-import androidx.leanback.widget.GuidedAction
+import com.kt.apps.core.base.leanback.GuidanceStylist
+import com.kt.apps.core.base.leanback.GuidedAction
+import com.kt.apps.core.base.leanback.GuidedStepSupportFragment
+import com.kt.apps.core.base.leanback.ProgressBarManager
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase

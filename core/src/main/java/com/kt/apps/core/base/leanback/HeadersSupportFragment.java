@@ -10,16 +10,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.leanback.widget.ClassPresenterSelector;
-import androidx.leanback.widget.DividerPresenter;
-import androidx.leanback.widget.DividerRow;
-import androidx.leanback.widget.FocusHighlightHelper;
-import androidx.leanback.widget.HorizontalGridView;
-import androidx.leanback.widget.ItemBridgeAdapter;
-import androidx.leanback.widget.PresenterSelector;
-import androidx.leanback.widget.Row;
-import androidx.leanback.widget.SectionRow;
-import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.kt.apps.core.R;

@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Parcelable
 import android.view.View
 import androidx.core.os.bundleOf
-import androidx.leanback.widget.*
+import com.kt.apps.core.base.leanback.*
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.observe
 import com.kt.apps.core.base.BaseRowSupportFragment

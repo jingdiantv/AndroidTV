@@ -10,7 +10,7 @@ import android.view.View
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.leanback.widget.*
+import com.kt.apps.core.base.leanback.*
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget

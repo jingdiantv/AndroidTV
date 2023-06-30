@@ -10,7 +10,7 @@
     android:paddingEnd="@dimen/lb_browse_header_padding_end"
     android:transitionGroup="true">
 
-    <androidx.leanback.widget.VerticalGridView
+    <com.kt.apps.core.base.leanback.VerticalGridView
         android:id="@+id/browse_headers"
         style="?attr/headersVerticalGridStyle"
         android:layout_width="@dimen/lb_browse_headers_width"

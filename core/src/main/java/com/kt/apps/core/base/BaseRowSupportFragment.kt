@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.leanback.app.ProgressBarManager
+import com.kt.apps.core.base.leanback.ProgressBarManager
 import com.kt.apps.core.base.leanback.RowsSupportFragment
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector

@@ -5,9 +5,9 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
-import androidx.leanback.widget.ArrayObjectAdapter
-import androidx.leanback.widget.OnItemViewClickedListener
-import androidx.leanback.widget.PresenterSelector
+import com.kt.apps.core.base.leanback.ArrayObjectAdapter
+import com.kt.apps.core.base.leanback.OnItemViewClickedListener
+import com.kt.apps.core.base.leanback.PresenterSelector
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.observe
 import com.google.android.exoplayer2.PlaybackException
@@ -21,6 +21,7 @@ import com.kt.apps.core.logging.logPlaybackRetryPlayVideo
 import com.kt.apps.core.logging.logPlaybackShowError
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.usecase.search.SearchForText
 import com.kt.apps.core.utils.removeAllSpecialChars
 import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
@@ -40,6 +41,10 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     }
     private val retryTimes by lazy {
         mutableMapOf<String, Int>()
+    }
+
+    override fun getSearchFilter(): String {
+        return SearchForText.FILTER_ONLY_TV_CHANNEL
     }
 
     override fun onHandlePlayerError(error: PlaybackException) {

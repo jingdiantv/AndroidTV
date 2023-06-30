@@ -3,7 +3,7 @@ package com.kt.apps.media.xemtv.ui.football
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.View
-import androidx.leanback.widget.OnItemViewClickedListener
+import com.kt.apps.core.base.leanback.OnItemViewClickedListener
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BasePlaybackFragment

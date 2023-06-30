@@ -1,8 +1,8 @@
 package com.kt.apps.media.xemtv.presenter
 
 import androidx.fragment.app.FragmentActivity
-import androidx.leanback.widget.Presenter
-import androidx.leanback.widget.PresenterSelector
+import com.kt.apps.core.base.leanback.Presenter
+import com.kt.apps.core.base.leanback.PresenterSelector
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.football.model.FootballMatch

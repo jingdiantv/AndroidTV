@@ -1,11 +1,11 @@
 package com.kt.apps.media.xemtv.ui.tv
 
 import android.view.View
-import androidx.leanback.widget.ArrayObjectAdapter
-import androidx.leanback.widget.FocusHighlight
-import androidx.leanback.widget.OnItemViewClickedListener
-import androidx.leanback.widget.OnItemViewSelectedListener
-import androidx.leanback.widget.VerticalGridPresenter
+import com.kt.apps.core.base.leanback.ArrayObjectAdapter
+import com.kt.apps.core.base.leanback.FocusHighlight
+import com.kt.apps.core.base.leanback.OnItemViewClickedListener
+import com.kt.apps.core.base.leanback.OnItemViewSelectedListener
+import com.kt.apps.core.base.leanback.VerticalGridPresenter
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.observe
 import com.kt.apps.core.base.BaseGridViewFragment

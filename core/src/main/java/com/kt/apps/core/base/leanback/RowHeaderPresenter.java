@@ -7,9 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.leanback.widget.HeaderItem;
-import androidx.leanback.widget.Presenter;
-import androidx.leanback.widget.Row;
 import com.kt.apps.core.R;
 
 /**
@@ -131,7 +128,7 @@ public class RowHeaderPresenter extends Presenter {
             }
         } else {
             if (vh.mTitleView != null) {
-                vh.mTitleView.setText(headerItem.getName());
+                vh.mTitleView.setText(headerItem.getContentDescription());
             }
             if (vh.mDescriptionView != null) {
                 if (TextUtils.isEmpty(headerItem.getDescription())) {

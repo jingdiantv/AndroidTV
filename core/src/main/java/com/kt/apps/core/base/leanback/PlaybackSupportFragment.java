@@ -40,27 +40,11 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.R;
-import androidx.leanback.media.PlaybackGlueHost;
-import androidx.leanback.widget.ArrayObjectAdapter;
-import androidx.leanback.widget.BaseOnItemViewClickedListener;
-import androidx.leanback.widget.BaseOnItemViewSelectedListener;
-import androidx.leanback.widget.ClassPresenterSelector;
-import androidx.leanback.widget.ItemAlignmentFacet;
-import androidx.leanback.widget.ItemBridgeAdapter;
-import androidx.leanback.widget.ObjectAdapter;
-import androidx.leanback.widget.PlaybackRowPresenter;
-import androidx.leanback.widget.PlaybackSeekDataProvider;
-import androidx.leanback.widget.PlaybackSeekUi;
-import androidx.leanback.widget.Presenter;
-import androidx.leanback.widget.PresenterSelector;
-import androidx.leanback.widget.Row;
-import androidx.leanback.widget.RowPresenter;
-import androidx.leanback.widget.SparseArrayObjectAdapter;
-import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.kt.apps.core.base.leanback.animation.LogAccelerateInterpolator;
 import com.kt.apps.core.base.leanback.animation.LogDecelerateInterpolator;
+import com.kt.apps.core.base.leanback.media.PlaybackGlueHost;
 
 /**
  * A fragment for displaying playback controls and related content.

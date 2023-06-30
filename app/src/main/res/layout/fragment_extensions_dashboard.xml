@@ -52,7 +52,7 @@
             app:strokeWidth="1dp"
             tools:layout_editor_absoluteY="90dp" />
 
-        <androidx.leanback.widget.VerticalGridView
+        <com.kt.apps.core.base.leanback.VerticalGridView
             android:id="@id/container_list"
             android:layout_width="@dimen/padding_0dp"
             android:layout_height="0dp"

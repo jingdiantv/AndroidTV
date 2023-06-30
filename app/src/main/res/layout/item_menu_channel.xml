@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <androidx.leanback.widget.ImageCardView
+            <com.kt.apps.core.base.leanback.ImageCardView
                 android:id="@+id/logoChannel"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
