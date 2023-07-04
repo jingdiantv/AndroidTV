@@ -6,6 +6,8 @@ import androidx.room.PrimaryKey
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.storage.local.dto.TVChannelEntity
+import com.kt.apps.core.storage.local.dto.TVChannelWithUrls
+import com.kt.apps.core.tv.datasource.impl.MainTVDataSource
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
@@ -101,5 +103,25 @@ class TVChannel(
             urls = listOf()
 
         )
+
+        fun TVChannelWithUrls.mapToTVChannel(): TVChannel {
+            return TVChannel(
+                tvGroup = this.tvChannel.tvGroup,
+                tvChannelName = this.tvChannel.tvChannelName,
+                tvChannelWebDetailPage = this.urls.firstOrNull {
+                    it.type == MainTVDataSource.TVChannelUrlType.WEB_PAGE.value
+                }?.url ?: this.urls[0].url,
+                urls = this.urls.map { url ->
+                    Url(
+                        dataSource = url.src,
+                        url = url.url,
+                        type = url.type
+                    )
+                },
+                sourceFrom = TVDataSourceFrom.MAIN_SOURCE.name,
+                logoChannel = this.tvChannel.logoChannel,
+                channelId = this.tvChannel.channelId
+            )
+        }
     }
 }

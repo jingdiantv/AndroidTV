@@ -50,7 +50,7 @@ import javax.inject.Inject
 import kotlin.math.max
 
 
-private const val MIN_SEEK_DURATION = 5_000
+private const val MIN_SEEK_DURATION = 30 * 1000
 
 abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     HasAndroidInjector, IMediaKeycodeHandler {

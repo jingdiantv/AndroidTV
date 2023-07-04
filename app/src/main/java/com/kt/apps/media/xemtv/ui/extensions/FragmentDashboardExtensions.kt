@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv.ui.extensions
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -9,19 +10,20 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
-import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.tab.LeanbackTabLayout
 import androidx.leanback.tab.LeanbackViewPager
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.observe
 import com.google.android.material.button.MaterialButton
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.leanback.GuidedStepSupportFragment
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.utils.leanback.findCurrentFocusedPosition
 import com.kt.apps.core.utils.leanback.findCurrentFocusedView
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.search.TVSearchActivity
 import com.kt.apps.media.xemtv.ui.tv.BaseTabLayoutFragment
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import javax.inject.Inject
@@ -191,6 +193,14 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                 }
             } else if (direction == View.FOCUS_DOWN) {
                 return viewPager
+            } else if (direction == View.FOCUS_UP) {
+                startActivity(
+                    Intent(
+                        requireContext(),
+                        TVSearchActivity::class.java
+                    )
+                )
+                return null
             }
         }
 

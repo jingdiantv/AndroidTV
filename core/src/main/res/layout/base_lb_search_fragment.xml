@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.kt.apps.core.base.leanback.BrowseFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/browse_grid_dock"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.kt.apps.core.base.leanback.BrowseFrameLayout
+            android:id="@+id/search_view_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#CC000000">
+
+            <com.kt.apps.core.base.leanback.SearchView
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                app:defaultQueryHint="@string/search_query_hint_default"
+                android:theme="@style/ThemeCompat.Search" />
+
+        </com.kt.apps.core.base.leanback.BrowseFrameLayout>
+
+        <com.kt.apps.core.base.leanback.VerticalGridView
+            android:id="@+id/container_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#DD000000"
+            android:nextFocusUp="@id/search_voice_btn"
+            android:visibility="visible" />
+    </LinearLayout>
+</com.kt.apps.core.base.leanback.BrowseFrameLayout>

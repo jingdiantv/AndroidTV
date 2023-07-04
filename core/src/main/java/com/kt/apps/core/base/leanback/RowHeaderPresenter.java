@@ -128,7 +128,11 @@ public class RowHeaderPresenter extends Presenter {
             }
         } else {
             if (vh.mTitleView != null) {
-                vh.mTitleView.setText(headerItem.getContentDescription());
+                if (!TextUtils.isEmpty(headerItem.getContentDescription())) {
+                    vh.mTitleView.setText(headerItem.getContentDescription());
+                } else {
+                    vh.mTitleView.setText(headerItem.getName());
+                }
             }
             if (vh.mDescriptionView != null) {
                 if (TextUtils.isEmpty(headerItem.getDescription())) {

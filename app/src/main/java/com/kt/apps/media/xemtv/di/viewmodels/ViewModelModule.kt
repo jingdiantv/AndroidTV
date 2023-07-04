@@ -3,11 +3,10 @@ package com.kt.apps.media.xemtv.di.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseViewModelFactory
-import com.kt.apps.core.di.CoreScope
-import com.kt.apps.media.xemtv.di.AppScope
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.extensions.ExtensionsViewModel
 import com.kt.apps.media.xemtv.ui.football.FootballViewModel
+import com.kt.apps.media.xemtv.ui.search.SearchViewModels
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
@@ -29,6 +28,11 @@ abstract class ViewModelModule {
     @IntoMap
     @ViewModelKey(ExtensionsViewModel::class)
     abstract fun bindExtensionsViewModel(extensionsViewModel: ExtensionsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SearchViewModels::class)
+    abstract fun bindSearchViewModels(searchViewModels: SearchViewModels): ViewModel
 
 
     @Binds

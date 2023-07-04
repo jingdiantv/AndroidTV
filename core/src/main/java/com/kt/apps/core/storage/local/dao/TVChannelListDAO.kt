@@ -19,6 +19,10 @@ abstract class TVChannelListDAO {
     @Transaction
     abstract fun getListChannelWithUrl(): Single<List<TVChannelWithUrls>>
 
+    @Query("SELECT * FROM TVChannelDTO WHERE tvChannelName LIKE '%'||:channelName||'%'")
+    @Transaction
+    abstract fun searchChannelByName(channelName: String): Single<List<TVChannelWithUrls>>
+
     @Query("SELECT * FROM TVChannelDTO WHERE channelId=:channelID")
     @Transaction
     abstract fun getChannelWithUrl(channelID: String): Observable<TVChannelWithUrls>

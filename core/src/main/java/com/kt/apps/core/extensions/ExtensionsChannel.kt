@@ -3,6 +3,7 @@ package com.kt.apps.core.extensions
 import android.net.Uri
 import android.os.Parcelable
 import androidx.annotation.Keep
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Ignore
 import com.kt.apps.core.extensions.model.TVScheduler
@@ -65,4 +66,12 @@ data class ExtensionsChannel(
                 "currentProgramme: $currentProgramme" +
                 "}"
     }
+}
+
+class ExtensionsChannelAndConfig(
+    @Embedded
+    val channel: ExtensionsChannel,
+    @Embedded
+    val config: ExtensionsConfig
+) {
 }

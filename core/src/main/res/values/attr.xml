@@ -4,4 +4,11 @@
         <attr name="navMenu" format="reference" />
         <attr name="childSpacingBetween" format="dimension" />
     </declare-styleable>
+
+    <declare-styleable name="SearchView">
+        <attr name="searchLayout" format="reference" />
+        <attr name="searchVoiceIcon" format="reference" />
+        <attr name="searchQueryHintDefault" format="reference" />
+        <attr name="searchIcon" format="reference" />
+    </declare-styleable>
 </resources>

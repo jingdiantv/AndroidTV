@@ -296,4 +296,9 @@ object Constants {
             "cnbc" to "icon_channel_cnbc_1656492959472.png",
         )
     }
+    const val REGEX_VN_A = "[aáàảãạăắằẳẵặâấầẩẫậ]"
+    const val REGEX_VN_E = "[eéèẻẽẹêếềểễệ]"
+    const val REGEX_VN_D = "[đ]"
+    const val REGEX_VN_O = "[oóòỏõọôốồổỗộơớờởỡợ]"
+    const val REGEX_VN_U = "[uúùủũụưứừửữự]"
 }

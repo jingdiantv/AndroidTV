@@ -28,6 +28,11 @@ class TVContentProvider : ContentProvider() {
     ): Cursor? = if (uri.pathSegments.firstOrNull() == "search") {
         Logger.d(this, message = "Handling query for $uri ${selectionArgs?.firstOrNull()}")
         selectionArgs?.firstOrNull()?.let { selector ->
+            db.contentProviderQuery(selector.replace(Regex("[^A-Za-z0-9 ]"), ""))
+        }
+    } else if (uri.pathSegments.last() == "search_suggest_query") {
+        Logger.d(this, message = "Handling query for $uri $selection $sortOrder $selectionArgs")
+        selectionArgs?.firstOrNull()?.let { selector ->
             // Perform light processing of the query selector as we send the request to the database
             db.contentProviderQuery(selector.replace(Regex("[^A-Za-z0-9 ]"), ""))
         }

@@ -16,4 +16,10 @@
     <!-- Error messages -->
     <string name="error_fragment_message">An error occurred</string>
     <string name="dismiss_error">Dismiss</string>
+
+    <string name="search_in_query_hint_title">Tìm kiếm trong %s</string>
+    <string name="search_tv_channel_query_hint_title">Tìm kiếm kênh truyền hình</string>
+    <string name="search_football_hint_title">Tìm kiếm trận đấu bóng đá</string>
+    <string name="search_iptv_hint_title">Tìm kiếm nội dung trong IPTV</string>
+    <string name="search_all_query_hint_title">Tìm kiếm nội dung trên iMedia</string>
 </resources>

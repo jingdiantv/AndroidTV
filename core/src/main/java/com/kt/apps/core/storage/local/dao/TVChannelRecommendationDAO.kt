@@ -17,7 +17,7 @@ abstract class TVChannelRecommendationDAO {
                 "channelPreviewProviderId as ${SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID}, " +
                 "tvChannelName as ${SearchManager.SUGGEST_COLUMN_TEXT_1}, " +
                 "tvGroup as ${SearchManager.SUGGEST_COLUMN_TEXT_2}, " +
-                "tvGroup as ${SearchManager.SUGGEST_COLUMN_RESULT_CARD_IMAGE}, " +
+                "logoChannel as ${SearchManager.SUGGEST_COLUMN_RESULT_CARD_IMAGE}, " +
                 "channelPreviewProviderId as ${SearchManager.SUGGEST_COLUMN_DURATION} " +
                 "FROM TVChannelEntity WHERE :title LIKE '%'"
     )

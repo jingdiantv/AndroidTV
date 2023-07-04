@@ -15,6 +15,8 @@ import com.kt.apps.media.xemtv.ui.main.MainActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import com.kt.apps.media.xemtv.ui.playback.TVPlaybackVideoFragment
 import com.kt.apps.media.xemtv.ui.radio.RadioFragment
+import com.kt.apps.media.xemtv.ui.search.TVSearchActivity
+import com.kt.apps.media.xemtv.ui.search.TVSearchFragment
 import com.kt.apps.media.xemtv.ui.tv.BaseTabLayoutFragment
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard
 import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboardNew
@@ -33,6 +35,9 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun dialogActivity(): DialogActivity
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun tvSearchActivity(): TVSearchActivity
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun detailFragment(): VideoDetailsFragment
@@ -79,5 +84,8 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun fragmentLoading(): BaseTabLayoutFragment.LoadingFragment
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun fragmentTVSearch(): TVSearchFragment
 
 }

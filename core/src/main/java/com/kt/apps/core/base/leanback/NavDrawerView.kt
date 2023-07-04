@@ -170,7 +170,9 @@ class NavDrawerView @JvmOverloads constructor(
 
     fun setItemSelected(position: Int, invalidate: Boolean) {
         Logger.d(this, message = "setItemSelected: $position")
-        val itemId = menu.getItem(position).itemId
+        val itemId = menu.getItem(position.takeIf {
+            it > -1
+        } ?: 0).itemId
         selectedItem = itemId
         if (invalidate) {
             var isFocused = false

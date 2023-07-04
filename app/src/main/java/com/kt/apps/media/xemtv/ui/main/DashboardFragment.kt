@@ -1,6 +1,7 @@
 package com.kt.apps.media.xemtv.ui.main
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -12,7 +13,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.leanback.app.*
-import androidx.leanback.widget.*
+import com.kt.apps.core.base.leanback.*
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.tabs.TabLayout
 import com.kt.apps.core.Constants
@@ -31,6 +32,7 @@ import com.kt.apps.media.xemtv.BuildConfig
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.extensions.FragmentAddExtensions
 import com.kt.apps.media.xemtv.ui.extensions.FragmentDashboardExtensions
+import com.kt.apps.media.xemtv.ui.search.TVSearchActivity
 import com.kt.apps.media.xemtv.ui.tv.BaseTabLayoutFragment
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
@@ -71,6 +73,19 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                         )
                     } catch (_: Throwable) {
                     }
+                }
+
+                if (mMainFragment is BaseTabLayoutFragment
+                    && focused is TabLayout.TabView
+                    && direction == View.FOCUS_UP
+                ) {
+                    startActivity(
+                        Intent(
+                            requireContext(),
+                            TVSearchActivity::class.java
+                        )
+                    )
+                    return focused
                 }
 
                 if (focused is DashboardTVChannelPresenter.TVImageCardView
@@ -252,6 +267,11 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     override fun onDpadDown() {
 
+    }
+
+    override fun onPause() {
+        super.onPause()
+        navDrawerView.setItemSelected(selectedPosition, true)
     }
 
     override fun onDpadUp() {

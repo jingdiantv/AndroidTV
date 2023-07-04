@@ -15,6 +15,7 @@ import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
 import com.kt.apps.core.usecase.GetListProgrammeForChannel
+import com.kt.apps.core.usecase.search.SearchForText
 import dagger.BindsInstance
 import dagger.Component
 import io.reactivex.rxjava3.disposables.DisposableContainer
@@ -47,6 +48,7 @@ interface CoreComponents {
     fun parserExtensionsProgram(): ParserExtensionsProgramSchedule
     fun getCurrentProgrammeForChannel() : GetCurrentProgrammeForChannel
     fun getListProgrammeForChannel() : GetListProgrammeForChannel
+    fun searchForText() : SearchForText
 
     fun inject(scope: BaseViewModel)
 

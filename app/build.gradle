@@ -60,7 +60,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.leanback:leanback:1.0.0'
+    implementation 'androidx.leanback:leanback:1.1.0-beta01'
     implementation appDependencies.values()
     implementation "androidx.leanback:leanback-paging:1.1.0-alpha07"
     implementation "androidx.leanback:leanback-tab:1.1.0-beta01"

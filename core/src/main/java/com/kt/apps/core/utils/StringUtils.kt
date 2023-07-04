@@ -1,5 +1,6 @@
 package com.kt.apps.core.utils
 
+import com.kt.apps.core.Constants
 import com.kt.apps.core.logging.Logger
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.net.HttpURLConnection
@@ -105,3 +106,23 @@ fun String.toDateTimeFormat(format: String): String {
     val date = this.toDateTime()
     return date.formatDateTime(format)
 }
+
+fun String.getKeyForLocalLogo() = this.lowercase()
+    .trim()
+    .replace("•", "")
+    .replace(" ", "")
+    .removeSuffix("vietteltv")
+    .removeSuffix("fpt")
+    .removeSuffix("vieon")
+    .removeSuffix("tv360")
+    .trim()
+    .removeSuffix("4k")
+    .removeAllSpecialChars()
+    .removeSuffix("hd")
+    .replace(".", "")
+
+fun String.replaceVNCharsToLatinChars() = this.replace(Regex(Constants.REGEX_VN_A), "a")
+    .replace(Regex(Constants.REGEX_VN_D), "d")
+    .replace(Regex(Constants.REGEX_VN_E), "e")
+    .replace(Regex(Constants.REGEX_VN_O), "o")
+    .replace(Regex(Constants.REGEX_VN_U), "u")
