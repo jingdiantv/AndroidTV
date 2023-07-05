@@ -2,7 +2,6 @@ package com.kt.apps.core.extensions
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.di.CoreScope
-import com.kt.apps.core.di.NetworkModule
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.getLastRefreshExtensions
@@ -14,7 +13,6 @@ import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.disposables.DisposableContainer
 import io.reactivex.rxjava3.schedulers.Schedulers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,7 +21,6 @@ import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import javax.inject.Inject
-import javax.inject.Named
 
 @CoreScope
 class ParserExtensionsSource @Inject constructor(
@@ -31,16 +28,10 @@ class ParserExtensionsSource @Inject constructor(
     private val storage: IKeyValueStorage,
     private val roomDataBase: RoomDataBase,
     private val programScheduleParser: ParserExtensionsProgramSchedule,
-    @Named(NetworkModule.EXTRA_NETWORK_DISPOSABLE)
-    private val disposable: DisposableContainer,
     private val remoteConfig: FirebaseRemoteConfig
 ) {
     private val extensionsChannelDao by lazy {
         roomDataBase.extensionsChannelDao()
-    }
-
-    private val extensionsConfigDao by lazy {
-        roomDataBase.extensionsConfig()
     }
 
     fun getIntervalRefreshData(configType: ExtensionsConfig.Type): Long {
@@ -64,18 +55,74 @@ class ParserExtensionsSource @Inject constructor(
         mutableMapOf()
     }
 
-    private val pendingObservableSource: MutableMap<String, Observable<List<ExtensionsChannel>>> by lazy {
+    private val pendingObservableSourceStatus: MutableMap<String, Status> by lazy {
         mutableMapOf()
+    }
+
+    private enum class Status {
+        PENDING,
+        RUNNING,
+        ERROR,
+        SUCCESS,
+        DISPOSED
     }
 
     fun parseFromRemoteRx(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
         if (pendingSource.containsKey(extension.sourceUrl)) {
             return pendingSource[extension.sourceUrl]!!
         }
-        val parserStreamingSource = parseFromStreamToMayBe(extension)
-            .observeOn(Schedulers.io())
+        val onlineSource = getListIptvFromOnline(extension)
+        val offlineSource = getListIptvFromLocalDB(extension)
+        Logger.d(this@ParserExtensionsSource, "execute", "Old time ${extension.sourceUrl}: ${storage.getLastRefreshExtensions(extension)}")
+        if (System.currentTimeMillis() - storage.getLastRefreshExtensions(extension) < getIntervalRefreshData(extension.type)) {
+            Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource - ${extension.sourceUrl}")
+            pendingSource[extension.sourceUrl] = offlineSource
+            return offlineSource
+        }
+        Logger.d(this@ParserExtensionsSource, "execute", "OnlineSource - ${extension.sourceUrl}")
+        pendingSource[extension.sourceUrl] = onlineSource
+        return onlineSource
+    }
 
-        val onlineSource = if (pendingSource.size <= 5) {
+    private fun getListIptvFromOnline(extension: ExtensionsConfig): Maybe<List<ExtensionsChannel>> {
+        val networkSource = parseFromRemoteRxStream(extension)
+            .reduce { t1, t2 ->
+                t1.toMutableList().let {
+                    it.addAll(t2)
+                    it
+                }
+            }
+
+        val parserStreamingSource = if (pendingObservableSourceStatus.containsKey(extension.sourceUrl)) {
+            Completable.create {
+                var status = pendingObservableSourceStatus[extension.sourceUrl]
+                while (status != null && status == Status.RUNNING) {
+                    Thread.sleep(100)
+                    status = pendingObservableSourceStatus[extension.sourceUrl]
+                    if (status == Status.SUCCESS) {
+                        break
+                    }
+                }
+                Logger.d(
+                    this@ParserExtensionsSource,
+                    tag = "OnlineSource",
+                    message = "Pending source: $status"
+                )
+                if (status == Status.SUCCESS) {
+                    it.onComplete()
+                } else if (status == Status.ERROR) {
+                    pendingObservableSourceStatus.remove(extension.sourceUrl)
+                    it.onError(Throwable("Retry"))
+                }
+            }.andThen(getListIptvFromLocalDB(extension))
+                .onErrorResumeNext {
+                    networkSource
+                }
+        } else {
+            networkSource
+        }.subscribeOn(Schedulers.io())
+
+        return if (pendingSource.size <= 5) {
             parserStreamingSource
         } else {
             Completable.create { emitter ->
@@ -108,52 +155,42 @@ class ParserExtensionsSource @Inject constructor(
             Logger.d(this@ParserExtensionsSource, "OnlineSource", "${extension.sourceUrl} Complete")
             pendingSource.remove(extension.sourceUrl)
         }
-
-        val offlineSource = extensionsChannelDao.getAllBySourceId(extension.sourceUrl)
-            .toMaybe()
-            .flatMap {
-                if (it.isEmpty()) {
-                    onlineSource
-                } else {
-                    Maybe.just(it)
-                }
-            }
-            .doOnComplete {
-                programScheduleParser.parseForConfig(extension)
-            }
-            .observeOn(Schedulers.io())
-
-        Logger.d(this@ParserExtensionsSource, "execute", "Old time ${extension.sourceUrl}: ${storage.getLastRefreshExtensions(extension)}")
-
-        if (System.currentTimeMillis() - storage.getLastRefreshExtensions(extension) < getIntervalRefreshData(extension.type)) {
-            Logger.d(this@ParserExtensionsSource, "execute", "OfflineSource - ${extension.sourceUrl}")
-            val source = offlineSource
-                .onErrorResumeNext {
-                    onlineSource
-                }
-                .doOnComplete {
-                    Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} source complete")
-                    pendingSource.remove(extension.sourceUrl)
-                }
-                .doOnError {
-                    Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} source error")
-                    pendingSource.remove(extension.sourceUrl)
-                }
-                .doOnDispose {
-                    Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} source dispose")
-                    pendingSource.remove(extension.sourceUrl)
-                }
-                .doOnSuccess {
-                    Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} success")
-                    pendingSource.remove(extension.sourceUrl)
-                }
-            pendingSource[extension.sourceUrl] = source
-            return source
-        }
-        Logger.d(this@ParserExtensionsSource, "execute", "OnlineSource - ${extension.sourceUrl}")
-        pendingSource[extension.sourceUrl] = onlineSource
-        return onlineSource
     }
+
+    private fun getListIptvFromLocalDB(
+        extension: ExtensionsConfig,
+    ): Maybe<List<ExtensionsChannel>> = extensionsChannelDao.getAllBySourceId(extension.sourceUrl)
+        .toMaybe()
+        .onErrorResumeNext {
+            getListIptvFromOnline(extension)
+        }
+        .flatMap {
+            if (it.isEmpty()) {
+                pendingObservableSourceStatus.remove(extension.sourceUrl)
+                pendingSource.remove(extension.sourceUrl)
+                getListIptvFromOnline(extension)
+            } else {
+                Maybe.just(it)
+            }
+        }
+        .subscribeOn(Schedulers.io())
+        .doOnComplete {
+            Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} source complete")
+            programScheduleParser.parseForConfig(extension)
+            pendingSource.remove(extension.sourceUrl)
+        }
+        .doOnError {
+            Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} source error")
+            pendingSource.remove(extension.sourceUrl)
+        }
+        .doOnDispose {
+            Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} source dispose")
+            pendingSource.remove(extension.sourceUrl)
+        }
+        .doOnSuccess {
+            Logger.d(this@ParserExtensionsSource, "execute", "Offline ${extension.sourceUrl} success")
+            pendingSource.remove(extension.sourceUrl)
+        }
 
     fun parseFromRemoteRxStream(extension: ExtensionsConfig): Observable<List<ExtensionsChannel>> {
         val parserSource = Observable.fromCallable {
@@ -183,6 +220,8 @@ class ParserExtensionsSource @Inject constructor(
                 throw ParserIPTVThrowable(false)
             }
             throw Throwable("Retry")
+        }.flatMap {
+            this@ParserExtensionsSource.parseInputStreamToListIPTVChannel(extension, it)
         }.retry { time, throwable ->
             Logger.d(this@ParserExtensionsSource, "ParseStreaming", "Retry ${extension.sourceUrl}")
             var canRetry = true
@@ -190,25 +229,22 @@ class ParserExtensionsSource @Inject constructor(
                 canRetry = throwable.canRetry
             }
             return@retry time < 3 && canRetry
-        }.flatMap {
-            parseFromStream(extension, it)
         }.doOnComplete {
-            Logger.d(this@ParserExtensionsSource, "ParseStreaming", "${extension.sourceUrl} Complete")
+            Logger.d(this@ParserExtensionsSource, "ParseStreaming", "Complete ${extension.sourceUrl}")
             storage.saveLastRefreshExtensions(extension)
             programScheduleParser.runPendingSource()
-            pendingObservableSource.remove(extension.sourceUrl)
+            pendingObservableSourceStatus[extension.sourceUrl] = Status.SUCCESS
         }.doOnError {
-            Logger.d(this@ParserExtensionsSource, "ParseStreaming", "${extension.sourceUrl} Error")
-            pendingObservableSource.remove(extension.sourceUrl)
+            Logger.d(this@ParserExtensionsSource, "ParseStreaming", "Error ${extension.sourceUrl}")
+            Logger.e(this@ParserExtensionsSource, "ParseStreaming", exception = it)
+            pendingObservableSourceStatus[extension.sourceUrl] = Status.ERROR
         }.doOnDispose {
-            Logger.d(this@ParserExtensionsSource, "ParseStreaming", "${extension.sourceUrl} Dispose")
-            pendingObservableSource.remove(extension.sourceUrl)
-        }.observeOn(Schedulers.io())
-
-        pendingObservableSource[extension.sourceUrl] = parserSource
+            Logger.d(this@ParserExtensionsSource, "ParseStreaming", "Dispose ${extension.sourceUrl}")
+            pendingObservableSourceStatus[extension.sourceUrl] = Status.DISPOSED
+            pendingObservableSourceStatus.remove(extension.sourceUrl)
+        }.subscribeOn(Schedulers.io())
         return parserSource
     }
-
 
     private fun getKeyValueByRegex(regex: Pattern, finder: String): Pair<String, String> {
         val key = getByRegex(regex, finder)
@@ -222,21 +258,7 @@ class ParserExtensionsSource @Inject constructor(
         return Pair(realHttpKey, value)
     }
 
-    private fun parseFromStreamToMayBe(
-        config: ExtensionsConfig
-    ) = if (pendingObservableSource.containsKey(config.sourceUrl)) {
-        Logger.d(this@ParserExtensionsSource, "ParseStreaming", "run pending source")
-        pendingObservableSource[config.sourceUrl]!!
-    } else {
-        parseFromRemoteRxStream(config)
-    }.reduce { t1, t2 ->
-        t1.toMutableList().let {
-            it.addAll(t2)
-            it
-        }
-    }
-
-    private fun parseFromStream(
+    private fun parseInputStreamToListIPTVChannel(
         config: ExtensionsConfig,
         stream: InputStream
     ): Observable<List<ExtensionsChannel>> = Observable.create<List<ExtensionsChannel>> { emitter ->
@@ -389,7 +411,7 @@ class ParserExtensionsSource @Inject constructor(
         if (!emitter.isDisposed) {
             emitter.onComplete()
         }
-    }.observeOn(Schedulers.io()).flatMap { list ->
+    }.subscribeOn(Schedulers.io()).flatMap { list ->
         val listCategory = list.groupBy {
             it.tvGroup
         }.keys.map {
@@ -405,6 +427,8 @@ class ParserExtensionsSource @Inject constructor(
             }.doOnError {
                 Logger.e(this@ParserExtensionsSource, "InsertDBFail", exception = it)
             }
+    }.also {
+        pendingObservableSourceStatus[config.sourceUrl] = Status.RUNNING
     }
 
     private fun getByRegex(pattern: Pattern, finder: String): String {
