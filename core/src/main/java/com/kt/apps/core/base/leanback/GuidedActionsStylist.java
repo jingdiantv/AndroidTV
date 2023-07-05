@@ -154,17 +154,17 @@ public class GuidedActionsStylist implements FragmentAnimationProvider {
      */
     public static final int VIEW_TYPE_DATE_PICKER = 1;
 
-    final static androidx.leanback.widget.ItemAlignmentFacet sGuidedActionItemAlignFacet;
+    final static ItemAlignmentFacet sGuidedActionItemAlignFacet;
 
     static {
-        sGuidedActionItemAlignFacet = new androidx.leanback.widget.ItemAlignmentFacet();
-        androidx.leanback.widget.ItemAlignmentFacet.ItemAlignmentDef alignedDef = new androidx.leanback.widget.ItemAlignmentFacet.ItemAlignmentDef();
+        sGuidedActionItemAlignFacet = new ItemAlignmentFacet();
+        ItemAlignmentFacet.ItemAlignmentDef alignedDef = new ItemAlignmentFacet.ItemAlignmentDef();
         alignedDef.setItemAlignmentViewId(R.id.guidedactions_item_title);
         alignedDef.setAlignedToTextViewBaseline(true);
         alignedDef.setItemAlignmentOffset(0);
         alignedDef.setItemAlignmentOffsetWithPadding(true);
         alignedDef.setItemAlignmentOffsetPercent(0);
-        sGuidedActionItemAlignFacet.setAlignmentDefs(new androidx.leanback.widget.ItemAlignmentFacet.ItemAlignmentDef[]{alignedDef});
+        sGuidedActionItemAlignFacet.setAlignmentDefs(new ItemAlignmentFacet.ItemAlignmentDef[]{alignedDef});
     }
 
     /**

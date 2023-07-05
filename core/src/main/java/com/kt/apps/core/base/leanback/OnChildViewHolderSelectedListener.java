@@ -13,7 +13,7 @@
  */
 package com.kt.apps.core.base.leanback;
 
-import androidx.leanback.widget.ItemAlignmentFacet.ItemAlignmentDef;
+import com.kt.apps.core.base.leanback.ItemAlignmentFacet.ItemAlignmentDef;
 import androidx.recyclerview.widget.RecyclerView;
 
 /**
