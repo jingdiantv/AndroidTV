@@ -170,7 +170,7 @@ class ParserExtensionsProgramSchedule @Inject constructor(
         )
     }
 
-    private fun runPendingSource() {
+    fun runPendingSource() {
         if (pendingSource.isEmpty()) {
             return
         }
@@ -199,7 +199,7 @@ class ParserExtensionsProgramSchedule @Inject constructor(
         }
     }
 
-    fun parseForConfig(config: ExtensionsConfig, programScheduleUrl: String) {
+    fun appendParseForConfigTask(config: ExtensionsConfig, programScheduleUrl: String) {
         programScheduleUrl.split(",")
             .filter {
                 it.trim().isNotBlank()
@@ -214,7 +214,6 @@ class ParserExtensionsProgramSchedule @Inject constructor(
                     pendingSourceStatus[url] = PendingSourceStatus.PENDING
                 }
             }
-        runPendingSource()
     }
 
     fun parseForConfigRx(config: ExtensionsConfig, tvgUrlList: String): Completable {

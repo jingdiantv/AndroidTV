@@ -138,7 +138,7 @@ open class BaseExtensionsViewModel @Inject constructor(
                 .getExtensionById(extensionsID)
                 .subscribeOn(Schedulers.io())
                 .flatMap {
-                    parserExtensionsSource.parseFromRemoteMaybe(it)
+                    parserExtensionsSource.parseFromRemoteRx(it)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ tvList ->
@@ -172,24 +172,33 @@ open class BaseExtensionsViewModel @Inject constructor(
                         _addExtensionConfigLiveData.postValue(DataState.Update(extensionsConfig))
                         parserExtensionsSource.updateIPTVSource(extensionsConfig)
                     } else {
-                        parserExtensionsSource.parseFromRemoteRx(extensionsConfig)
+                        parserExtensionsSource.parseFromRemoteRxStream(extensionsConfig)
                             .subscribeOn(Schedulers.io())
                             .observeOn(Schedulers.io())
-                            .flatMapCompletable {
-                                if (it.isNotEmpty()) {
-                                    parserExtensionsSource.insertIptvSource(extensionsConfig)
-                                } else {
-                                    Completable.error(Throwable("Data empty"))
+                            .doOnNext {
+                                if (it.isNotEmpty() && pendingIptvSource?.sourceUrl == extensionsConfig.sourceUrl) {
+                                    if (_addExtensionConfigLiveData.value !is DataState.Success) {
+                                        actionLogger.logAddIPTVSource(
+                                            extensionsConfig.sourceUrl,
+                                            extensionsConfig.sourceName
+                                        )
+                                        _addExtensionConfigLiveData.postValue(DataState.Success(extensionsConfig))
+                                        compositeDisposable.add(
+                                            parserExtensionsSource.insertIptvSource(extensionsConfig)
+                                                .subscribe({
+                                                    loadAllListExtensionsChannelConfig(true)
+                                                }, {
+                                                })
+                                        )
+                                    }
                                 }
+                            }
+                            .flatMapCompletable {
+                                Completable.complete()
                             }
                     }
                 }
                 .subscribe({
-                    actionLogger.logAddIPTVSource(extensionsConfig.sourceUrl, extensionsConfig.sourceName)
-                    if (pendingIptvSource?.sourceUrl == extensionsConfig.sourceUrl) {
-                        _addExtensionConfigLiveData.postValue(DataState.Success(extensionsConfig))
-                    }
-                    loadAllListExtensionsChannelConfig(true)
                     Logger.e(this@BaseExtensionsViewModel, message = "addIPTVSource Success: $extensionsConfig")
                 }, {
                     if (pendingIptvSource?.sourceUrl != extensionsConfig.sourceUrl) {

@@ -49,7 +49,7 @@ class ExtensionsViewModel @Inject constructor(
         compositeDisposable.add(
             observableData.flatMapIterable { x -> x }
                 .flatMapMaybe {
-                    parserExtensionsSource.parseFromRemoteMaybe(it)
+                    parserExtensionsSource.parseFromRemoteRx(it)
                             .map {result ->
                                 Pair(it, result)
                             }
