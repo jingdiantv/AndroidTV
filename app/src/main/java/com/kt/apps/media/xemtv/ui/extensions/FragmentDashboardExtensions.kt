@@ -213,7 +213,7 @@ class FragmentDashboardExtensions : BaseTabLayoutFragment() {
                 }
             } else if (direction == View.FOCUS_RIGHT) {
                 return if (currentFocus == tabCount - 1) {
-                    _btnAddSource
+                    focused
                 } else {
                     tabLayout.getTabAt((currentFocus + 1) % tabLayout.tabCount)?.view
                 }

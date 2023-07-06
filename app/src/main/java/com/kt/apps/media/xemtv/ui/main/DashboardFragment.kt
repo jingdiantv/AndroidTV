@@ -109,6 +109,16 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                         return (mMainFragment as BaseTabLayoutFragment).tabLayout
                             .getTabAt((tabFocused - 1) % tabCount)!!.view
                     }
+                } else if (mMainFragment is BaseTabLayoutFragment
+                    && focused is TabLayout.TabView
+                    && direction == View.FOCUS_RIGHT
+                ) {
+                    val tabCount = (mMainFragment as BaseTabLayoutFragment).tabLayout.tabCount
+                    val tabFocused = (mMainFragment as BaseTabLayoutFragment).tabLayout
+                        .findCurrentFocusedPosition()
+                    if (tabFocused == tabCount - 1) {
+                        return focused
+                    }
                 }
 
                 if (mMainFragment is BaseTabLayoutFragment
