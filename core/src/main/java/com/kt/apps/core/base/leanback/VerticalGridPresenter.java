@@ -31,6 +31,7 @@ import androidx.leanback.transition.TransitionHelper;
 public class VerticalGridPresenter extends Presenter {
     private static final String TAG = "GridPresenter";
     private static final boolean DEBUG = false;
+    private int layoutRes = R.layout.lb_vertical_grid;
 
     class VerticalGridItemBridgeAdapter extends ItemBridgeAdapter {
         @Override
@@ -234,7 +235,7 @@ public class VerticalGridPresenter extends Presenter {
 
     @Override
     public final ViewHolder onCreateViewHolder(ViewGroup parent) {
-        ViewHolder vh = createGridViewHolder(parent);
+        ViewHolder vh = createGridViewHolder(parent, layoutRes);
         vh.mInitialized = false;
         vh.mItemBridgeAdapter = new VerticalGridItemBridgeAdapter();
         initializeGridViewHolder(vh);
@@ -244,12 +245,16 @@ public class VerticalGridPresenter extends Presenter {
         return vh;
     }
 
+    public void setLayoutRes(int layoutRes) {
+        this.layoutRes = layoutRes;
+    }
+
     /**
      * Subclass may override this to inflate a different layout.
      */
-    protected ViewHolder createGridViewHolder(ViewGroup parent) {
+    protected ViewHolder createGridViewHolder(ViewGroup parent, int layoutRes) {
         View root = LayoutInflater.from(parent.getContext()).inflate(
-                R.layout.lb_vertical_grid, parent, false);
+                layoutRes, parent, false);
         return new ViewHolder((VerticalGridView) root.findViewById(R.id.browse_grid));
     }
 
