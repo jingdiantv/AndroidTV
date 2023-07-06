@@ -1,33 +1,33 @@
 package com.kt.apps.media.xemtv.ui.tv
 
-import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.Parcelable
 import android.view.View
-import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import com.kt.apps.core.base.leanback.*
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
-import com.kt.apps.core.base.adapter.leanback.applyLoading
+import com.kt.apps.core.base.leanback.ArrayObjectAdapter
+import com.kt.apps.core.base.leanback.HeaderItem
+import com.kt.apps.core.base.leanback.ImageCardView
+import com.kt.apps.core.base.leanback.ListRow
+import com.kt.apps.core.base.leanback.ListRowPresenter
+import com.kt.apps.core.base.leanback.OnItemViewClickedListener
+import com.kt.apps.core.base.leanback.OnItemViewSelectedListener
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
-import com.kt.apps.core.tv.model.TVChannelLinkStream
 import com.kt.apps.core.utils.showErrorDialog
-import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.presenter.DashboardTVChannelPresenter
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
-import com.kt.apps.media.xemtv.ui.details.DetailsActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 import javax.inject.Inject
 
 class FragmentTVDashboard : BaseRowSupportFragment() {
@@ -89,13 +89,7 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 is DataState.Success -> {
                     mRowsAdapter.clear()
                     val channelWithCategory = it.data
-                        .filter { channel ->
-                            if (filterGroup == FILTER_TOTAL) {
-                                filterTvOrRadio(channel)
-                            } else {
-                                channel.tvGroup == filterGroup && filterTvOrRadio(channel)
-                            }
-                        }
+                        .filter(filterTVByGroup(filterGroup, filterType))
                         .groupBy {
                             it.tvGroup
                         }
@@ -122,51 +116,6 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 else -> {
                 }
             }
-        }
-
-        tvChannelViewModel.tvWithLinkStreamLiveData
-            .observe(viewLifecycleOwner) {
-                handleGetTVChannelLinkStream(it)
-            }
-    }
-
-    private fun filterTvOrRadio(channel: TVChannel) = if (filterType == PlaybackActivity.Type.TV) {
-        !channel.isRadio
-    } else {
-        channel.isRadio
-    }
-
-    private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {
-        when (it) {
-            is DataState.Loading -> {
-            }
-
-            is DataState.Success -> {
-                val intent = Intent(requireActivity(), PlaybackActivity::class.java)
-                intent.putExtra(PlaybackActivity.EXTRA_TV_CHANNEL, it.data)
-                intent.putExtra(PlaybackActivity.EXTRA_PLAYBACK_TYPE, filterType as Parcelable)
-                val bundle = try {
-                    ActivityOptionsCompat.makeSceneTransitionAnimation(
-                        requireActivity(),
-                        selectedView!!.mainImageView,
-                        DetailsActivity.SHARED_ELEMENT_NAME
-                    ).toBundle()
-                } catch (e: Exception) {
-                    bundleOf()
-                }
-
-                startActivity(intent, bundle)
-            }
-            is DataState.Error -> {
-                showErrorDialog(content = it.throwable.message)
-            }
-            else -> {
-            }
-        }
-        if (it is DataState.Loading) {
-            progressManager.show()
-        } else {
-            progressManager.hide()
         }
     }
 
@@ -238,6 +187,26 @@ class FragmentTVDashboard : BaseRowSupportFragment() {
                 EXTRA_FILTER_GROUP to filterGroup,
                 EXTRA_FILTER_TYPE to type
             )
+        }
+
+        fun filterTVByGroup(
+            filterGroup: String,
+            filterType: PlaybackActivity.Type
+        ) = { channel: TVChannel ->
+            if (filterGroup == FILTER_TOTAL) {
+                filterTvOrRadio(channel, filterType)
+            } else {
+                channel.tvGroup == filterGroup && filterTvOrRadio(channel, filterType)
+            }
+        }
+
+        private fun filterTvOrRadio(
+            channel: TVChannel,
+            filterType: PlaybackActivity.Type
+        ) = if (filterType == PlaybackActivity.Type.TV) {
+            !channel.isRadio
+        } else {
+            channel.isRadio
         }
 
         fun newInstance(filterGroup: String, type: PlaybackActivity.Type, mMainAdapter: MainFragmentAdapter) =

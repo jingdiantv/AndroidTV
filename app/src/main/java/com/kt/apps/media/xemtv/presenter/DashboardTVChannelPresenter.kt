@@ -28,7 +28,14 @@ class DashboardTVChannelPresenter : Presenter() {
     private var mDefaultCardImage: Drawable? = null
     private var sSelectedBackgroundColor: Int by Delegates.notNull()
     private var sDefaultBackgroundColor: Int by Delegates.notNull()
-
+    private var _defaultImageWidthDimensions: Float = CARD_WIDTH.toFloat()
+    var defaultImageWidthDimensions: Float?
+        get() = _defaultImageWidthDimensions
+        set(value) {
+            if (value != null) {
+                _defaultImageWidthDimensions = value
+            }
+        }
 
     class TVImageCardView(context: Context) :
         ImageCardView(ContextThemeWrapper(context, R.style.ImageCardViewStyleTitle)) {
@@ -66,7 +73,10 @@ class DashboardTVChannelPresenter : Presenter() {
             is TVChannel -> {
                 cardView.titleText = item.tvChannelName
                 cardView.contentText = null
-                cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
+                cardView.setMainImageDimensions(
+                    _defaultImageWidthDimensions.toInt(),
+                    (_defaultImageWidthDimensions / IMAGE_DIMENSION).toInt()
+                )
 
                 cardView.let { imgView ->
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
@@ -114,5 +124,6 @@ class DashboardTVChannelPresenter : Presenter() {
     companion object {
         private const val CARD_WIDTH = 313
         private const val CARD_HEIGHT = 176
+        private const val IMAGE_DIMENSION = 48.0 / 27
     }
 }

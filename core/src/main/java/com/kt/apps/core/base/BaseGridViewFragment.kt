@@ -50,7 +50,7 @@ abstract class BaseGridViewFragment<T : ViewDataBinding> : Fragment(),
         super.onAttach(context)
     }
 
-    private val mMainFragmentAdapter by lazy {
+    protected val mMainFragmentAdapter by lazy {
         object : BrowseSupportFragment.MainFragmentAdapter<Fragment>(this@BaseGridViewFragment) {
             override fun setEntranceTransitionState(state: Boolean) {
                 super.setEntranceTransitionState(state)

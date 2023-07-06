@@ -1,6 +1,8 @@
 package com.kt.apps.media.xemtv.ui.tv
 
+import android.content.Intent
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -10,16 +12,18 @@ import androidx.leanback.tab.LeanbackTabLayout
 import androidx.leanback.tab.LeanbackViewPager
 import com.kt.apps.core.base.leanback.ArrayObjectAdapter
 import com.kt.apps.core.base.leanback.ListRowPresenter
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseRowSupportFragment
 import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.adapter.leanback.applyLoading
 import com.kt.apps.core.tv.model.TVChannel
 import com.kt.apps.core.tv.model.TVChannelGroup
+import com.kt.apps.core.tv.model.TVChannelLinkStream
+import com.kt.apps.core.utils.showErrorDialog
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
 import com.kt.apps.media.xemtv.ui.main.DashboardFragment
+import com.kt.apps.media.xemtv.ui.main.MainActivity
 import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
 import javax.inject.Inject
 
@@ -144,6 +148,9 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
         }
 
         override fun getFragment(position: Int): Fragment {
+            if (position != 0) {
+                return FragmentTVGrid.newInstance(totalList[position], type, mMainFragmentAdapter)
+            }
             return FragmentTVDashboard.newInstance(totalList[position], type, mMainFragmentAdapter)
         }
 
@@ -175,6 +182,7 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setAlignment(mAlignedTop)
+        MainActivity.screenWidth = view.findViewById<View>(R.id.view_pager).measuredWidth
     }
 
     override fun initView(rootView: View) {
@@ -185,7 +193,7 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
         tvChannelViewModel.getListTVChannel(false)
         mainFragmentAdapter.fragmentHost!!.notifyViewCreated(mainFragmentAdapter)
         viewPager.adapter = pagerAdapter
-        tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner, Observer {
+        tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             when (it) {
                 is DataState.Success -> {
                     val totalList = it.data.filter(filterByType())
@@ -214,8 +222,43 @@ class FragmentTVDashboardNew : BaseTabLayoutFragment() {
 
                 }
             }
-        })
+        }
 
+        tvChannelViewModel.tvWithLinkStreamLiveData.observe(viewLifecycleOwner) {
+            handleGetTVChannelLinkStream(it)
+        }
+
+    }
+
+    private fun handleGetTVChannelLinkStream(it: DataState<TVChannelLinkStream>) {
+        when (it) {
+            is DataState.Loading -> {
+            }
+
+            is DataState.Success -> {
+                val intent = Intent(requireActivity(), PlaybackActivity::class.java)
+                intent.putExtra(PlaybackActivity.EXTRA_TV_CHANNEL, it.data)
+                intent.putExtra(
+                    PlaybackActivity.EXTRA_PLAYBACK_TYPE, if (it.data.channel.isRadio) {
+                        PlaybackActivity.Type.RADIO
+                    } else {
+                        PlaybackActivity.Type.TV
+                    } as Parcelable
+                )
+                startActivity(intent)
+            }
+
+            is DataState.Error -> {
+                showErrorDialog(content = it.throwable.message)
+            }
+            else -> {
+            }
+        }
+        if (it is DataState.Loading) {
+            progressManager.show()
+        } else {
+            progressManager.hide()
+        }
     }
 
     private fun filterByType() = { channel: TVChannel ->

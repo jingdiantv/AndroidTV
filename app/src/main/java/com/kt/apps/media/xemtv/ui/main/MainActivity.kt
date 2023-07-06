@@ -37,6 +37,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         get() = R.layout.activity_main
 
     override fun initView(savedInstanceState: Bundle?) {
+        screenWidth = binding.root.measuredWidth
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
@@ -73,5 +74,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
             ?: super.onBackPressed()
 
+    }
+
+    companion object {
+        var screenWidth = -1
     }
 }

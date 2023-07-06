@@ -15,6 +15,7 @@ class TVChannelPresenterSelector(
         mutableMapOf<String, Presenter>()
     }
 
+    var defaultImageWidthDimensions: Float? = null
     override fun getPresenter(item: Any?): Presenter {
         item ?: throw IllegalStateException("Null item")
         val presenter: Presenter? = presenterMap[item::class.java.name]
@@ -22,7 +23,9 @@ class TVChannelPresenterSelector(
             is TVChannel, is ExtensionsChannel -> if (playback) {
                 PlaybackTVChannelPresenter()
             } else {
-                DashboardTVChannelPresenter()
+                DashboardTVChannelPresenter().apply {
+                    this.defaultImageWidthDimensions = this@TVChannelPresenterSelector.defaultImageWidthDimensions
+                }
             }
             is FootballMatch -> FootballPresenter()
             else -> throw IllegalStateException("Not support presenter for: ${item::class.java.name}")

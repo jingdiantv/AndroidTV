@@ -1,38 +1,54 @@
 package com.kt.apps.media.xemtv.ui.tv
 
+import android.os.Bundle
 import android.view.View
+import androidx.core.os.bundleOf
+import androidx.lifecycle.ViewModelProvider
+import com.kt.apps.core.base.BaseGridViewFragment
+import com.kt.apps.core.base.DataState
 import com.kt.apps.core.base.leanback.ArrayObjectAdapter
+import com.kt.apps.core.base.leanback.BrowseSupportFragment
+import com.kt.apps.core.base.leanback.BrowseSupportFragment.FragmentHostImpl
 import com.kt.apps.core.base.leanback.FocusHighlight
 import com.kt.apps.core.base.leanback.OnItemViewClickedListener
 import com.kt.apps.core.base.leanback.OnItemViewSelectedListener
+import com.kt.apps.core.base.leanback.RowsSupportFragment
 import com.kt.apps.core.base.leanback.VerticalGridPresenter
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.observe
-import com.kt.apps.core.base.BaseGridViewFragment
-import com.kt.apps.core.base.DataState
-import com.kt.apps.core.databinding.DefaultGridFragmentBinding
+import com.kt.apps.core.tv.model.TVChannel
+import com.kt.apps.core.utils.showErrorDialog
+import com.kt.apps.media.xemtv.R
+import com.kt.apps.media.xemtv.databinding.FragmentTvGridBinding
 import com.kt.apps.media.xemtv.presenter.TVChannelPresenterSelector
 import com.kt.apps.media.xemtv.ui.TVChannelViewModel
+import com.kt.apps.media.xemtv.ui.playback.PlaybackActivity
+import com.kt.apps.media.xemtv.ui.tv.FragmentTVDashboard.Companion.filterTVByGroup
 import javax.inject.Inject
 
-class FragmentTVGrid : BaseGridViewFragment<DefaultGridFragmentBinding>() {
+class FragmentTVGrid : BaseGridViewFragment<FragmentTvGridBinding>() {
     override val layoutRes: Int
-        get() = com.kt.apps.core.R.layout.default_grid_fragment
+        get() = R.layout.fragment_tv_grid
 
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
-
-    private val filterGroup by lazy {
-        requireArguments().getString("filterGroup")
-    }
+    private var filterGroup = FragmentTVDashboard.FILTER_TOTAL
+    private var filterType = PlaybackActivity.Type.TV
 
     private val tvChannelViewModel by lazy {
         ViewModelProvider(requireActivity(), viewModelFactory)[TVChannelViewModel::class.java]
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        filterGroup =
+            requireArguments().getString(FragmentTVDashboard.EXTRA_FILTER_GROUP) ?: FragmentTVDashboard.FILTER_TOTAL
+        filterType = requireArguments().getParcelable(FragmentTVDashboard.EXTRA_FILTER_TYPE) ?: PlaybackActivity.Type.TV
+    }
+
     override fun onCreatePresenter(): VerticalGridPresenter {
-        return VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM).apply {
+        return VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply {
+            this.setLayoutRes(R.layout.fragment_tv_vertical_grid)
+            this.shadowEnabled = false
             this.numberOfColumns = 5
         }
     }
@@ -44,12 +60,20 @@ class FragmentTVGrid : BaseGridViewFragment<DefaultGridFragmentBinding>() {
 
     override fun onItemViewClickedListener(): OnItemViewClickedListener {
         return OnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
-
+            if (item !is TVChannel) {
+                return@OnItemViewClickedListener
+            }
+            if (!item.isFreeContent) {
+                showErrorDialog(content = "Đây là nội dung tính phí\r\nLiên hệ đội phát triển để có thêm thông tin")
+                return@OnItemViewClickedListener
+            }
+            tvChannelViewModel.getLinkStreamForChannel(tvDetail = item)
         }
     }
 
     override fun onCreateAdapter() {
         val cardPresenter = TVChannelPresenterSelector(requireActivity())
+        cardPresenter.defaultImageWidthDimensions = 150 * resources.displayMetrics.scaledDensity
         mAdapter = ArrayObjectAdapter(cardPresenter)
         updateAdapter()
     }
@@ -62,14 +86,32 @@ class FragmentTVGrid : BaseGridViewFragment<DefaultGridFragmentBinding>() {
         tvChannelViewModel.tvChannelLiveData.observe(viewLifecycleOwner) {
             when (it) {
                 is DataState.Success -> {
+                    binding.title.text = filterGroup
+                    val channelWithCategory = it.data
+                        .filter(filterTVByGroup(filterGroup, filterType))
+
                     (mAdapter as ArrayObjectAdapter)
-                        .addAll(0, it.data)
+                        .addAll(0, channelWithCategory)
                 }
 
                 else -> {
 
                 }
             }
+        }
+    }
+
+    companion object {
+        fun newInstance(
+            filterGroup: String,
+            type: PlaybackActivity.Type,
+            mMainAdapter: BrowseSupportFragment.MainFragmentAdapter<RowsSupportFragment>
+        ) = FragmentTVGrid().apply {
+            this.arguments = bundleOf(
+                FragmentTVDashboard.EXTRA_FILTER_GROUP to filterGroup,
+                FragmentTVDashboard.EXTRA_FILTER_TYPE to type
+            )
+            this.mMainFragmentAdapter.setFragmentHost(mMainAdapter.fragmentHost as FragmentHostImpl)
         }
     }
 }
