@@ -1,5 +1,6 @@
 package com.kt.apps.media.xemtv.di
 
+import com.kt.apps.autoupdate.di.AppUpdateComponent
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.CoreLoggerModule
@@ -20,7 +21,8 @@ import dagger.android.support.AndroidSupportInjectionModule
 @Component(
     dependencies = [CoreComponents::class,
         TVComponents::class,
-        FootballComponents::class],
+        FootballComponents::class,
+        AppUpdateComponent::class],
     modules = [
         ViewModelModule::class,
         AndroidSupportInjectionModule::class,
@@ -42,6 +44,7 @@ interface AppComponents : AndroidInjector<App> {
         fun coreComponents(coreComponents: CoreComponents): Builder
         fun tvComponents(tvComponents: TVComponents): Builder
         fun footballComponent(footballComponents: FootballComponents): Builder
+        fun appUpdateComponent(appUpdateComponent: AppUpdateComponent): Builder
         fun build(): AppComponents
     }
 

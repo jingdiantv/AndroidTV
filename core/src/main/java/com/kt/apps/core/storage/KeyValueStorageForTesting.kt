@@ -14,6 +14,8 @@ class KeyValueStorageForTesting : IKeyValueStorage {
 
     override fun <T: Any> save(key: String, value: T) {
         println(key)
+        println(value)
+        println(value::class.java)
     }
 
     override fun <T, U> save(key: String, value: Map<T, U>) {

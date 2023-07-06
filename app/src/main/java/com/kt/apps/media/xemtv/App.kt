@@ -4,6 +4,7 @@ import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.kt.apps.autoupdate.di.DaggerAppUpdateComponent
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.di.CoreComponents
 import com.kt.apps.core.di.DaggerCoreComponents
@@ -36,6 +37,12 @@ class App : CoreApp() {
 
     private val _footballComponent by lazy {
         DaggerFootballComponents.builder()
+            .coreComponents(_coreComponents)
+            .build()
+    }
+
+    private val _appUpdateComponent by lazy {
+        DaggerAppUpdateComponent.builder()
             .coreComponents(_coreComponents)
             .build()
     }
@@ -83,6 +90,7 @@ class App : CoreApp() {
             .tvComponents(_tvComponents)
             .coreComponents(_coreComponents)
             .footballComponent(_footballComponent)
+            .appUpdateComponent(_appUpdateComponent)
             .app(this)
             .build()
     }

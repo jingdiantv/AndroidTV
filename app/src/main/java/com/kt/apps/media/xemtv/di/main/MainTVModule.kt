@@ -1,5 +1,7 @@
 package com.kt.apps.media.xemtv.di.main
 
+import com.kt.apps.autoupdate.ui.AppUpdateActivity
+import com.kt.apps.autoupdate.ui.FragmentInfo
 import com.kt.apps.media.xemtv.di.viewmodels.ViewModelModule
 import com.kt.apps.media.xemtv.ui.DialogActivity
 import com.kt.apps.media.xemtv.ui.details.DetailsActivity
@@ -87,5 +89,12 @@ abstract class MainTVModule {
 
     @ContributesAndroidInjector(modules = [ViewModelModule::class])
     internal abstract fun fragmentTVSearch(): TVSearchFragment
+
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun appUpdateActivity(): AppUpdateActivity
+
+    @ContributesAndroidInjector(modules = [ViewModelModule::class])
+    internal abstract fun fragmentInfo(): FragmentInfo
 
 }

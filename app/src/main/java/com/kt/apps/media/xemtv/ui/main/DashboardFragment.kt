@@ -13,18 +13,18 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.leanback.app.*
-import com.kt.apps.core.base.leanback.*
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.tabs.TabLayout
+import com.kt.apps.autoupdate.ui.AppUpdateActivity
 import com.kt.apps.core.Constants
 import com.kt.apps.core.R
 import com.kt.apps.core.base.IKeyCodeHandler
-import com.kt.apps.core.base.leanback.BrowseFrameLayout
+import com.kt.apps.core.base.leanback.*
 import com.kt.apps.core.base.leanback.BrowseSupportFragment
+import com.kt.apps.core.base.leanback.NavDrawerView.INavDrawerItemSelected
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
-import com.kt.apps.core.base.leanback.DashboardIconHeaderPresenterSelector
 import com.kt.apps.core.utils.leanback.findCurrentFocusedPosition
 import com.kt.apps.core.utils.leanback.findCurrentFocusedView
 import com.kt.apps.core.utils.leanback.findCurrentSelectedPosition
@@ -38,7 +38,6 @@ import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
-import java.lang.StringBuilder
 import javax.inject.Inject
 
 class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeHandler {
@@ -60,6 +59,10 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
         ArrayObjectAdapter(ListRowPresenter().apply {
             shadowEnabled = false
         })
+    }
+
+    private val _mainHandler by lazy {
+        Handler(Looper.getMainLooper())
     }
 
     private val childFocusSearchListener by lazy {
@@ -180,6 +183,43 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     }
 
     private fun initAction() {
+        navDrawerView.onNavDrawerItemSelected = object : INavDrawerItemSelected {
+            override fun onSelected(position: Int, itemSelected: Int) {
+
+                when (itemSelected) {
+                    com.kt.apps.media.xemtv.R.id.search -> {
+                        navDrawerView.forceCloseNav()
+                        _mainHandler.removeCallbacksAndMessages(navDrawerView)
+                        _mainHandler.postDelayed({
+                            startActivity(
+                                Intent(
+                                    requireContext(),
+                                    TVSearchActivity::class.java
+                                )
+                            )
+                        }, navDrawerView, NavDrawerView.DEFAULT_DURATION)
+                    }
+
+                    R.id.info -> {
+                        navDrawerView.forceCloseNav()
+                        _mainHandler.removeCallbacksAndMessages(navDrawerView)
+                        _mainHandler.postDelayed({
+                            startActivity(
+                                Intent(
+                                    requireContext(),
+                                    AppUpdateActivity::class.java
+                                )
+                            )
+                        }, navDrawerView, NavDrawerView.DEFAULT_DURATION)
+                    }
+
+                    else -> {
+                        onRowSelected(position)
+                    }
+                }
+            }
+        }
+
         Logger.e(this, message = "initAction")
         requireView().findViewById<TextView>(R.id.app_version).text = displayVersionName
         activity?.intent?.data?.let {
@@ -239,7 +279,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                 (mMainFragment as BaseTabLayoutFragment)
                     .requestFocusChildContent()
                     .requestFocus()
-                navDrawerView.setItemSelected(selectedPosition, true)
+                navDrawerView.setEnableSelectedItem(selectedPosition, true)
             }
         }
         mBackgroundManager.drawable = when (currentPageIdSelected) {
@@ -271,7 +311,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
 
     override fun onPause() {
         super.onPause()
-        navDrawerView.setItemSelected(selectedPosition, true)
+//        navDrawerView.setItemSelected(selectedPosition, true)
     }
 
     override fun onDpadUp() {

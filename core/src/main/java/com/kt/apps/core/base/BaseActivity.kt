@@ -5,7 +5,10 @@ import android.animation.AnimatorListenerAdapter
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -37,6 +40,8 @@ import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.isNetworkA
 import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.registerNetworkChangeReceiver
 import com.kt.apps.core.base.receiver.NetworkChangeReceiver.Companion.unregisterNetworkChangeReceiver
 import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.utils.blurry.Blur
+import com.kt.apps.core.utils.blurry.BlurFactor
 import com.kt.apps.core.utils.showSuccessDialog
 import com.kt.apps.core.utils.updateLocale
 import dagger.android.AndroidInjection
@@ -351,6 +356,23 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
             }
         } else {
             fragment.hideOverlay()
+        }
+    }
+
+    fun setBackgroundOverlay() {
+        BackgroundManager.getInstance(this).apply {
+            attach(window)
+            val bg: Bitmap = BitmapFactory.decodeResource(
+                this@BaseActivity.resources,
+                R.drawable.bg_tv
+            )
+            drawable = BitmapDrawable(null, Blur.of(this@BaseActivity,
+                bg,
+                BlurFactor().apply {
+                    this.radius = 10
+                    this.sampling = 1
+                }
+            ))
         }
     }
 

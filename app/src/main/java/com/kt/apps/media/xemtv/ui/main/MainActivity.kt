@@ -3,6 +3,7 @@ package com.kt.apps.media.xemtv.ui.main
 import android.content.Intent
 import android.os.Bundle
 import androidx.lifecycle.ViewModelProvider
+import com.kt.apps.autoupdate.ui.FragmentInfo
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.media.xemtv.BuildConfig
@@ -39,6 +40,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     override fun initAction(savedInstanceState: Bundle?) {
+        FragmentInfo.appVersion = BuildConfig.VERSION_NAME
         supportFragmentManager.beginTransaction()
             .replace(R.id.main_browse_fragment, DashboardFragment())
             .commitNow()

@@ -37,20 +37,7 @@ class TVSearchActivity : BaseActivity<ActivityTvSearchBinding>() {
     }
 
     override fun initView(savedInstanceState: Bundle?) {
-        BackgroundManager.getInstance(this).apply {
-            attach(window)
-            val bg: Bitmap = BitmapFactory.decodeResource(
-                this@TVSearchActivity.resources,
-                com.kt.apps.core.R.drawable.bg_tv
-            )
-            drawable = BitmapDrawable(null, Blur.of(this@TVSearchActivity,
-                bg,
-                BlurFactor().apply {
-                    this.radius = 10
-                    this.sampling = 1
-                }
-            ))
-        }
+        setBackgroundOverlay()
         commitSearchFragment(intent)
     }
 

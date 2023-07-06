@@ -1230,7 +1230,6 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         navDrawerView = root.findViewById(R.id.nav_drawer);
         mBrowseFrame.setOnChildFocusListener(mOnChildFocusListener);
         mBrowseFrame.setOnFocusSearchListener(mOnFocusSearchListener);
-        navDrawerView.setOnNavDrawerItemSelected(this::onRowSelected);
 
         installTitleView(inflater, mBrowseFrame, savedInstanceState);
 
@@ -1396,13 +1395,13 @@ public class BrowseSupportFragment extends BaseSupportFragment {
         }
     }
 
-    void onRowSelected(int position) {
+    public void onRowSelected(int position) {
         // even position is same, it could be data changed, always post selection runnable
         // to possibly swap main fragment.
         if (position == NO_POSITION) {
             return;
         }
-        navDrawerView.setItemSelected(position, true);
+        navDrawerView.setEnableSelectedItem(position, true);
 
         mSelectedPosition = position;
         if (mMainFragmentAdapter == null) {

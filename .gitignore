@@ -41,3 +41,5 @@ output.json
 /app_mobile/playStore/release/
 /app_mobile/modBeta/release/
 /build.properties
+/autoupdate/src/androidTest/java/com/kt/apps/autoupdate/
+/autoupdate/src/test/java/com/kt/apps/autoupdate/

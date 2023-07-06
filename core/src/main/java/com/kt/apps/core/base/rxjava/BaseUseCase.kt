@@ -15,10 +15,14 @@ abstract class BaseUseCase<T : Any>(private val transformer: AsyncTransformer<T>
 }
 
 abstract class MaybeUseCase<T: Any>(private val transformer: MaybeAsyncTransformer<T> = MaybeAsyncTransformer()) {
+    var cacheData: T? = null
     abstract fun prepareExecute(params: Map<String, Any>): Maybe<T>
     fun execute(params: Map<String, Any>): Maybe<T> {
         return prepareExecute(params)
             .compose(transformer)
+            .doOnSuccess {
+                cacheData = it
+            }
     }
 
     fun error(message: String): Observable<T> = Observable.error(Throwable(message))
