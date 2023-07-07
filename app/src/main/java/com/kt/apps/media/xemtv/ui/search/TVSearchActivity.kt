@@ -3,18 +3,11 @@ package com.kt.apps.media.xemtv.ui.search
 import android.annotation.SuppressLint
 import android.app.SearchManager
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import android.util.Log
 import androidx.core.os.bundleOf
-import androidx.leanback.app.BackgroundManager
 import androidx.lifecycle.ViewModelProvider
 import com.kt.apps.core.base.BaseActivity
 import com.kt.apps.core.usecase.search.SearchForText
-import com.kt.apps.core.utils.blurry.Blur
-import com.kt.apps.core.utils.blurry.BlurFactor
 import com.kt.apps.media.xemtv.R
 import com.kt.apps.media.xemtv.databinding.ActivityTvSearchBinding
 import javax.inject.Inject
@@ -34,6 +27,7 @@ class TVSearchActivity : BaseActivity<ActivityTvSearchBinding>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.getDefaultSearchList()
     }
 
     override fun initView(savedInstanceState: Bundle?) {
@@ -72,7 +66,6 @@ class TVSearchActivity : BaseActivity<ActivityTvSearchBinding>() {
     }
 
     override fun onBackPressed() {
-        Log.e("TAG", "onBackPressed")
         supportFragmentManager.findFragmentById(android.R.id.content)
             ?.let {
                 super.onBackPressed()
@@ -107,7 +100,6 @@ class TVSearchActivity : BaseActivity<ActivityTvSearchBinding>() {
             extraIntent?.data?.getQueryParameter("query")
         }
         val queryHint = extraIntent?.data?.getQueryParameter("query_hint")
-        Log.e("TAG", "extraIntent ${extraIntent?.data} ${extraIntent?.data?.getQueryParameter("filter")}")
         val tvSearchFragment = supportFragmentManager.findFragmentById(R.id.main_browse_fragment).takeIf {
             it is TVSearchFragment
         }

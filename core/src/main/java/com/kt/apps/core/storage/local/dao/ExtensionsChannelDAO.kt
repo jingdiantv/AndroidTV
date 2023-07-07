@@ -50,6 +50,18 @@ abstract class ExtensionsChannelDAO {
     @Query(
         "SELECT * FROM ExtensionChannelDatabaseViews " +
                 "INNER JOIN ExtensionsConfig ON extensionSourceId=sourceUrl " +
+                "WHERE tvGroup=:category " +
+                "AND channelId=:itemId AND tvChannelName=:displayName "
+    )
+    abstract fun getConfigAndChannelByIdAndCategory(
+        category: String,
+        itemId: String,
+        displayName: String
+    ): Single<ExtensionsChannelAndConfig>
+    @Transaction
+    @Query(
+        "SELECT * FROM ExtensionChannelDatabaseViews " +
+                "INNER JOIN ExtensionsConfig ON extensionSourceId=sourceUrl " +
                 "WHERE tvStreamLink=:streamLink "
     )
     abstract fun getConfigAndChannelByStreamLink(streamLink: String): Single<ExtensionsChannelAndConfig>

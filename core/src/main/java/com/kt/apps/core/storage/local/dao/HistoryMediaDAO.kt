@@ -25,8 +25,11 @@ abstract class HistoryMediaDAO {
     @Delete
     abstract fun delete(mediaItem: HistoryMediaItemDTO): Completable
 
-    @Query("SELECT * from HistoryMediaItemDTO")
+    @Query("SELECT * from HistoryMediaItemDTO order by lastViewTime desc")
     abstract fun getAll(): Single<List<HistoryMediaItemDTO>>
+
+    @Query("SELECT itemId from HistoryMediaItemDTO")
+    abstract fun getAllItemId(): Single<List<String>>
 
     @Query("SELECT * from HistoryMediaItemDTO WHERE itemId = :itemId")
     abstract fun getItem(itemId: String): Single<HistoryMediaItemDTO>

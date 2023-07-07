@@ -299,6 +299,7 @@ object Constants {
     const val REGEX_VN_A = "[aáàảãạăắằẳẵặâấầẩẫậ]"
     const val REGEX_VN_E = "[eéèẻẽẹêếềểễệ]"
     const val REGEX_VN_D = "[đ]"
+    const val REGEX_VN_I = "[íìỉĩị]"
     const val REGEX_VN_O = "[oóòỏõọôốồổỗộơớờởỡợ]"
     const val REGEX_VN_U = "[uúùủũụưứừửữự]"
 }

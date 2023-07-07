@@ -1,6 +1,7 @@
 package com.kt.apps.media.xemtv.ui.extensions
 
 import com.kt.apps.core.base.viewmodels.BaseExtensionsViewModel
+import com.kt.apps.core.base.viewmodels.HistoryIteractors
 import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.repository.IMediaHistoryRepository
@@ -19,7 +20,7 @@ class ExtensionsViewModel @Inject constructor(
     private val getListProgrammeForChannel: GetListProgrammeForChannel,
     private val actionLogger: IActionLogger,
     private val storage: IKeyValueStorage,
-    private val iMediaHistoryRepository: IMediaHistoryRepository
+    private val historyIteractors: HistoryIteractors
 ) : BaseExtensionsViewModel(
     parserExtensionsSource,
     roomDataBase,
@@ -27,7 +28,7 @@ class ExtensionsViewModel @Inject constructor(
     getListProgrammeForChannel,
     actionLogger,
     storage,
-    iMediaHistoryRepository
+    historyIteractors
 ) {
 
 }

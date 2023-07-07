@@ -51,7 +51,6 @@ fun getHeaderFromLinkStream(referer: String, host: String): Map<String, String> 
 fun String.getBaseUrl(): String {
     val isUrl = this.contains("http")
     val isHttps = this.contains("https:")
-    Log.e("TAG","getBaseUrl ${isUrl} $isHttps")
     if (!isUrl) return ""
     val baseUrl = replace(Regex("(http(s)?:\\/\\/)|(\\/.*)"), "")
     return if (isHttps) "https://$baseUrl" else "http://$baseUrl"

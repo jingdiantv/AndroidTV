@@ -12,19 +12,25 @@ import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logAddIPTVSource
-import com.kt.apps.core.repository.IMediaHistoryRepository
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.dto.HistoryMediaItemDTO
 import com.kt.apps.core.storage.removeLastRefreshExtensions
 import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
 import com.kt.apps.core.usecase.GetListProgrammeForChannel
+import com.kt.apps.core.usecase.history.GetHistoryForMediaItem
+import com.kt.apps.core.usecase.history.GetListHistory
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
+@CoreScope
+data class HistoryIteractors @Inject constructor(
+    val getListHistory: GetListHistory,
+    val getHistoryForMediaItem: GetHistoryForMediaItem
+)
 @CoreScope
 open class BaseExtensionsViewModel @Inject constructor(
     private val parserExtensionsSource: ParserExtensionsSource,
@@ -33,7 +39,7 @@ open class BaseExtensionsViewModel @Inject constructor(
     private val getListProgrammeForChannel: GetListProgrammeForChannel,
     private val actionLogger: IActionLogger,
     private val storage: IKeyValueStorage,
-    private val iMediaHistoryRepository: IMediaHistoryRepository
+    private val historyIteractors: HistoryIteractors
 ) : BaseViewModel() {
 
     private val _totalExtensionsConfig by lazy {
@@ -66,7 +72,7 @@ open class BaseExtensionsViewModel @Inject constructor(
     fun getHistoryForItem(extensionsChannel: ExtensionsChannel, streamLink: String) {
         _historyItem.postValue(DataState.Loading())
         add(
-            iMediaHistoryRepository.getHistoryForItem(extensionsChannel.channelId, streamLink)
+            historyIteractors.getHistoryForMediaItem(extensionsChannel.channelId, streamLink)
                 .subscribe({
                     _historyItem.postValue(DataState.Success(it))
                 }, {

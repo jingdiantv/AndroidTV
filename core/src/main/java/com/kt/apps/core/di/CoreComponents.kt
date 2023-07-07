@@ -9,6 +9,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.kt.apps.core.base.BaseViewModel
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.base.player.ExoPlayerManagerMobile
+import com.kt.apps.core.base.viewmodels.HistoryIteractors
 import com.kt.apps.core.extensions.ParserExtensionsProgramSchedule
 import com.kt.apps.core.extensions.ParserExtensionsSource
 import com.kt.apps.core.repository.IMediaHistoryRepository
@@ -52,6 +53,7 @@ interface CoreComponents {
     fun getListProgrammeForChannel() : GetListProgrammeForChannel
     fun searchForText() : SearchForText
     fun historyManager(): IMediaHistoryRepository
+    fun historyIteractors(): HistoryIteractors
 
     fun inject(scope: BaseViewModel)
 

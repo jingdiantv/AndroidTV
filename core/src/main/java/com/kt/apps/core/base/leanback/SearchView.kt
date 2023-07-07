@@ -257,8 +257,7 @@ class SearchView @JvmOverloads constructor(
         // Cache the voice search capability
         mVoiceButtonEnabled = hasVoiceSearch()
         if (mVoiceButtonEnabled) {
-            // TODO: use imeOptions to disable voice input when the new API will be available
-//            mSearchSrcTextView!!.privateImeOptions = IME_OPTION_NO_MICROPHONE
+            mSearchSrcTextView!!.privateImeOptions = IME_OPTION_NO_MICROPHONE
         }
         updateViewsVisibility(isIconified())
     }

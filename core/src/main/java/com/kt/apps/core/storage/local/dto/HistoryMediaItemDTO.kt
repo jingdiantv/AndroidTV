@@ -53,7 +53,7 @@ data class HistoryMediaItemDTO(
                 itemId = mediaItem.mediaId,
                 category = metaData.albumTitle.toString(),
                 displayName = metaData.displayTitle.toString(),
-                thumb = metaData.extras?.getString(AbstractExoPlayerManager.EXTRA_MEDIA_THUMB) ?: "",
+                thumb = "${metaData.artworkUri}",
                 currentPosition = currentPosition,
                 contentDuration = contentDuration,
                 isLiveStreaming = false,

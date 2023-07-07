@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.core.os.bundleOf
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.upstream.HttpDataSource
+import com.kt.apps.core.storage.local.dto.HistoryMediaItemDTO
+import com.kt.apps.core.usecase.search.SearchForText
 
 interface IActionLogger {
     fun log(event: String, extras: Bundle)
@@ -112,3 +114,62 @@ fun IActionLogger.logPlaybackRetryGetStreamLink(
         *extras
     )
 }
+
+fun IActionLogger.logSearchForText(
+    query: String,
+    queryResultCount: Int,
+    vararg extras: Pair<String, Any?>
+) {
+    this.log(
+        "Search",
+        extras = bundleOf(
+            "SearchQuery" to query,
+            "SearchResultCount" to queryResultCount,
+            *extras
+        )
+    )
+}
+
+fun IActionLogger.logSearchForTextAndPerformClick(
+    query: String,
+    searchResult: SearchForText.SearchResult,
+    vararg extras: Pair<String, Any?>
+) {
+    this.log(
+        "SearchAndPerformClick",
+        extras = bundleOf(
+            "SearchQuery" to query,
+            "Type" to when (searchResult) {
+                is SearchForText.SearchResult.TV -> "TV"
+                is SearchForText.SearchResult.History -> "History"
+                is SearchForText.SearchResult.ExtensionsChannelWithCategory -> "IPTV"
+            },
+            "SearchResultTitle" to when (searchResult) {
+                is SearchForText.SearchResult.TV -> searchResult.data.tvChannelName
+                is SearchForText.SearchResult.History -> searchResult.data.displayName
+                is SearchForText.SearchResult.ExtensionsChannelWithCategory -> searchResult.data.tvChannelName
+            },
+            "SearchResultData" to "$searchResult",
+            *extras
+        )
+    )
+}
+
+fun IActionLogger.logShowHistoryForItemDialog(
+    item: HistoryMediaItemDTO
+) {
+
+}
+
+fun IActionLogger.logClickYesHistoryDialog(
+    item: HistoryMediaItemDTO
+) {
+
+}
+
+fun IActionLogger.logClickNoHistoryDialog(
+    item: HistoryMediaItemDTO
+) {
+
+}
+

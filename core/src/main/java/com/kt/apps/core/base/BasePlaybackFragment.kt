@@ -174,7 +174,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         object : TimerTask() {
             override fun run() {
                 mainLooper.post {
-                    if (exoPlayerManager.exoPlayer?.isPlaying == true) {
+                    if (exoPlayerManager.exoPlayer?.isPlaying == true
+                        && exoPlayerManager.exoPlayer?.playbackState != Player.STATE_ENDED
+                    ) {
                         val player = exoPlayerManager.exoPlayer ?: return@post
                         updateProgress(player)
                     }

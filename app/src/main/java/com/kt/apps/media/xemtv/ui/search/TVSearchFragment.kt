@@ -80,12 +80,11 @@ class TVSearchFragment : BaseRowSupportFragment(), IKeyCodeHandler {
         adapter = mRowsAdapter
         onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ ->
             when (item) {
-                is SearchForText.SearchResult.TV -> {
-                    viewModel.getResultForItem(item)
-                }
-
-                is SearchForText.SearchResult.ExtensionsChannelWithCategory -> {
-                    viewModel.getResultForItem(item)
+                is SearchForText.SearchResult -> {
+                    viewModel.getResultForItem(
+                        item,
+                        _searchView?.searchEdtAutoComplete?.text.toString()
+                    )
                 }
             }
         }

@@ -11,7 +11,9 @@ import com.kt.apps.core.di.CoreScope
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.storage.local.databaseviews.ExtensionsChannelDBWithCategoryViews
+import com.kt.apps.core.storage.local.dto.HistoryMediaItemDTO
 import com.kt.apps.core.storage.local.dto.TVChannelDTO
+import com.kt.apps.core.usecase.history.GetListHistory
 import com.kt.apps.core.utils.replaceVNCharsToLatinChars
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.Single
@@ -19,7 +21,8 @@ import javax.inject.Inject
 
 @CoreScope
 class SearchForText @Inject constructor(
-    private val roomDataBase: RoomDataBase
+    private val roomDataBase: RoomDataBase,
+    private val _getListHistory: GetListHistory
 ) : MaybeUseCase<Map<String, List<SearchForText.SearchResult>>>() {
 
     sealed class SearchResult {
@@ -33,12 +36,17 @@ class SearchForText @Inject constructor(
             val urls: List<TVChannelDTO.TVChannelUrl>,
             val highlightTitle: SpannableString
         ) : SearchResult()
+
+        data class History(
+            val data: HistoryMediaItemDTO
+        ) : SearchResult()
     }
 
     override fun prepareExecute(params: Map<String, Any>): Maybe<Map<String, List<SearchResult>>> {
-        val query = params[EXTRA_QUERY] as String
-        val limit = params[EXTRA_LIMIT] as Int
-        val offset = params[EXTRA_OFFSET] as Int
+        val defaultListItem = params[EXTRA_DEFAULT_HISTORY] as? Boolean ?: false
+        val query = params[EXTRA_QUERY] as? String ?: ""
+        val limit = params[EXTRA_LIMIT] as? Int ?: 0
+        val offset = params[EXTRA_OFFSET] as? Int ?: 0
         val filter = params[EXTRA_FILTER] as? String
         val filterHighlight = query.lowercase()
             .replaceVNCharsToLatinChars()
@@ -73,8 +81,19 @@ class SearchForText @Inject constructor(
                 }
             }
 
+        val historySource = _getListHistory.invoke()
+            .filter {
+                it.isNotEmpty()
+            }
+            .map { itemList ->
+                val listSearchResult: List<SearchResult> = itemList.map { SearchResult.History(it) }
+                mapOf("Đã xem gần đây" to listSearchResult)
+            }
+            .switchIfEmpty(tvChannelSource)
+
         return when {
             filter == FILTER_ONLY_TV_CHANNEL -> tvChannelSource.toFlowable()
+            defaultListItem || query.isEmpty() -> historySource.toFlowable()
             filter == FILTER_ALL_IPTV -> extensionsSource.toFlowable()
             !filter?.trim().isNullOrBlank() -> {
                 extensionsSource.toFlowable()
@@ -98,6 +117,12 @@ class SearchForText @Inject constructor(
             EXTRA_LIMIT to limit,
             EXTRA_OFFSET to offset,
             EXTRA_FILTER to (filter ?: "")
+        )
+    )
+
+    operator fun invoke() = execute(
+        mapOf(
+            EXTRA_DEFAULT_HISTORY to true
         )
     )
 
@@ -164,6 +189,8 @@ class SearchForText @Inject constructor(
         private const val EXTRA_LIMIT = "extra:limit"
         private const val EXTRA_OFFSET = "extra:offset"
         private const val EXTRA_FILTER = "extra:filter"
+        private const val EXTRA_DEFAULT_HISTORY = "extra:default_history"
+
         const val FILTER_ONLY_TV_CHANNEL = "tv"
         const val FILTER_ALL_IPTV = "all_iptv"
         const val FILTER_FOOT_BALL = "football"

@@ -78,6 +78,20 @@ class SearchPresenter : Presenter() {
                 }
             }
 
+            is SearchForText.SearchResult.History -> {
+                cardView.titleText = item.data.displayName
+                cardView.contentText = item.data.category
+                cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
+                updateCardBackgroundColor(cardView, false)
+                cardView.let { imgView ->
+                    imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
+                    imgView.mainImageView.loadImgByUrl(
+                        item.data.thumb.trim(),
+                        ImageView.ScaleType.FIT_CENTER
+                    )
+                }
+            }
+
             is SearchForText.SearchResult.TV -> {
                 cardView.titleText = item.highlightTitle
                 cardView.contentText = null
@@ -90,6 +104,7 @@ class SearchPresenter : Presenter() {
                 }
                 updateCardBackgroundColor(cardView, false)
             }
+
         }
 
     }
