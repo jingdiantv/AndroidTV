@@ -29,7 +29,8 @@ local.properties
 /app/debug
 /app/release
 /icon
-
+test
+androidTest
 # generated
 captures/
 .externalNativeBuild/
