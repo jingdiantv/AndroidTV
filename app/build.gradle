@@ -90,6 +90,7 @@ dependencies {
     implementation project(":tv")
     implementation project(":football")
     implementation project(":autoupdate")
+    implementation project(':resources')
     implementation otherLibs.values()
     implementation rxJavaDependencies.values()
 

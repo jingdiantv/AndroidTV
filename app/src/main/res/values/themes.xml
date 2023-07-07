@@ -1,8 +1,9 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="Theme.XemTv" parent="@style/Theme.Leanback">
         <item name="navMenu">@menu/dashboard_menu</item>
         <item name="imageCardViewTitleStyle">@style/ImageCardViewStyleTitleDefault</item>
+        <item name="android:progressBarStyleLarge">@style/ThemeProgressLarge</item>
     </style>
 
     <style name="ImageCardViewStyleTitleDefault" parent="Widget.Leanback.ImageCardView.TitleStyle">

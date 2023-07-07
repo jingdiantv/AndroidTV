@@ -177,8 +177,8 @@ class SearchView @JvmOverloads constructor(
         LayoutInflater.from(context)
             .inflate(resLayout, this, true)
 
-        mSearchButton = findViewById(R.id.search_button)
-        mGoButton = findViewById(R.id.search_go_btn)
+        mSearchButton = findViewById(androidx.appcompat.R.id.search_button)
+        mGoButton = findViewById(androidx.appcompat.R.id.search_go_btn)
         mCloseButton = findViewById(R.id.search_close_btn)
         mVoiceButton = findViewById(R.id.search_voice_btn)
         mSearchSrcTextView = findViewById(R.id.search_src_text)

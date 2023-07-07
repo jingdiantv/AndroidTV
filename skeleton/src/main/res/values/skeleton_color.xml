@@ -30,7 +30,7 @@
 
     <color name="skeleton_elements">@color/item_gray_selected</color> <!--    middle skeleton-->
     <color name="skeleton_elements_transparent">#00ECECEC</color>
-    <color name="skeleton_elements_100">@color/backgroundColor</color>  <!--    light skeleton-->
+    <color name="skeleton_elements_100">@color/item_gray_light</color>  <!--    light skeleton-->
 
     <color name="white_transparent">#00FFFFFF</color>
     <color name="icon_color_grey">#838287</color>

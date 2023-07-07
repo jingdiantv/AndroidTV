@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="ThemeCompat" parent="Theme.AppCompat">
+        <item name="android:windowBackground">#00ffffff</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
+    <style name="ThemeCompat.Search" parent="ThemeCompat" />
+
+    <style name="BaseGridViewStyle" parent="Widget.Leanback.GridItems.VerticalGridView">
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:stretchMode">columnWidth</item>
+        <item name="android:paddingBottom">@dimen/lb_vertical_grid_padding_bottom</item>
+        <item name="android:paddingTop">21dp</item>
+        <item name="android:numColumns">auto_fit</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:horizontalSpacing">@dimen/lb_browse_item_horizontal_spacing</item>
+        <item name="android:verticalSpacing">@dimen/lb_browse_item_vertical_spacing</item>
+        <item name="focusOutFront">true</item>
+        <item name="focusOutSideEnd">false</item>
+        <item name="focusOutEnd">false</item>
+    </style>
+
+    <style name="ThemeProgressLarge">
+        <item name="android:indeterminateDrawable">@drawable/default_progress_bar_layer_list</item>
+        <item name="android:minWidth">54dp</item>
+        <item name="android:maxWidth">54dp</item>
+        <item name="android:minHeight">54dp</item>
+        <item name="android:maxHeight">54dp</item>
+        <item name="android:indeterminateBehavior">repeat</item>
+        <item name="android:indeterminateDuration">1500</item>
+        <item name="android:indeterminateOnly">true</item>
+    </style>
+
+    <style name="AlertDialogTheme" parent="@style/Theme.AppCompat.Dialog.Alert">
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowTitleStyle">@style/AlertDialogTheme.TitleTextStyle</item>
+        <item name="android:windowTitleBackgroundStyle">
+            @style/AlertDialogTheme.WindowTitleBackgroundStyle
+        </item>
+        <item name="android:windowBackground">@drawable/background_alert_dialog</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBlurBehindEnabled" tools:targetApi="s">true</item>
+        <item name="android:windowBackgroundBlurRadius" tools:targetApi="s">10dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:textColorPrimary">#DDFFFFFF</item>
+        <item name="buttonBarPositiveButtonStyle">@style/AlertDialogTheme.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/AlertDialogTheme.Button</item>
+    </style>
+
+    <style name="AlertDialogTheme.TitleTextStyle" parent="@style/RtlOverlay.DialogWindowTitle.AppCompat">
+        <item name="android:textSize">17sp</item>
+        <item name="android:layout_marginBottom">4dp</item>
+    </style>
+
+    <style name="AlertDialogTheme.WindowTitleBackgroundStyle" parent="Base.DialogWindowTitleBackground.AppCompat">
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="AlertDialogTheme.Button" parent="Widget.AppCompat.ButtonBar.AlertDialog">
+        <item name="android:background">@drawable/background_btn_alert_leanback</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:paddingLeft">22dp</item>
+        <item name="android:paddingRight">22dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textColor">@color/color_text_button_alert</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Widget.Button.Colored
+        </item>
+    </style>
+
+
+</resources>

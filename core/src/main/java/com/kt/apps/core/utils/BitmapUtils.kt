@@ -20,7 +20,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.kt.apps.core.GlideApp
 import com.kt.apps.core.GlideRequest
-import com.kt.apps.core.R
+import com.kt.apps.resources.R
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.utils.blurry.Blur

@@ -46,7 +46,7 @@ class SearchPresenter : Presenter() {
         sSelectedBackgroundColor = Color.TRANSPARENT
         mDefaultCardImage = ContextCompat.getDrawable(
             parent.context,
-            com.kt.apps.core.R.drawable.app_icon
+            com.kt.apps.resources.R.drawable.app_icon
         )
         val cardView: ImageCardView = DashboardTVChannelPresenter.TVImageCardView(parent.context)
         cardView.isFocusable = true

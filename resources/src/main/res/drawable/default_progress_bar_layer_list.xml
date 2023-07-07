@@ -1,0 +1,12 @@
+<layer-list xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        tools:targetApi="m">
+        <rotate
+            android:drawable="@drawable/spinner_white_76"
+            android:fromDegrees="0"
+            android:pivotX="50%"
+            android:pivotY="50%"
+            android:toDegrees="360" />
+    </item>
+</layer-list>

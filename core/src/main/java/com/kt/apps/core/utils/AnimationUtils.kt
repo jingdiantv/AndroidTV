@@ -13,7 +13,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.kt.apps.core.R
+import com.kt.apps.resources.R
 import kotlin.math.hypot
 
 object AnimationUtils {

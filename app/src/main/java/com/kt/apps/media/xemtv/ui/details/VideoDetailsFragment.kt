@@ -165,7 +165,7 @@ class VideoDetailsFragment : DetailsSupportFragment(), HasAndroidInjector {
         // Set detail background.
         val detailsPresenter = FullWidthDetailsOverviewRowPresenter(DetailsDescriptionPresenter())
         detailsPresenter.backgroundColor =
-            ContextCompat.getColor(requireActivity(), com.kt.apps.core.R.color.selected_background)
+            ContextCompat.getColor(requireActivity(), com.kt.apps.resources.R.color.selected_background)
 
         // Hook up transition element.
         val sharedElementHelper = FullWidthDetailsOverviewSharedElementHelper()

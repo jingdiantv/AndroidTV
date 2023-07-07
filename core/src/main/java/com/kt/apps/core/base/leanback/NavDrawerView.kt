@@ -110,7 +110,7 @@ class NavDrawerView @JvmOverloads constructor(
         val typedArray = context.obtainStyledAttributes(attr, R.styleable.NavDrawerView)
         val childSpacingBetween = typedArray.getDimensionPixelSize(
             R.styleable.NavDrawerView_childSpacingBetween,
-            R.dimen.nav_spacing_between
+            com.kt.apps.resources.R.dimen.nav_spacing_between
         )
         if (typedArray.hasValue(R.styleable.NavDrawerView_navMenu)) {
             val menuResId = typedArray.getResourceId(

@@ -24,7 +24,7 @@ class PlaybackTVChannelPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         sDefaultBackgroundColor = Color.TRANSPARENT
         sSelectedBackgroundColor = Color.TRANSPARENT
-        mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.core.R.drawable.app_icon)
+        mDefaultCardImage = ContextCompat.getDrawable(parent.context, com.kt.apps.resources.R.drawable.app_icon)
 
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_channel_playback, null, false)
