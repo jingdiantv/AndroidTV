@@ -14,6 +14,7 @@ import com.google.android.exoplayer2.PlaybackException
 import com.kt.apps.core.R
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logPlaybackRetryGetStreamLink
@@ -270,21 +271,25 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
         )
     }
 
-    private fun playVideo(tvChannel: TVChannelLinkStream) {
+    private fun playVideo(tvChannelLinkStream: TVChannelLinkStream) {
         playVideo(
-            title = tvChannel.channel.tvChannelName,
-            null,
-            referer = if (tvChannel.channel.referer.isEmpty()) {
-                tvChannel.linkStream.first()
-            } else {
-                tvChannel.channel.referer
+            linkStreams = tvChannelLinkStream.linkStream.map {
+                LinkStream(
+                    it,
+                    tvChannelLinkStream.channel.referer,
+                    streamId = tvChannelLinkStream.channel.channelId,
+                    isHls = it.contains("m3u8")
+                )
             },
-            linkStream = tvChannel.linkStream,
-            true,
-            isHls = tvChannel.channel.isHls
+            playItemMetaData = tvChannelLinkStream.channel.getMapData(),
+            isHls = tvChannelLinkStream.channel.isHls,
+            headers = null,
+            isLive = true,
+            listener = null,
+            hideGridView = true
         )
-        tvChannelViewModel.loadProgramForChannel(tvChannel.channel)
-        Logger.d(this, message = "PlayVideo: $tvChannel")
+        tvChannelViewModel.loadProgramForChannel(tvChannelLinkStream.channel)
+        Logger.d(this, message = "PlayVideo: $tvChannelLinkStream")
         if (tvChannelViewModel.tvChannelLiveData.value is DataState.Success) {
             val listChannel = (tvChannelViewModel.tvChannelLiveData.value as DataState.Success<List<TVChannel>>).data
             mPlayingPosition = listChannel.indexOfLast {

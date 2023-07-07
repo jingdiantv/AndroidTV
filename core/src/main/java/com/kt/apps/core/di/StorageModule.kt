@@ -19,6 +19,12 @@ class StorageModule {
 
     @Provides
     @CoreScope
+    @Named(EXTRA_EXO_DISPOSABLE)
+    fun provideNetworkDisposable(): DisposableContainer = CompositeDisposable()
+
+
+    @Provides
+    @CoreScope
     @Named(Constants.SHARE_PREF_NAME)
     fun providesSharePreferenceName(): String = "XemTV"
 
@@ -42,6 +48,10 @@ class StorageModule {
         Context
     ): RoomDataBase {
         return RoomDataBase.getInstance(context)
+    }
+
+    companion object {
+        const val EXTRA_EXO_DISPOSABLE = "extra:exo_disposable"
     }
 
 

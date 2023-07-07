@@ -4,13 +4,15 @@ import com.google.android.exoplayer2.Player
 import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.base.leanback.media.LeanbackPlayerAdapter
 import com.kt.apps.core.logging.Logger
+import com.kt.apps.core.repository.IMediaHistoryRepository
 import javax.inject.Inject
 
 
 class ExoPlayerManager @Inject constructor(
     private val _application: CoreApp,
-    private val _audioFocusManager: AudioFocusManager
-) : AbstractExoPlayerManager(_application, _audioFocusManager) {
+    private val _audioFocusManager: AudioFocusManager,
+    private val _historyManager: IMediaHistoryRepository
+) : AbstractExoPlayerManager(_application, _audioFocusManager, _historyManager) {
     private var _playerAdapter: LeanbackPlayerAdapter? = null
 
     val playerAdapter: LeanbackPlayerAdapter?

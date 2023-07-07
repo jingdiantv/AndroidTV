@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.storage.local.dto.FootballTeamEntity
+import com.kt.apps.core.storage.local.dto.HistoryMediaItemDTO
 
 class RoomDBTypeConverters {
 
@@ -58,6 +59,21 @@ class RoomDBTypeConverters {
         type.name
     } catch (e: java.lang.Exception) {
         ExtensionsConfig.Type.TV_CHANNEL.name
+    }
+
+    @TypeConverter
+    fun stringToHistoryType(str: String): HistoryMediaItemDTO.Type = try {
+        HistoryMediaItemDTO.Type
+            .valueOf(str)
+    } catch (e: java.lang.Exception) {
+        HistoryMediaItemDTO.Type.IPTV
+    }
+
+    @TypeConverter
+    fun historyTypeToString(type: HistoryMediaItemDTO.Type): String = try {
+        type.name
+    } catch (e: java.lang.Exception) {
+        HistoryMediaItemDTO.Type.IPTV.name
     }
 
     companion object {

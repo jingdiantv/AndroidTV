@@ -6,7 +6,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import cn.pedant.SweetAlert.ProgressHelper
@@ -32,7 +31,6 @@ import com.pnikosis.materialishprogress.ProgressWheel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
-import kotlin.coroutines.coroutineContext
 
 interface IPlaybackAction {
     fun onLoadedSuccess(videoSize: VideoSize)
@@ -276,7 +274,7 @@ class PlaybackFragment : BaseFragment<FragmentPlaybackBinding>() {
     private fun playVideo(data: TVChannelLinkStream) {
         exoPlayerManager.playVideo(data.linkStream.map {
             LinkStream(it, data.channel.tvChannelWebDetailPage, data.channel.tvChannelWebDetailPage)
-        }, data.channel.isHls, playbackViewModel?.playerListener)
+        }, data.channel.isHls, data.channel.getMapData() , playbackViewModel?.playerListener)
         binding.exoPlayer.player = exoPlayerManager.exoPlayer
         activity?.runOnUiThread {
             titleLabel.text = data.channel.tvChannelName

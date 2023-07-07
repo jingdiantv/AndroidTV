@@ -57,6 +57,7 @@ dependencies {
     implementation externalDependencies.values()
     implementation project(":skeleton")
     implementation project(":dialoglib")
+    implementation project(':resources')
     implementation authen.values()
     implementation roomDatabase.values()
     implementation otherLibs.values()

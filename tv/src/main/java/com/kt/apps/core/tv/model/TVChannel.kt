@@ -3,6 +3,7 @@ package com.kt.apps.core.tv.model
 import android.os.Parcelable
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import com.kt.apps.core.base.player.AbstractExoPlayerManager
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.storage.local.dto.TVChannelEntity
@@ -49,6 +50,14 @@ class TVChannel(
         get() = tvChannelWebDetailPage.contains("m3u8")
                 || tvGroup != TVChannelGroup.VOV.name
 
+    fun getMapData() = mapOf(
+        AbstractExoPlayerManager.EXTRA_MEDIA_ID to channelId,
+        AbstractExoPlayerManager.EXTRA_MEDIA_TITLE to tvChannelName,
+        AbstractExoPlayerManager.EXTRA_MEDIA_DESCRIPTION to (currentProgramme?.description ?: ""),
+        AbstractExoPlayerManager.EXTRA_MEDIA_ALBUM_TITLE to tvGroup,
+        AbstractExoPlayerManager.EXTRA_MEDIA_THUMB to logoChannel,
+        AbstractExoPlayerManager.EXTRA_MEDIA_ALBUM_ARTIST to sourceFrom
+    )
 
     override fun toString(): String {
         return "{" +

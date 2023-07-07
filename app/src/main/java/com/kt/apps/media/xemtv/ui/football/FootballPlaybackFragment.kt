@@ -33,19 +33,7 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
 
         arguments?.getParcelable<FootballMatchWithStreamLink?>(PlaybackActivity.EXTRA_FOOTBALL_MATCH)
             ?.let {
-                playVideo(
-                    it.match.getMatchName(),
-                    it.match.league,
-                    it.linkStreams.map { streamWithReferer ->
-                        LinkStream(
-                            streamWithReferer.m3u8Link,
-                            streamWithReferer.referer,
-                            streamWithReferer.m3u8Link
-                        )
-                    },
-                    isLive = it.match.isLiveMatch,
-                    isHls = true
-                )
+                playVideo(it)
             }
         observer = Observer { dataState ->
             Logger.e(this, message = dataState::class.java.name)
@@ -53,20 +41,7 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
                 is DataState.Success -> {
                     progressBarManager.hide()
                     val data = dataState.data
-                    val linkStreams = data.linkStreams.map { streamWithReferer ->
-                        LinkStream(
-                            streamWithReferer.m3u8Link,
-                            streamWithReferer.referer,
-                            streamWithReferer.m3u8Link
-                        )
-                    }
-                    playVideo(
-                        data.match.getMatchName(),
-                        data.match.league,
-                        linkStreams,
-                        isLive = data.match.isLiveMatch,
-                        isHls = true
-                    )
+                    playVideo(data)
                 }
 
                 is DataState.Loading -> {
@@ -105,6 +80,25 @@ class FootballPlaybackFragment : BasePlaybackFragment() {
             }
         }
 
+    }
+
+    private fun playVideo(matchWithStreamLink: FootballMatchWithStreamLink) {
+        val linkStreams = matchWithStreamLink.linkStreams.map { streamWithReferer ->
+            LinkStream(
+                streamWithReferer.m3u8Link,
+                streamWithReferer.referer,
+                streamWithReferer.m3u8Link
+            )
+        }
+        playVideo(
+            linkStreams = linkStreams,
+            playItemMetaData = matchWithStreamLink.match.getMediaItemData(),
+            headers = null,
+            listener = null,
+            isLive = matchWithStreamLink.match.isLiveMatch,
+            isHls = true,
+            hideGridView = true
+        )
     }
 
     override fun onPause() {

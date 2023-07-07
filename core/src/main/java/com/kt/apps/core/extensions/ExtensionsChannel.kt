@@ -6,6 +6,7 @@ import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Ignore
+import com.kt.apps.core.base.player.AbstractExoPlayerManager
 import com.kt.apps.core.extensions.model.TVScheduler
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
@@ -47,6 +48,15 @@ data class ExtensionsChannel(
                     )
 
         }
+
+    fun getMapData() = mapOf(
+        AbstractExoPlayerManager.EXTRA_MEDIA_ID to channelId,
+        AbstractExoPlayerManager.EXTRA_MEDIA_TITLE to tvChannelName,
+        AbstractExoPlayerManager.EXTRA_MEDIA_DESCRIPTION to (currentProgramme?.description ?: ""),
+        AbstractExoPlayerManager.EXTRA_MEDIA_ALBUM_TITLE to tvGroup,
+        AbstractExoPlayerManager.EXTRA_MEDIA_THUMB to logoChannel,
+        AbstractExoPlayerManager.EXTRA_MEDIA_ALBUM_ARTIST to extensionSourceId
+    )
 
     override fun toString(): String {
         return "{" +

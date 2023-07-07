@@ -44,13 +44,15 @@ class IMediaSessionPreparer(
         }
         currentItem?.let {
             exoPlayerManagerMobile.playVideo(
-                listOf(LinkStream(
+                linkStreams = listOf(LinkStream(
                     it.tvChannelWebDetailPage,
                     it.tvChannelWebDetailPage,
                     it.channelId,
                     it.tvGroup != TVChannelGroup.VOV.name
                 )),
-                it.tvGroup != TVChannelGroup.VOV.name
+
+                isHls = it.tvGroup != TVChannelGroup.VOV.name,
+                itemMetaData = it.getMapData(),
             )
         }
     }

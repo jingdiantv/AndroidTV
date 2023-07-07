@@ -12,8 +12,10 @@ import com.kt.apps.core.extensions.model.TVScheduler
 import com.kt.apps.core.logging.IActionLogger
 import com.kt.apps.core.logging.Logger
 import com.kt.apps.core.logging.logAddIPTVSource
+import com.kt.apps.core.repository.IMediaHistoryRepository
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
+import com.kt.apps.core.storage.local.dto.HistoryMediaItemDTO
 import com.kt.apps.core.storage.removeLastRefreshExtensions
 import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
 import com.kt.apps.core.usecase.GetListProgrammeForChannel
@@ -30,7 +32,8 @@ open class BaseExtensionsViewModel @Inject constructor(
     private val getCurrentProgrammeForChannel: GetCurrentProgrammeForChannel,
     private val getListProgrammeForChannel: GetListProgrammeForChannel,
     private val actionLogger: IActionLogger,
-    private val storage: IKeyValueStorage
+    private val storage: IKeyValueStorage,
+    private val iMediaHistoryRepository: IMediaHistoryRepository
 ) : BaseViewModel() {
 
     private val _totalExtensionsConfig by lazy {
@@ -52,6 +55,25 @@ open class BaseExtensionsViewModel @Inject constructor(
     val channelListCache: Map<String, WeakReference<List<ExtensionsChannel>>>
         get() = _extensionsChannelListCache
 
+
+    private val _historyItem by lazy {
+        MutableLiveData<DataState<HistoryMediaItemDTO>>()
+    }
+
+    val historyItem: LiveData<DataState<HistoryMediaItemDTO>>
+        get() = _historyItem
+
+    fun getHistoryForItem(extensionsChannel: ExtensionsChannel, streamLink: String) {
+        _historyItem.postValue(DataState.Loading())
+        add(
+            iMediaHistoryRepository.getHistoryForItem(extensionsChannel.channelId, streamLink)
+                .subscribe({
+                    _historyItem.postValue(DataState.Success(it))
+                }, {
+
+                })
+        )
+    }
 
     fun appendExtensionsCache(id: String, channelList: List<ExtensionsChannel>) {
         Logger.e(this, message = "id = $id")
@@ -224,5 +246,9 @@ open class BaseExtensionsViewModel @Inject constructor(
                     Logger.e(this@BaseExtensionsViewModel, exception = it)
                 })
         )
+    }
+
+    fun clearHistoryDataState() {
+        _historyItem.postValue(DataState.None())
     }
 }

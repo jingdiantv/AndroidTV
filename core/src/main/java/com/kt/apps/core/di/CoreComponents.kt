@@ -11,6 +11,7 @@ import com.kt.apps.core.base.CoreApp
 import com.kt.apps.core.base.player.ExoPlayerManagerMobile
 import com.kt.apps.core.extensions.ParserExtensionsProgramSchedule
 import com.kt.apps.core.extensions.ParserExtensionsSource
+import com.kt.apps.core.repository.IMediaHistoryRepository
 import com.kt.apps.core.storage.IKeyValueStorage
 import com.kt.apps.core.storage.local.RoomDataBase
 import com.kt.apps.core.usecase.GetCurrentProgrammeForChannel
@@ -27,6 +28,7 @@ import okhttp3.OkHttpClient
         StorageModule::class,
         FirebaseModule::class,
         NetworkModule::class,
+        ExoModule::class
     ]
 )
 @CoreScope
@@ -49,6 +51,7 @@ interface CoreComponents {
     fun getCurrentProgrammeForChannel() : GetCurrentProgrammeForChannel
     fun getListProgrammeForChannel() : GetListProgrammeForChannel
     fun searchForText() : SearchForText
+    fun historyManager(): IMediaHistoryRepository
 
     fun inject(scope: BaseViewModel)
 

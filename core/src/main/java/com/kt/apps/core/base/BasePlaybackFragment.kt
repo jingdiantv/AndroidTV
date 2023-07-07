@@ -31,6 +31,7 @@ import com.google.android.exoplayer2.util.Util
 import com.kt.apps.core.R
 import com.kt.apps.core.base.leanback.ProgressBarManager
 import com.kt.apps.core.base.leanback.media.LeanbackPlayerAdapter
+import com.kt.apps.core.base.player.AbstractExoPlayerManager
 import com.kt.apps.core.base.player.ExoPlayerManager
 import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.logging.IActionLogger
@@ -189,8 +190,8 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         updateProgress(player)
     }
 
-    private val formatBuilder = StringBuilder()
-    private val formatter = Formatter(formatBuilder, Locale.getDefault())
+    protected val formatBuilder = StringBuilder()
+    protected val formatter = Formatter(formatBuilder, Locale.getDefault())
     private var contentPosition = 0L
 
     private fun updateProgress(player: Player) {
@@ -211,7 +212,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         progressBar?.progress = player.contentPosition.toInt()
         contentDurationView?.text = " ${Util.getStringForTime(formatBuilder, formatter, player.contentDuration)}"
         contentPositionView?.text = "${Util.getStringForTime(formatBuilder, formatter, player.contentPosition)} /"
-        exoPlayerManager.exoPlayer?.setSeekParameters(SeekParameters(10_000L, 10_000L))
+//        exoPlayerManager.exoPlayer?.setSeekParameters(SeekParameters(10_000L, 10_000L))
     }
 
     open fun onPlayerPlaybackStateChanged(playbackState: Int) {
@@ -448,21 +449,6 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
 
     }
 
-    fun playVideo(
-        title: String,
-        subTitle: String?,
-        referer: String,
-        linkStream: List<String>,
-        isLive: Boolean,
-        isHls: Boolean,
-        headers: Map<String, String>? = null,
-        hidGridView: Boolean = true
-    ) {
-        playVideo(title, subTitle, linkStream.map {
-            LinkStream(it, referer, title)
-        }, mPlayerListener, isLive, isHls, headers, hidGridView)
-    }
-
     fun prepare(
         title: String,
         subTitle: String?,
@@ -489,8 +475,71 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }
     }
 
+    fun fadeInOverlay() {
+        mPlaybackOverlaysContainerView?.fadeIn()
+        mPlaybackInfoContainerView?.fadeIn()
+        if (mGridViewPickHeight > 0) {
+            mGridViewOverlays?.translationY = mGridViewPickHeight
+        }
+        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+        mPlayPauseIcon?.requestFocus()
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+    }
+
     fun playVideo(
-        title: String, subTitle: String?,
+        linkStreams: List<LinkStream>,
+        playItemMetaData: Map<String, String>,
+        headers: Map<String, String>?,
+        isHls: Boolean,
+        isLive: Boolean,
+        listener: Player.Listener?,
+        hideGridView: Boolean
+    ) {
+        progressManager.hide()
+        mGlueHost.setSurfaceHolderCallback(null)
+        exoPlayerManager.playVideo(
+            linkStreams = linkStreams,
+            isHls = isHls,
+            itemMetaData = playItemMetaData,
+            playerListener = listener ?: mPlayerListener,
+            headers = headers
+        )
+        mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
+        mTransportControlGlue.host = mGlueHost
+        mTransportControlGlue.title = playItemMetaData[AbstractExoPlayerManager.EXTRA_MEDIA_TITLE]
+        mTransportControlGlue.subtitle = playItemMetaData[AbstractExoPlayerManager.EXTRA_MEDIA_DESCRIPTION]
+        mTransportControlGlue.isSeekEnabled = true
+        mTransportControlGlue.playWhenPrepared()
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
+        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        if (hideGridView) {
+            setVideoInfo(
+                playItemMetaData[AbstractExoPlayerManager.EXTRA_MEDIA_TITLE],
+                playItemMetaData[AbstractExoPlayerManager.EXTRA_MEDIA_DESCRIPTION],
+                isLive
+            )
+            mPlaybackOverlaysContainerView?.fadeIn()
+            mPlaybackInfoContainerView?.fadeIn()
+            if (mGridViewPickHeight > 0) {
+                mGridViewOverlays?.translationY = mGridViewPickHeight
+            }
+            mPlayPauseIcon?.requestFocus()
+            setSelectedPosition(0)
+        }
+        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+        if (isLive) {
+            progressBarContainer?.gone()
+        } else {
+            progressBarContainer?.visible()
+        }
+        changeNextFocus()
+        progressBar?.isActivated = false
+        progressBar?.isFocusable = false
+    }
+
+    private fun playVideo(
+        title: String,
+        description: String?,
         linkStreams: List<LinkStream>,
         listener: Player.Listener? = null,
         isLive: Boolean,
@@ -500,17 +549,23 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     ) {
         progressManager.hide()
         mGlueHost.setSurfaceHolderCallback(null)
-        exoPlayerManager.playVideo(linkStreams, isHls, listener ?: mPlayerListener, headers)
+        exoPlayerManager.playVideo(
+            linkStreams = linkStreams,
+            isHls = isHls,
+            mapOf(),
+            playerListener = listener ?: mPlayerListener,
+            headers = headers
+        )
         mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
         mTransportControlGlue.host = mGlueHost
         mTransportControlGlue.title = title
-        mTransportControlGlue.subtitle = subTitle
+        mTransportControlGlue.subtitle = description
         mTransportControlGlue.isSeekEnabled = false
         mTransportControlGlue.playWhenPrepared()
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)
         if (hideGridView) {
-            setVideoInfo(title, subTitle, isLive)
+            setVideoInfo(title, description, isLive)
             mPlaybackOverlaysContainerView?.fadeIn()
             mPlaybackInfoContainerView?.fadeIn()
             if (mGridViewPickHeight > 0) {
@@ -556,17 +611,17 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }
     }
 
-    private fun setVideoInfo(title: String?, info: String?, isLive: Boolean = false) {
+    private fun setVideoInfo(title: String?, description: String?, isLive: Boolean = false) {
         if (!mPlaybackTitleView?.text.toString().equals(title, ignoreCase = true)) {
             mPlaybackTitleView?.text = title
         }
-        if (!mPlaybackInfoView?.text.toString().equals(info, ignoreCase = true)) {
-            mPlaybackInfoView?.text = info?.trim()
+        if (!mPlaybackInfoView?.text.toString().equals(description, ignoreCase = true)) {
+            mPlaybackInfoView?.text = description?.trim()
         }
         if (mPlaybackTitleView?.isSelected != true) {
             mPlaybackTitleView?.isSelected = true
         }
-        if (info == null) {
+        if (description == null) {
             mPlaybackInfoView?.gone()
         } else {
             mPlaybackInfoView?.visible()
@@ -766,6 +821,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     override fun onDpadLeft() {
         if (progressBar?.isFocused == true) {
             exoPlayerManager.exoPlayer?.seekTo(contentPosition - MIN_SEEK_DURATION)
+            exoPlayerManager.exoPlayer?.let {
+                updateProgress(it)
+            }
         }
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)
@@ -782,6 +840,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     override fun onDpadRight() {
         if (progressBar?.isFocused == true) {
             exoPlayerManager.exoPlayer?.seekTo(contentPosition + MIN_SEEK_DURATION)
+            exoPlayerManager.exoPlayer?.let {
+                updateProgress(it)
+            }
         }
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         mHandler.postDelayed(autoHideOverlayRunnable, 5000)

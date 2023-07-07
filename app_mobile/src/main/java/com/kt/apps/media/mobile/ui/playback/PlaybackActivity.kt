@@ -215,9 +215,13 @@ class PlaybackActivity : BaseActivity<ActivityPlaybackBinding>() {
 
     private fun playVideo(data: TVChannelLinkStream) {
         currentPlayingItem = data
-        exoPlayerManager.playVideo(data.linkStream.map {
-            LinkStream(it, data.channel.tvChannelWebDetailPage, data.channel.tvChannelWebDetailPage)
-        }, data.channel.isHls)
+        exoPlayerManager.playVideo(
+            linkStreams = data.linkStream.map {
+                LinkStream(it, data.channel.tvChannelWebDetailPage, data.channel.tvChannelWebDetailPage)
+            },
+            isHls = data.channel.isHls,
+            itemMetaData = data.channel.getMapData()
+        )
         titleVideoView.text = data.channel.tvChannelName
         binding.exoPlayer.player = exoPlayerManager.exoPlayer
     }

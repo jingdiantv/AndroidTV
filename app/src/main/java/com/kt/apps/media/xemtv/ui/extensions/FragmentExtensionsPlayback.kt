@@ -1,14 +1,22 @@
 package com.kt.apps.media.xemtv.ui.extensions
 
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.view.ContextThemeWrapper
 import android.view.View
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import com.kt.apps.core.base.leanback.OnItemViewClickedListener
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.util.Util
 import com.kt.apps.core.base.BasePlaybackFragment
 import com.kt.apps.core.base.DataState
+import com.kt.apps.core.base.player.LinkStream
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.extensions.ExtensionsConfig
 import com.kt.apps.core.logging.Logger
@@ -108,6 +116,61 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             }
         }
 
+        extensionsViewModel.historyItem.observe(viewLifecycleOwner) {
+            if (it is DataState.Success) {
+                val historyData = it.data
+                val timeString = Util.getStringForTime(
+                    formatBuilder,
+                    formatter,
+                    historyData.currentPosition
+                )
+                val spannableString = SpannableString("Bạn đang xem ${it.data.displayName} tại ${timeString}." +
+                        "\nBạn có muốn tiếp tục không?")
+                val timeIndex = spannableString.indexOf(timeString)
+                val titleIndex = spannableString.indexOf(it.data.displayName)
+                spannableString.setSpan(
+                    ForegroundColorSpan(ContextCompat.getColor(requireContext(), com.kt.apps.resources.R.color.color_text_highlight)),
+                    timeIndex,
+                    timeIndex + timeString.length,
+                    Spannable.SPAN_EXCLUSIVE_INCLUSIVE
+                )
+                spannableString.setSpan(
+                    ForegroundColorSpan(ContextCompat.getColor(requireContext(), com.kt.apps.resources.R.color.color_text_highlight)),
+                    titleIndex,
+                    titleIndex + it.data.displayName.length,
+                    Spannable.SPAN_EXCLUSIVE_INCLUSIVE
+                )
+
+
+                if (itemToPlay?.channelId == historyData.itemId) {
+                    AlertDialog.Builder(
+                        ContextThemeWrapper(
+                            requireActivity(),
+                            androidx.appcompat.R.style.Theme_AppCompat
+                        ), com.kt.apps.resources.R.style.AlertDialogTheme
+                    )
+                        .setTitle(it.data.category)
+                        .setMessage(spannableString)
+                        .setPositiveButton("Có") { dialog, which ->
+                            fadeInOverlay()
+                            exoPlayerManager.exoPlayer?.seekTo(historyData.currentPosition)
+                            dialog.dismiss()
+                        }
+                        .setNegativeButton("Xem lại từ đầu") { dialog, which ->
+                            dialog.dismiss()
+                        }
+                        .create()
+                        .apply {
+                            this.setOnShowListener {
+                                this.findViewById<View>(android.R.id.button1)?.requestFocus()
+                            }
+                        }
+                        .show()
+
+                }
+            }
+        }
+
 
     }
 
@@ -178,25 +241,25 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         CompositeDisposable()
     }
     private fun playVideo(
-        tvChannel: ExtensionsChannel,
+        extensionsChannel: ExtensionsChannel,
         useCatchup: Boolean = false,
         hideGridView: Boolean = true
     ) {
         if (hideGridView) {
-            extensionsViewModel.loadProgramForChannel(tvChannel, extension.type)
+            extensionsViewModel.loadProgramForChannel(extensionsChannel, extension.type)
         }
         lastExpandUrlTask?.let { disposable.remove(it) }
         disposable.clear()
         val linkToPlay = if (!useCatchup) {
-            tvChannel.tvStreamLink
+            extensionsChannel.tvStreamLink
         } else {
-            tvChannel.catchupSource
+            extensionsChannel.catchupSource
         }
 
         Logger.d(
             this,
             "PlayVideo",
-            "$tvChannel,\t" +
+            "$extensionsChannel,\t" +
                     "useCatchup: $useCatchup," +
                     "isHls: ${
                         linkToPlay.contains("m3u8") ||
@@ -212,7 +275,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
         )
 
         if (hideGridView) {
-            showInfo(tvChannel)
+            showInfo(extensionsChannel)
         }
 
         if (linkToPlay.isShortLink()) {
@@ -223,15 +286,15 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, realUrl, false)
+                    playWhenReady(extensionsChannel, realUrl, false)
                 }, {
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, linkToPlay, false)
+                    playWhenReady(extensionsChannel, linkToPlay, false)
                 })
             disposable.add(lastExpandUrlTask!!)
 
         } else if (linkToPlay.contains(".m3u8")) {
-            playWhenReady(tvChannel, linkToPlay, false)
+            playWhenReady(extensionsChannel, linkToPlay, false)
         } else {
             disposable.add(Observable.fromCallable {
                 linkToPlay.expandUrl()
@@ -240,34 +303,42 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ realUrl ->
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, realUrl, false)
+                    playWhenReady(extensionsChannel, realUrl, false)
                 }, {
                     if (isDetached) return@subscribe
-                    playWhenReady(tvChannel, linkToPlay, false)
+                    playWhenReady(extensionsChannel, linkToPlay, false)
                 }))
 
         }
     }
 
     private fun FragmentExtensionsPlayback.playWhenReady(
-        tvChannel: ExtensionsChannel,
+        extensionsChannel: ExtensionsChannel,
         linkToPlay: String,
         hideGridView: Boolean
     ) {
+        extensionsViewModel.getHistoryForItem(extensionsChannel, linkToPlay)
         playVideo(
-            tvChannel.currentProgramme?.title?.takeIf {
-                it.trim().isNotBlank()
-            }?.trim() ?: tvChannel.tvChannelName,
-            tvChannel.currentProgramme?.description?.takeIf {
-                it.isNotBlank()
-            }?.trim(),
-            referer = tvChannel.referer,
-            linkStream = listOf(linkToPlay),
-            isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
+            linkStreams = listOf(
+                LinkStream(
+                    linkToPlay,
+                    extensionsChannel.referer,
+                    streamId = extensionsChannel.channelId,
+                    isHls = linkToPlay.contains("m3u8")
+                )
+            ),
+            playItemMetaData = extensionsChannel.getMapData(),
             isHls = linkToPlay.contains("m3u8"),
-            headers = tvChannel.props,
-            hidGridView = hideGridView
+            headers = extensionsChannel.props,
+            isLive = extension.type == ExtensionsConfig.Type.FOOTBALL,
+            listener = null,
+            hideGridView = hideGridView
         )
+    }
+
+    override fun onPause() {
+        extensionsViewModel.clearHistoryDataState()
+        super.onPause()
     }
 
     private fun showInfo(
