@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <style name="Theme.BaseLeanBack" parent="@style/Theme.Leanback">
+        <item name="android:progressBarStyleLarge">@style/ThemeProgressLarge</item>
+        <item name="itemsVerticalGridStyle">@style/BaseGridViewStyle</item>
+    </style>
+
     <style name="ThemeCompat" parent="Theme.AppCompat">
         <item name="android:windowBackground">#00ffffff</item>
         <item name="android:windowContentOverlay">@null</item>
@@ -11,7 +16,22 @@
 
     <style name="ThemeCompat.Search" parent="ThemeCompat" />
 
-    <style name="BaseGridViewStyle" parent="Widget.Leanback.GridItems.VerticalGridView">
+    <style name="BaseGridViewStyle">
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:paddingStart">?attr/browsePaddingStart</item>
+        <item name="android:paddingEnd">?attr/browsePaddingEnd</item>
+        <item name="android:paddingBottom">@dimen/lb_vertical_grid_padding_bottom</item>
+        <item name="android:paddingTop">?attr/browseRowsMarginTop</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:horizontalSpacing">@dimen/lb_browse_item_horizontal_spacing</item>
+        <item name="android:verticalSpacing">@dimen/lb_browse_item_vertical_spacing</item>
+        <item name="focusOutFront">true</item>
+        <item name="focusOutSideEnd">false</item>
+        <item name="focusOutEnd">false</item>
+    </style>
+
+    <style name="BaseGridViewStyle.NoPaddingTop" parent="BaseGridViewStyle">
         <item name="android:focusable">true</item>
         <item name="android:focusableInTouchMode">true</item>
         <item name="android:stretchMode">columnWidth</item>

@@ -27,4 +27,10 @@
     <color name="selected_background">#02D2B3</color>
 
     <color name="color_text_highlight">#fb8500</color>
+    <!--alpha: 20 percent-->
+    <color name="white_dim_33_hex">#33FFFFFF</color>
+    <!--alpha: 60 percent-->
+    <color name="white_dim_99_hex">#99FFFFFF</color>
+    <!--alpha: 80 percent-->
+    <color name="white_dim_dd_hex">#DDFFFFFF</color>
 </resources>

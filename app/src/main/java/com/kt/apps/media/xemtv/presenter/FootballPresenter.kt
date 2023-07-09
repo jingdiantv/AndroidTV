@@ -2,7 +2,6 @@ package com.kt.apps.media.xemtv.presenter
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,13 +13,10 @@ import androidx.core.graphics.component2
 import androidx.core.graphics.component3
 import androidx.core.graphics.toColor
 import com.kt.apps.core.base.leanback.Presenter
-import com.kt.apps.core.utils.changeWithAlpha
-import com.kt.apps.core.utils.dpToPx
 import com.kt.apps.core.utils.getMainColor
 import com.kt.apps.core.utils.loadImageBitmap
 import com.kt.apps.football.model.FootballMatch
 import com.kt.apps.media.xemtv.R
-import com.kt.skeleton.setCornerRadius
 
 class FootballPresenter(private val showLeagueTitle: Boolean = true) : Presenter() {
 
@@ -61,30 +57,13 @@ class FootballPresenter(private val showLeagueTitle: Boolean = true) : Presenter
                 cardView.isSelected = hasFocus
                 oldFocusChange.onFocusChange(v, hasFocus)
             }
-            home.loadImageBitmap(
-                this.homeTeam.logo,
+            home.loadImageBitmap(this.homeTeam.logo,
                 filterColor = if (this.homeTeam.name.lowercase().contains("juv")) {
                     Color.WHITE
                 } else {
                     0
-                }
-            ) {
-                viewHolder.view.findViewById<View>(R.id.background_home).apply {
-                    val mainColor = it.getMainColor().toColor()
-                    this.background = GradientDrawable(
-                        GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(
-                            mainColor.changeWithAlpha(0.4f),
-                            Color.TRANSPARENT,
-                            Color.TRANSPARENT,
-                        )
-                    ).apply {
-                        this.setCornerRadius(
-                            topLeft = 9.dpToPx().toFloat(),
-                            bottomLeft = 9.dpToPx().toFloat(),
-                        )
-                    }
-                }
-            }
+                },
+                onResourceReady = {})
             away.loadImageBitmap(
                 this.awayTeam.logo,
                 filterColor = if (this.awayTeam.name.lowercase().contains("juv")) {
@@ -92,23 +71,7 @@ class FootballPresenter(private val showLeagueTitle: Boolean = true) : Presenter
                 } else {
                     0
                 }
-            ) {
-                viewHolder.view.findViewById<View>(R.id.background_away).apply {
-                    val mainColor = it.getMainColor().toColor()
-                    this.background = GradientDrawable(
-                        GradientDrawable.Orientation.RIGHT_LEFT, intArrayOf(
-                            mainColor.changeWithAlpha(0.4f),
-                            Color.TRANSPARENT,
-                            Color.TRANSPARENT,
-                        )
-                    ).apply {
-                        this.setCornerRadius(
-                            topRight = 9.dpToPx().toFloat(),
-                            bottomRight = 9.dpToPx().toFloat(),
-                        )
-                    }
-                }
-            }
+            ) {}
         }
     }
 

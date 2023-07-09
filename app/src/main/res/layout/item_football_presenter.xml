@@ -18,23 +18,37 @@
             android:layout_width="300dp"
             android:layout_height="170dp"
             android:background="@drawable/main_card_background_corners_8dp"
-            android:foreground="@drawable/main_card_background_outline_w_state"
             android:clipToOutline="true"
             android:clipToPadding="true"
             android:focusable="true"
-            android:focusableInTouchMode="true">
+            android:focusableInTouchMode="true"
+            android:foreground="@drawable/main_card_background_outline_w_state">
 
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/bacground_for_football_match" />
 
-            <View
-                android:id="@+id/background_home"
+            <com.kt.apps.resources.customview.ImageViewGradientBackground
+                android:id="@+id/home_team"
                 android:layout_width="155dp"
-                android:layout_height="170dp" />
+                android:layout_height="match_parent"
+                android:layout_gravity="start"
+                android:src="@drawable/app_icon"
+                app:imageHeight="100dp"
+                app:imageWidth="100dp"
+                app:rounded="left" />
 
-            <View
-                android:id="@+id/background_away"
+            <com.kt.apps.resources.customview.ImageViewGradientBackground
+                android:id="@+id/away_team"
                 android:layout_width="155dp"
-                android:layout_height="170dp"
-                android:layout_gravity="end" />
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:src="@drawable/app_icon"
+                app:imageHeight="100dp"
+                app:imageWidth="100dp"
+                app:rounded="right" />
 
             <TextView
                 android:id="@+id/match_time"
@@ -52,33 +66,6 @@
                 tools:drawableEnd="@drawable/background_live_football_circle"
                 tools:text="LIVE"
                 tools:textSize="12sp" />
-
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="fitXY"
-                android:src="@drawable/bacground_for_football_match" />
-
-            <ImageView
-                android:id="@+id/home_team"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="38dp"
-                android:src="@drawable/app_icon"
-                tools:text="Home" />
-
-
-            <ImageView
-                android:id="@+id/away_team"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_gravity="end"
-                android:layout_marginTop="38dp"
-                android:layout_marginEnd="20dp"
-                android:src="@drawable/app_icon"
-                tools:text="Away" />
         </FrameLayout>
 
         <LinearLayout

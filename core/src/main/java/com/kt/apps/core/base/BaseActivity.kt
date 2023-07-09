@@ -364,7 +364,7 @@ abstract class BaseActivity<T : ViewDataBinding> : FragmentActivity(), HasAndroi
             attach(window)
             val bg: Bitmap = BitmapFactory.decodeResource(
                 this@BaseActivity.resources,
-                R.drawable.bg_tv
+                com.kt.apps.resources.R.drawable.bg_tv
             )
             drawable = BitmapDrawable(null, Blur.of(this@BaseActivity,
                 bg,

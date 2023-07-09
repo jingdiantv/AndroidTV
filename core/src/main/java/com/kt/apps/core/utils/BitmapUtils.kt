@@ -58,6 +58,9 @@ fun ImageView.loadImageBitmap(
                 target: Target<Bitmap>?,
                 isFirstResource: Boolean
             ): Boolean {
+                this@loadImageBitmap.setImageDrawable(
+                    ContextCompat.getDrawable(context, R.drawable.app_icon)
+                )
                 return true
             }
 
