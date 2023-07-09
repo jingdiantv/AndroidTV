@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
 import com.kt.apps.core.Constants
+import com.kt.apps.core.utils.dpToPx
 
 import com.kt.apps.core.extensions.ExtensionsChannel
 import com.kt.apps.core.tv.model.TVChannel
@@ -68,15 +69,14 @@ class DashboardTVChannelPresenter : Presenter() {
 
     override fun onBindViewHolder(viewHolder: ViewHolder, item: Any) {
         val cardView = viewHolder.view as ImageCardView
-
+        cardView.setMainImageDimensions(
+            _defaultImageWidthDimensions.toInt(),
+            (_defaultImageWidthDimensions / IMAGE_DIMENSION).toInt()
+        )
         when (item) {
             is TVChannel -> {
                 cardView.titleText = item.tvChannelName
                 cardView.contentText = null
-                cardView.setMainImageDimensions(
-                    _defaultImageWidthDimensions.toInt(),
-                    (_defaultImageWidthDimensions / IMAGE_DIMENSION).toInt()
-                )
 
                 cardView.let { imgView ->
                     imgView.mainImageView.scaleType = ImageView.ScaleType.FIT_CENTER
@@ -89,7 +89,6 @@ class DashboardTVChannelPresenter : Presenter() {
             is ExtensionsChannel -> {
                 cardView.titleText = item.tvChannelName
                 cardView.contentText = ""
-                cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
                 updateCardBackgroundColor(cardView, false)
                 cardView.let { imgView ->
                     val name = Constants.mapChannel[
@@ -122,7 +121,7 @@ class DashboardTVChannelPresenter : Presenter() {
     }
 
     companion object {
-        private const val CARD_WIDTH = 313
+        val CARD_WIDTH = 160.dpToPx() //dp
         private const val CARD_HEIGHT = 176
         private const val IMAGE_DIMENSION = 48.0 / 27
     }
