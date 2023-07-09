@@ -1061,7 +1061,7 @@ public class BrowseSupportFragment extends BaseSupportFragment {
                         // disable focus_down moving into PageFragment.
                         return focused;
                     } else {
-                        return null;
+                        return focused;
                     }
                 }
             };
