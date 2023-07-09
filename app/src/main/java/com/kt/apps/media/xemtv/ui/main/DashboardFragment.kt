@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Message
 import android.view.*
 import android.widget.TextView
 import android.widget.Toast
@@ -68,6 +69,11 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
     private val childFocusSearchListener by lazy {
         object : BrowseFrameLayout.OnFocusSearchListener {
             override fun onFocusSearch(focused: View?, direction: Int): View? {
+                Logger.d(
+                    this@DashboardFragment,
+                    "FocusSearch",
+                    "{direction:$direction, focused: $focused}"
+                )
                 if (mMainFragment is FragmentDashboardExtensions) {
                     try {
                         return (mMainFragment as FragmentDashboardExtensions).onFocusSearch(
@@ -200,27 +206,31 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                     com.kt.apps.media.xemtv.R.id.search -> {
                         navDrawerView.forceCloseNav()
                         _mainHandler.removeCallbacksAndMessages(navDrawerView)
-                        _mainHandler.postDelayed({
+                        val message = Message.obtain(_mainHandler) {
                             startActivity(
                                 Intent(
                                     requireContext(),
                                     TVSearchActivity::class.java
                                 )
                             )
-                        }, navDrawerView, NavDrawerView.DEFAULT_DURATION)
+                        }
+                        message.obj = navDrawerView
+                        _mainHandler.sendMessageDelayed(message, NavDrawerView.DEFAULT_DURATION)
                     }
 
                     R.id.info -> {
                         navDrawerView.forceCloseNav()
                         _mainHandler.removeCallbacksAndMessages(navDrawerView)
-                        _mainHandler.postDelayed({
+                        val message = Message.obtain(_mainHandler) {
                             startActivity(
                                 Intent(
                                     requireContext(),
                                     AppUpdateActivity::class.java
                                 )
                             )
-                        }, navDrawerView, NavDrawerView.DEFAULT_DURATION)
+                        }
+                        message.obj = navDrawerView
+                        _mainHandler.sendMessageDelayed(message, NavDrawerView.DEFAULT_DURATION)
                     }
 
                     else -> {
@@ -230,7 +240,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
             }
         }
 
-        Logger.e(this, message = "initAction")
+        Logger.d(this, message = "initAction")
         requireView().findViewById<TextView>(R.id.app_version).text = displayVersionName
         activity?.intent?.data?.let {
             selectPageRowByUri(it)
@@ -239,7 +249,7 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
         mBackgroundManager.attach(requireActivity().window)
         mBackgroundManager.color = Color.BLACK
         onItemViewSelectedListener = OnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
-            Logger.e(this, message = row.toString())
+            Logger.d(this, tag = "DashboardSelected", message = row.toString())
             currentPageIdSelected = row.id
         }
 
@@ -261,13 +271,13 @@ class DashboardFragment : BrowseSupportFragment(), HasAndroidInjector, IKeyCodeH
                 Logger.d(this, message = uri.toString())
                 when (uri.host) {
                     Constants.HOST_FOOTBALL -> {
-                        setSelectedPosition(1, true)
+                        onRowSelected(defaultPages.keys.indexOf(DashboardPageRowFactory.ROW_FOOTBALL))
                     }
                     Constants.HOST_TV -> {
-                        setSelectedPosition(0, true)
+                        onRowSelected(defaultPages.keys.indexOf(DashboardPageRowFactory.ROW_TV))
                     }
                     Constants.HOST_RADIO -> {
-                        setSelectedPosition(2, true)
+                        onRowSelected(defaultPages.keys.indexOf(DashboardPageRowFactory.ROW_RADIO))
                     }
                 }
             }
