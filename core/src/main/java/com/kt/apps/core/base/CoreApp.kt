@@ -2,7 +2,9 @@ package com.kt.apps.core.base
 
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
+import android.content.Context
 import android.os.Bundle
+import androidx.multidex.MultiDex
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.remoteconfig.ktx.remoteConfig
@@ -14,6 +16,10 @@ import dagger.android.DaggerApplication
 abstract class CoreApp : DaggerApplication(), ActivityLifecycleCallbacks {
     abstract val coreComponents: CoreComponents
 
+    override fun attachBaseContext(base: Context?) {
+        super.attachBaseContext(base)
+        MultiDex.install(this)
+    }
     override fun onCreate() {
         super.onCreate()
         app = this
