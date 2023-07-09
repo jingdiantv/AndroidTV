@@ -78,14 +78,14 @@ public final class SeekBar extends View {
         setWillNotDraw(false);
         mBackgroundPaint.setColor(Color.GRAY);
         mSecondProgressPaint.setColor(Color.LTGRAY);
-        mProgressPaint.setColor(Color.RED);
+        mProgressPaint.setColor(Color.WHITE);
         mKnobPaint.setColor(Color.WHITE);
         mBarHeight = context.getResources().getDimensionPixelSize(
                 R.dimen.lb_playback_transport_progressbar_bar_height);
         mActiveBarHeight = context.getResources().getDimensionPixelSize(
-                R.dimen.lb_playback_transport_progressbar_active_bar_height);
+                com.kt.apps.resources.R.dimen.leanback_active_bar_height_seek_bark);
         mActiveRadius = context.getResources().getDimensionPixelSize(
-                R.dimen.lb_playback_transport_progressbar_active_radius);
+                com.kt.apps.resources.R.dimen.leanback_active_bar_radius_seek_bark);
     }
 
     /**
@@ -233,7 +233,11 @@ public final class SeekBar extends View {
         mSecondProgressRect.set(mProgressRect.right, verticalPadding,
                 mBarHeight / 2 + secondProgressPixels, height - verticalPadding);
 
-        mKnobx = radius + (int) progressPixels;
+        if (isFocused()) {
+            mKnobx = radius / 2 + (int) progressPixels;
+        } else {
+            mKnobx = radius + (int) progressPixels;
+        }
         invalidate();
     }
 
