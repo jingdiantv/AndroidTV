@@ -93,6 +93,8 @@ class TVPlaybackVideoFragment : BasePlaybackFragment() {
     }
 
     private fun notifyPlaybackError(error: PlaybackException) {
+        fadeInOverlay(false)
+        removeAutoHideCallback()
         showErrorDialog(
             content = "Kênh ${tvChannelViewModel.lastWatchedChannel?.channel?.tvChannelName ?: "TV"} " +
                     "hiện tại đang lỗi hoặc chưa hỗ trợ nội dung miễn phí: " +

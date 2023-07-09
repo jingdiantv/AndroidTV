@@ -205,6 +205,8 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
 
         when {
             retriedTimes > MAX_RETRY_TIME -> {
+                fadeInOverlay(false)
+                removeAutoHideCallback()
                 showErrorDialog(
                     content = "${
                         itemToPlay?.tvChannelName?.replaceFirstChar {
@@ -352,7 +354,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
             }?.trim() ?: tvChannel.tvChannelName,
             tvChannel.currentProgramme?.description?.takeIf {
                 it.isNotBlank()
-            }?.trim(),
+            }?.trim() ?: tvChannel.tvGroup,
             false,
             showProgressManager = showProgressManager
         )
