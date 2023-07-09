@@ -10,6 +10,7 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.disposables.DisposableContainer
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -29,6 +30,7 @@ class MediaHistoryRepositoryImpl @Inject constructor(
 
     override fun saveHistoryItem(item: HistoryMediaItemDTO) {
         val insertSource = _historyDao.getItem(item.itemId)
+            .delay(10, TimeUnit.SECONDS)
             .filter { oldItem ->
                 oldItem.currentPosition > item.currentPosition
             }
