@@ -87,7 +87,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     private var mPlaybackInfoView: TextView? = null
     private var mPlaybackInfoLiveView: TextView? = null
     private var mBrowseDummyView: FrameLayout? = null
-    private var progressBar: ProgressBar? = null
+    private var progressBar: SeekBar? = null
     private var progressBarContainer: ViewGroup? = null
     private var contentPositionView: TextView? = null
     private var contentDurationView: TextView? = null
@@ -209,7 +209,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }
         progressBar?.max = realDurationMillis.toInt()
         contentPosition = player.contentPosition
-        progressBar?.secondaryProgress = player.bufferedPosition.toInt()
+        progressBar?.setSecondaryProgress(player.bufferedPosition.toInt())
         player.contentBufferedPosition
         progressBar?.progress = player.contentPosition.toInt()
         contentDurationView?.text = " ${Util.getStringForTime(formatBuilder, formatter, player.contentDuration)}"
@@ -239,7 +239,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             isAnimationHideGridMenuShowVideoInfoRunning.set(false)
             mBrowseDummyView?.fadeOut {
                 mGridViewOverlays?.translationY = mGridViewPickHeight
-                mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+//                mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
                 mSelectedPosition = 0
                 mGridViewHolder?.gridView?.setSelectedPositionSmooth(0)
                 mPlayPauseIcon?.clearFocus()
@@ -327,6 +327,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
         mTransportControlGlue.host = mGlueHost
         mTransportControlGlue.isSeekEnabled = false
+
     }
 
     override fun onStart() {
@@ -360,7 +361,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
     }
 
     private fun setupVerticalGridView(gridView: View) {
-        mGridPresenter = VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM).apply {
+        mGridPresenter = VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM, false).apply {
             shadowEnabled = false
         }
         mGridPresenter!!.numberOfColumns = numOfRowColumns
@@ -463,13 +464,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         mHandler.removeCallbacks(autoHideOverlayRunnable)
         setVideoInfo(title, subTitle, isLive)
 
-        mPlaybackOverlaysContainerView?.fadeIn()
-        mPlaybackInfoContainerView?.fadeIn()
-        if (mGridViewPickHeight > 0) {
-            mGridViewOverlays?.translationY = mGridViewPickHeight
-        }
-        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
-        mPlayPauseIcon?.requestFocus()
+        fadeInOverlay(false)
         if (isLive) {
             progressBarContainer?.gone()
         } else {
@@ -477,15 +472,23 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         }
     }
 
-    fun fadeInOverlay() {
+    fun fadeInOverlay(autoHide: Boolean = true) {
         mPlaybackOverlaysContainerView?.fadeIn()
         mPlaybackInfoContainerView?.fadeIn()
+        mPlayPauseIcon?.fadeIn()
         if (mGridViewPickHeight > 0) {
             mGridViewOverlays?.translationY = mGridViewPickHeight
         }
-        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+//        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
         mPlayPauseIcon?.requestFocus()
-        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        if (autoHide) {
+            mHandler.removeCallbacks(autoHideOverlayRunnable)
+            mHandler.postDelayed(autoHideOverlayRunnable, 5000)
+        }
+    }
+
+    fun removeAutoHideCallback() {
+        mHandler.removeCallbacks(autoHideOverlayRunnable)
     }
 
     fun playVideo(
@@ -520,63 +523,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                 playItemMetaData[AbstractExoPlayerManager.EXTRA_MEDIA_DESCRIPTION],
                 isLive
             )
-            mPlaybackOverlaysContainerView?.fadeIn()
-            mPlaybackInfoContainerView?.fadeIn()
-            if (mGridViewPickHeight > 0) {
-                mGridViewOverlays?.translationY = mGridViewPickHeight
-            }
-            mPlayPauseIcon?.requestFocus()
+            fadeInOverlay(false)
             setSelectedPosition(0)
         }
-        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
-        if (isLive) {
-            progressBarContainer?.gone()
-        } else {
-            progressBarContainer?.visible()
-        }
-        changeNextFocus()
-        progressBar?.isActivated = false
-        progressBar?.isFocusable = false
-    }
-
-    private fun playVideo(
-        title: String,
-        description: String?,
-        linkStreams: List<LinkStream>,
-        listener: Player.Listener? = null,
-        isLive: Boolean,
-        isHls: Boolean,
-        headers: Map<String, String>? = null,
-        hideGridView: Boolean = true
-    ) {
-        progressManager.hide()
-        mGlueHost.setSurfaceHolderCallback(null)
-        exoPlayerManager.playVideo(
-            linkStreams = linkStreams,
-            isHls = isHls,
-            mapOf(),
-            playerListener = listener ?: mPlayerListener,
-            headers = headers
-        )
-        mTransportControlGlue = PlaybackTransportControlGlue(activity, exoPlayerManager.playerAdapter)
-        mTransportControlGlue.host = mGlueHost
-        mTransportControlGlue.title = title
-        mTransportControlGlue.subtitle = description
-        mTransportControlGlue.isSeekEnabled = false
-        mTransportControlGlue.playWhenPrepared()
-        mHandler.removeCallbacks(autoHideOverlayRunnable)
-        mHandler.postDelayed(autoHideOverlayRunnable, 5000)
-        if (hideGridView) {
-            setVideoInfo(title, description, isLive)
-            mPlaybackOverlaysContainerView?.fadeIn()
-            mPlaybackInfoContainerView?.fadeIn()
-            if (mGridViewPickHeight > 0) {
-                mGridViewOverlays?.translationY = mGridViewPickHeight
-            }
-            mPlayPauseIcon?.requestFocus()
-            setSelectedPosition(0)
-        }
-        mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
         if (isLive) {
             progressBarContainer?.gone()
         } else {
@@ -641,7 +590,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             mGridViewHolder?.gridView?.clearFocus()
             mPlayPauseIcon?.requestFocus()
             mGridViewOverlays?.translateY(mGridViewPickHeight) {
-                mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+//                mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
             }
         }
     }
@@ -708,13 +657,7 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                     "}"
         )
         if (!visible || mPlaybackOverlaysContainerView!!.alpha < 1f) {
-            mPlaybackOverlaysContainerView?.fadeIn()
-            mPlaybackInfoContainerView?.fadeIn()
-            if (mGridViewPickHeight > 0) {
-                mGridViewOverlays?.translationY = mGridViewPickHeight
-            }
-            mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
-            mPlayPauseIcon?.requestFocus()
+            fadeInOverlay(false)
             setSelectedPosition(0)
         }
         return false
@@ -732,12 +675,14 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             mPlaybackInfoContainerView?.fadeOut {
                 isAnimationHideGridMenuShowVideoInfoRunning.set(false)
             }
+            mPlayPauseIcon?.fadeOut()
             if (mGridViewOverlays!!.translationY == mGridViewPickHeight) {
                 mGridViewOverlays?.translateY(0f) {
                     Logger.d(this, message = "translateY = ${mGridViewOverlays?.translationY} - $mGridViewPickHeight")
                     mHandler.removeCallbacks(autoHideOverlayRunnable)
                     mGridViewOverlays?.visible()
-                    mBrowseDummyView?.setBackgroundColor(mDarkOverlayColor)
+                    mGridViewHolder?.gridView?.requestFocus()
+//                    mBrowseDummyView?.setBackgroundColor(mDarkOverlayColor)
                 }
             }
         } else {
@@ -796,8 +741,9 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
                     focusOnDpadUp()
                     isAnimationHideGridMenuShowVideoInfoRunning.set(false)
                 }
+                mPlayPauseIcon?.fadeIn()
                 mGridViewOverlays?.translateY(mGridViewPickHeight, onAnimationEnd = {
-                    mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
+//                    mBrowseDummyView?.setBackgroundColor(mLightOverlaysColor)
                     mPlaybackInfoContainerView?.alpha = 1f
                     focusOnDpadUp()
                     isAnimationHideGridMenuShowVideoInfoRunning.set(false)
@@ -883,18 +829,18 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         if (mPlaybackOverlaysContainerView?.visibility != View.VISIBLE) {
             mPlaybackOverlaysContainerView?.fadeIn {
                 mPlaybackInfoContainerView?.gone()
+                mPlayPauseIcon?.fadeOut()
                 mGridViewOverlays?.translateY(0f) {
                     mGridViewOverlays?.visible()
-                    mBrowseDummyView?.setBackgroundColor(mDarkOverlayColor)
                     mGridViewHolder?.gridView?.requestFocus()
                 }
             }
         } else if (mPlaybackInfoContainerView?.visibility == View.VISIBLE) {
             mGridViewOverlays?.translateY(0f) {
-                mGridViewOverlays?.visible()
-                mBrowseDummyView?.setBackgroundColor(mDarkOverlayColor)
-                mGridViewHolder?.gridView?.requestFocus()
                 mPlaybackInfoContainerView?.gone()
+                mGridViewOverlays?.visible()
+                mGridViewHolder?.gridView?.requestFocus()
+                mPlayPauseIcon?.fadeOut()
             }
         }
 
