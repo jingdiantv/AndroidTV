@@ -46,7 +46,7 @@ class FragmentTVGrid : BaseGridViewFragment<FragmentTvGridBinding>() {
     }
 
     override fun onCreatePresenter(): VerticalGridPresenter {
-        return VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply {
+        return VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM, false).apply {
             this.setLayoutRes(R.layout.fragment_tv_vertical_grid)
             this.shadowEnabled = false
             this.numberOfColumns = 5
