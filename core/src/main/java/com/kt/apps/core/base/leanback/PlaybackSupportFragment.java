@@ -90,6 +90,7 @@ public class PlaybackSupportFragment extends Fragment {
     PlaybackSeekUi.Client mSeekUiClient;
     boolean mInSeek;
     ProgressBarManager mProgressBarManager = new ProgressBarManager();
+    protected boolean enableAutoControlOverlayHandler;
 
     /**
      * Resets the focus on the button in the middle of control row.
@@ -187,7 +188,7 @@ public class PlaybackSupportFragment extends Fragment {
     }
 
     private static final String TAG = "PlaybackSupportFragment";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private static final int ANIMATION_MULTIPLIER = 1;
 
     private static final int START_FADE_OUT = 1;
@@ -319,6 +320,9 @@ public class PlaybackSupportFragment extends Fragment {
      *  {@link androidx.leanback.media.PlaybackBaseControlGlue} on user interactions.
      */
     public void setControlsOverlayAutoHideEnabled(boolean enabled) {
+        if (!enableAutoControlOverlayHandler) {
+            return;
+        }
         if (DEBUG) Log.v(TAG, "setControlsOverlayAutoHideEnabled " + enabled);
         if (enabled != mFadingEnabled) {
             mFadingEnabled = enabled;
@@ -672,6 +676,9 @@ public class PlaybackSupportFragment extends Fragment {
      * @param animation True to run animation.
      */
     void showControlsOverlay(boolean show, boolean animation) {
+        if (show && !enableAutoControlOverlayHandler) {
+            return;
+        }
         if (DEBUG) Log.v(TAG, "showControlsOverlay " + show);
         if (getView() == null) {
             mControlVisibleBeforeOnCreateView = show;
