@@ -199,6 +199,15 @@ open class BaseExtensionsViewModel @Inject constructor(
                     if (exist) {
                         _addExtensionConfigLiveData.postValue(DataState.Update(extensionsConfig))
                         parserExtensionsSource.updateIPTVSource(extensionsConfig)
+                            .doOnComplete {
+                                if (_addExtensionConfigLiveData.value !is DataState.Success) {
+                                    actionLogger.logAddIPTVSource(
+                                        extensionsConfig.sourceUrl,
+                                        extensionsConfig.sourceName
+                                    )
+                                    _addExtensionConfigLiveData.postValue(DataState.Success(extensionsConfig))
+                                }
+                            }
                     } else {
                         parserExtensionsSource.parseFromRemoteRxStream(extensionsConfig)
                             .subscribeOn(Schedulers.io())
@@ -252,6 +261,10 @@ open class BaseExtensionsViewModel @Inject constructor(
                     Logger.e(this@BaseExtensionsViewModel, exception = it)
                 })
         )
+    }
+
+    fun insertWatchNextPrograms(extensionsChannel: ExtensionsChannel) {
+
     }
 
     fun clearHistoryDataState() {
