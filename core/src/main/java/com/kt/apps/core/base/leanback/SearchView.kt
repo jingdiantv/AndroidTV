@@ -38,8 +38,8 @@ import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ListPopupWindow
-import android.widget.ListView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
 import androidx.cursoradapter.widget.CursorAdapter
 import com.kt.apps.core.R
@@ -89,6 +89,7 @@ class SearchView @JvmOverloads constructor(
             true
         }
     }
+    @RequiresApi(Build.VERSION_CODES.M)
     private var mTextKeyListener = OnKeyListener { v, keyCode, event -> // guard against possible race conditions
         if (mSearchable == null) {
             return@OnKeyListener false
@@ -98,16 +99,18 @@ class SearchView @JvmOverloads constructor(
             message = "mTextListener.onKey(" + keyCode + "," + event + "), selection: "
                     + mSearchSrcTextView!!.listSelection
         )
-        // If a suggestion is selected, handle enter, search key, and action keys
-        // as presses on the selected suggestion
-        if (mSearchSrcTextView!!.isPopupShowing
-            && mSearchSrcTextView!!.listSelection != ListView.INVALID_POSITION
+        if (event.hasNoModifiers()
+            && event.action == KeyEvent.ACTION_UP
+            && keyCode == KeyEvent.KEYCODE_DPAD_CENTER
         ) {
-            return@OnKeyListener onSuggestionsKey(v, keyCode, event)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!rootWindowInsets.isVisible(1 shl 3)) {
+                    showKeyboard()
+                }
+            } else {
+                showKeyboard()
+            }
         }
-
-        // If there is text in the query box, handle enter, and action keys
-        // The search key is handled by the dialog's onKeyDown().
         if (!mSearchSrcTextView!!.isEmpty && event.hasNoModifiers()) {
             if (event.action == KeyEvent.ACTION_UP) {
                 if (keyCode == KeyEvent.KEYCODE_ENTER) {
@@ -228,7 +231,9 @@ class SearchView @JvmOverloads constructor(
         mSearchSrcTextView!!.setOnEditorActionListener(mOnEditorActionListener)
 //        mSearchSrcTextView!!.onItemClickListener = mOnItemClickListener
 //        mSearchSrcTextView!!.onItemSelectedListener = mOnItemSelectedListener
-        mSearchSrcTextView!!.setOnKeyListener(mTextKeyListener)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mSearchSrcTextView!!.setOnKeyListener(mTextKeyListener)
+        }
 
         mSearchSrcTextView!!.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
             if (mOnQueryTextFocusChangeListener != null) {
@@ -561,18 +566,19 @@ class SearchView @JvmOverloads constructor(
                     "direction: $direction" +
                     "}"
         )
-        if (focused == mVoiceButton && direction == View.FOCUS_RIGHT) {
-            return if (mSearchSrcTextView?.isEmpty == true) {
-                mSearchSrcTextView
-            } else {
-                mCloseButton
-            }
-        } else if (focused == mSearchSrcTextView
+//        if (focused == mVoiceButton && direction == View.FOCUS_RIGHT) {
+//            return if (mSearchSrcTextView?.isEmpty == true) {
+//                mSearchSrcTextView
+//            } else {
+//                mCloseButton
+//            }
+//        } else
+        if (focused == mSearchSrcTextView
             && (mSearchSrcTextView?.isEmpty == true
                     || mSearchSrcTextView!!.selectionStart == 0)
             && ((direction == View.FOCUS_LEFT) || (direction == View.FOCUS_UP))
         ) {
-            return mVoiceButton
+            return focused
         } else if (focused == mSearchSrcTextView
             && (mSearchSrcTextView?.isEmpty == true
                     || mSearchSrcTextView!!.selectionEnd == mSearchSrcTextView?.text?.length?.minus(1)
@@ -820,7 +826,7 @@ class SearchView @JvmOverloads constructor(
         }
     }
 
-    class SearchAutoComplete @JvmOverloads constructor(
+    open class SearchAutoComplete @JvmOverloads constructor(
         context: Context?,
         attrs: AttributeSet? = null,
         defStyle: Int = 0
@@ -913,23 +919,23 @@ class SearchView @JvmOverloads constructor(
 
         override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {
             Logger.d(this@SearchAutoComplete, message = "On Key PreIme: $keyCode")
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                // special case for the back key, we do not even try to send it
-                // to the drop down list but instead, consume it immediately
-                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                    val state = keyDispatcherState
-                    state?.startTracking(event, this)
-                    return true
-                } else if (event.action == KeyEvent.ACTION_UP) {
-                    val state = keyDispatcherState
-                    state?.handleUpEvent(event)
-                    if (event.isTracking && !event.isCanceled) {
-                        mSearchView?.mVoiceButton?.requestFocus()
-                        setImeVisibility(false)
-                        return true
-                    }
-                }
-            }
+//            if (keyCode == KeyEvent.KEYCODE_BACK) {
+//                // special case for the back key, we do not even try to send it
+//                // to the drop down list but instead, consume it immediately
+//                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+//                    val state = keyDispatcherState
+//                    state?.startTracking(event, this)
+//                    return true
+//                } else if (event.action == KeyEvent.ACTION_UP) {
+//                    val state = keyDispatcherState
+//                    state?.handleUpEvent(event)
+//                    if (event.isTracking && !event.isCanceled) {
+//                        mSearchView?.mVoiceButton?.requestFocus()
+//                        setImeVisibility(false)
+//                        return true
+//                    }
+//                }
+//            }
             return super.onKeyPreIme(keyCode, event)
         }
 

@@ -14,21 +14,20 @@
         android:layout_marginStart="20dp"
         android:background="@drawable/bg_circle"
         android:contentDescription="@string/abc_searchview_description_voice"
-        android:focusable="true"
-        android:focusedByDefault="true"
+        android:focusable="false"
+        android:focusedByDefault="false"
         android:padding="15dp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:srcCompat="@drawable/record_icon"
         app:tint="@color/color_record_selector"
         tools:ignore="UnusedAttribute"
-        tools:visibility="visible" />
+        tools:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/search_edit_frame"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:layout_marginHorizontal="20dp"
         android:background="@drawable/background_form_search_outline"
         android:gravity="center_vertical"
         android:layoutDirection="locale"
@@ -56,18 +55,21 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:textCursorDrawable="@drawable/edittext_cursor"
             android:background="@null"
             android:dropDownAnchor="@id/search_edit_frame"
             android:dropDownHeight="wrap_content"
             android:dropDownHorizontalOffset="0dip"
             android:dropDownVerticalOffset="0dip"
             android:ellipsize="end"
+            android:focusable="true"
+            android:focusedByDefault="true"
             android:imeOptions="actionSearch"
             android:inputType="text|textAutoComplete|textNoSuggestions"
             android:paddingStart="@dimen/abc_dropdownitem_text_padding_left"
             android:paddingEnd="@dimen/abc_dropdownitem_text_padding_right"
-            android:singleLine="true"/>
+            android:singleLine="true"
+            android:textCursorDrawable="@drawable/edittext_cursor"
+            tools:ignore="UnusedAttribute" />
 
         <ImageView
             android:id="@+id/search_close_btn"

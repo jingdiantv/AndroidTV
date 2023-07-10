@@ -159,14 +159,20 @@ class TVSearchFragment : BaseRowSupportFragment(), IKeyCodeHandler {
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP && event.action == KeyEvent.ACTION_DOWN
                     && selectedPosition == 0
                 ) {
-                    _btnVoice?.requestFocus()
+                    if (_searchView?.searchEdtAutoComplete?.text.isNullOrBlank()) {
+                        _searchView?.searchEdtAutoComplete?.requestFocus()
+                    } else if (_btnClose?.isFocused == false) {
+                        _btnClose?.requestFocus()
+                    } else {
+                        return@setOnDispatchKeyListener false
+                    }
                     return@setOnDispatchKeyListener true
                 } else if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_DOWN) {
                     val focused = view?.findFocus()
                     if (focused is DashboardTVChannelPresenter.TVImageCardView) {
-                        _btnVoice?.requestFocus()
+                        _searchView?.searchEdtAutoComplete?.requestFocus()
                         return@setOnDispatchKeyListener true
-                    } else if (focused == _btnClose || focused == findViewById<ImageView>(androidx.appcompat.R.id.search_voice_btn)) {
+                    } else if (focused == _searchView?.searchEdtAutoComplete) {
                         activity?.finish()
                         return@setOnDispatchKeyListener true
                     }
