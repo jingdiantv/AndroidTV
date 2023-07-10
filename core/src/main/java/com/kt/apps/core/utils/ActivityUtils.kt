@@ -5,9 +5,11 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.inputmethod.InputMethodManager
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
@@ -49,21 +51,43 @@ fun Fragment.showSuccessDialog(
 fun Fragment.showErrorDialog(
     onSuccessListener: (() -> Unit)? = null,
     content: String? = null,
+    titleText: String? = null,
+    confirmText: String? = "OK",
     delayMillis: Int? = 1900,
+    onDismissListener: (() -> Unit)? = null,
+    onShowListener: (() -> Unit)? = null,
 ) {
     if (this.isDetached || this.isHidden) {
         return
     }
-    val successAlert = SweetAlertDialog(requireContext(), SweetAlertDialog.ERROR_TYPE)
+    val successAlert = SweetAlertDialog(requireContext(), SweetAlertDialog.NORMAL_TYPE)
         .showCancelButton(false)
-        .hideConfirmButton()
 
     successAlert.showContentText(content != null)
     successAlert.setCancelable(true)
     successAlert.contentText = content
-    successAlert.titleText = null
-    successAlert.confirmText = null
+    successAlert.titleText = titleText
+    successAlert.confirmText = confirmText
     successAlert.setBackground(ColorDrawable(Color.TRANSPARENT))
+    val oldForeground = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        this.view?.foreground
+    } else {
+        this.view?.background
+    }
+    successAlert.setOnDismissListener {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.view?.foreground = oldForeground
+        }
+        onDismissListener?.invoke()
+    }
+    successAlert.setOnShowListener {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.view?.foreground = context?.let { ctx ->
+                ContextCompat.getDrawable(ctx, com.kt.apps.resources.R.drawable.base_background_player_container_error)
+            }
+        }
+        onShowListener?.invoke()
+    }
     successAlert.show()
     lifecycle.addObserver(object : LifecycleEventObserver {
         override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
@@ -98,11 +122,21 @@ fun Activity.showSuccessDialog(
 fun Activity.showErrorDialog(
     onSuccessListener: (() -> Unit)? = null,
     content: String? = null,
+    titleText: String? = null,
+    confirmText: String? = null,
     delayMillis: Int? = 1900,
     autoDismiss: Boolean = false
 ) {
     try {
-        showSweetDialog(SweetAlertDialog.ERROR_TYPE, onSuccessListener, content, delayMillis, autoDismiss)
+        showSweetDialog(
+            SweetAlertDialog.ERROR_TYPE,
+            onSuccessListener,
+            content,
+            delayMillis,
+            autoDismiss,
+            titleText,
+            confirmText
+        )
     } catch (_: Exception) {
     }
 }
@@ -112,7 +146,9 @@ fun Activity.showSweetDialog(
     onSuccessListener: (() -> Unit?)? = null,
     content: String? = null,
     delayMillis: Int? = 1900,
-    autoDismiss: Boolean = false
+    autoDismiss: Boolean = false,
+    titleText: String? = null,
+    confirmText: String? = null
 ) {
     val successAlert = SweetAlertDialog(this, type)
         .showCancelButton(false)
@@ -121,8 +157,8 @@ fun Activity.showSweetDialog(
     successAlert.showContentText(content != null)
     successAlert.setCancelable(!autoDismiss)
     successAlert.contentText = content
-    successAlert.titleText = null
-    successAlert.confirmText = null
+    successAlert.titleText = titleText
+    successAlert.confirmText = confirmText
     successAlert.setBackground(ColorDrawable(Color.TRANSPARENT))
 
     successAlert.show()

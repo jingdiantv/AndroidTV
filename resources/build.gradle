@@ -34,4 +34,6 @@ dependencies {
     implementation 'androidx.leanback:leanback:1.1.0-beta01'
     implementation appDependencies.values()
     implementation otherLibs.values()
+    implementation project(":skeleton")
+    implementation project(":dialoglib")
 }

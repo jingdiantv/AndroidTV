@@ -205,20 +205,7 @@ class FragmentExtensionsPlayback : BasePlaybackFragment() {
 
         when {
             retriedTimes > MAX_RETRY_TIME -> {
-                fadeInOverlay(false)
-                removeAutoHideCallback()
-                showErrorDialog(
-                    content = "${
-                        itemToPlay?.tvChannelName?.replaceFirstChar {
-                            if (it.isLowerCase()) {
-                                it.titlecase()
-                            } else {
-                                it.toString()
-                            }
-                        } ?: "Chương trình IPTV"
-                    } " + "hiện tại đang lỗi : " +
-                            "$errorCode $errorMessage"
-                )
+                showErrorDialogWithErrorCode(errorCode)
                 retryTimes[itemToPlay!!.channelId] = 0
             }
 

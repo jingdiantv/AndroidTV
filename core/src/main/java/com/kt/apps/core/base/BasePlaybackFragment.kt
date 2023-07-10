@@ -3,6 +3,7 @@ package com.kt.apps.core.base
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -215,6 +216,15 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
         contentDurationView?.text = " ${Util.getStringForTime(formatBuilder, formatter, player.contentDuration)}"
         contentPositionView?.text = "${Util.getStringForTime(formatBuilder, formatter, player.contentPosition)} /"
 //        exoPlayerManager.exoPlayer?.setSeekParameters(SeekParameters(10_000L, 10_000L))
+    }
+
+    protected fun setOverlayBackground(background: Drawable?, showBtnPlay: Boolean) {
+        mBrowseDummyView?.background = background
+        if (showBtnPlay) {
+            mPlayPauseIcon?.fadeIn {}
+        } else {
+            mPlayPauseIcon?.fadeOut {}
+        }
     }
 
     open fun onPlayerPlaybackStateChanged(playbackState: Int) {
@@ -844,6 +854,23 @@ abstract class BasePlaybackFragment : PlaybackSupportFragment(),
             }
         }
 
+    }
+
+    fun showErrorDialogWithErrorCode(errorCode: Int) {
+        fadeInOverlay(false)
+        removeAutoHideCallback()
+        showErrorDialog(
+            content = getString(
+                com.kt.apps.resources.R.string.error_playback_popup_content_text,
+                errorCode
+            ),
+            titleText = getString(com.kt.apps.resources.R.string.error_playback_popup_title_text),
+            onDismissListener = {
+
+            },
+            onShowListener = {
+            }
+        )
     }
 
     override fun onResume() {

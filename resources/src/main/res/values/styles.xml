@@ -4,6 +4,15 @@
     <style name="Theme.BaseLeanBack" parent="@style/Theme.Leanback">
         <item name="android:progressBarStyleLarge">@style/ThemeProgressLarge</item>
         <item name="itemsVerticalGridStyle">@style/BaseGridViewStyle</item>
+        <item name="sweet_alert_btn_confirm_bg_drawable">@drawable/background_outline_circle</item>
+        <item name="sweet_alert_btn_confirm_text_color">@color/white</item>
+        <item name="sweet_alert_btn_confirm_text_size">14sp</item>
+        <item name="sweet_alert_title_text_color">@color/white</item>
+        <item name="sweet_alert_title_text_size">19sp</item>
+        <item name="sweet_alert_content_text_size">15sp</item>
+        <item name="sweet_alert_content_text_color">@color/white</item>
+        <item name="sweet_alert_btn_confirm_default_focus">true</item>
+        <item name="sweet_alert_bg_drawable">@null</item>
     </style>
 
     <style name="ThemeCompat" parent="Theme.AppCompat">
@@ -32,18 +41,9 @@
     </style>
 
     <style name="BaseGridViewStyle.NoPaddingTop" parent="BaseGridViewStyle">
-        <item name="android:focusable">true</item>
-        <item name="android:focusableInTouchMode">true</item>
         <item name="android:stretchMode">columnWidth</item>
-        <item name="android:paddingBottom">@dimen/lb_vertical_grid_padding_bottom</item>
         <item name="android:paddingTop">21dp</item>
         <item name="android:numColumns">auto_fit</item>
-        <item name="android:gravity">center_horizontal</item>
-        <item name="android:horizontalSpacing">@dimen/lb_browse_item_horizontal_spacing</item>
-        <item name="android:verticalSpacing">@dimen/lb_browse_item_vertical_spacing</item>
-        <item name="focusOutFront">true</item>
-        <item name="focusOutSideEnd">false</item>
-        <item name="focusOutEnd">false</item>
     </style>
 
     <style name="ThemeProgressLarge">

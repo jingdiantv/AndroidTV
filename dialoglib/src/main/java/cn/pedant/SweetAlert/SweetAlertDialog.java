@@ -220,7 +220,6 @@ public class SweetAlertDialog extends Dialog implements View.OnClickListener {
 
         adjustButtonContainerVisibility();
 
-        mConfirmButton.setBackgroundResource(R.drawable.green_button_background);
         mErrorFrame.clearAnimation();
         mErrorX.clearAnimation();
         mSuccessTick.clearAnimation();
@@ -350,7 +349,7 @@ public class SweetAlertDialog extends Dialog implements View.OnClickListener {
             if (contentTextSize != 0) {
                 mContentTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, spToPx(contentTextSize, getContext()));
             }
-            mContentTextView.setText(Html.fromHtml(mContentText));
+            mContentTextView.setText(mContentText);
             mContentTextView.setVisibility(View.VISIBLE);
             if(mAlertType == ERROR_TYPE) {
                 mDefaultTextColor = getContext().getResources().getColor(R.color.error_stroke_color);
